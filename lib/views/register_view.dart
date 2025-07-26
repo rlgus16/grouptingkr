@@ -24,6 +24,15 @@ class _RegisterViewState extends State<RegisterView> {
   String _selectedGender = '';
 
   @override
+  void initState() {
+    super.initState();
+    // 임시 저장된 회원가입 데이터가 있으면 복원
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _restoreTemporaryData();
+    });
+  }
+
+  @override
   void dispose() {
     _idController.dispose();
     _passwordController.dispose();
@@ -31,6 +40,22 @@ class _RegisterViewState extends State<RegisterView> {
     _phoneController.dispose();
     _birthDateController.dispose();
     super.dispose();
+  }
+
+  void _restoreTemporaryData() {
+    final authController = context.read<AuthController>();
+    final tempData = authController.tempRegistrationData;
+    
+    if (tempData != null) {
+      print('임시 저장된 회원가입 데이터 복원: $tempData');
+      setState(() {
+        _idController.text = tempData['email']?.split('@')[0] ?? '';
+        _phoneController.text = tempData['phoneNumber'] ?? '';
+        _birthDateController.text = tempData['birthDate'] ?? '';
+        _selectedGender = tempData['gender'] ?? '';
+        // 비밀번호는 보안상 복원하지 않음
+      });
+    }
   }
 
   Future<void> _register() async {
@@ -50,7 +75,9 @@ class _RegisterViewState extends State<RegisterView> {
     /// 나중에 자체 그룹팅 도메인을 도입할 예정이라면 수정하면서 개발해 주시면 됩니다.
 
     final email = '${_idController.text}@groupting.com';
-    await authController.signUpWithAdditionalInfo(
+    
+    // 회원가입 데이터를 임시 저장 (Firebase 계정은 생성하지 않음)
+    authController.saveTemporaryRegistrationData(
       email: email,
       password: _passwordController.text,
       phoneNumber: _phoneController.text,
@@ -59,18 +86,18 @@ class _RegisterViewState extends State<RegisterView> {
     );
 
     if (mounted) {
-      if (authController.errorMessage != null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(authController.errorMessage!)));
-      } else {
-        // 회원가입 성공 시 프로필 설정 화면으로 이동
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/profile-create',
-          (route) => false,
-        );
-      }
+      // 프로필 생성 화면으로 이동
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/profile-create',
+        (route) => false,
+        arguments: {
+          'userId': _idController.text,
+          'phoneNumber': _phoneController.text,
+          'birthDate': _birthDateController.text,
+          'gender': _selectedGender,
+        },
+      );
     }
   }
 
@@ -388,6 +415,7 @@ class _RegisterViewState extends State<RegisterView> {
                       ],
                     ),
                   ),
+
                   const SizedBox(height: 32),
 
                   // 회원가입 버튼

@@ -1,0 +1,68 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    
+    "chats": {
+      "$groupId": {
+        ".read": "auth != null && (root.child('groups').child($groupId).child('memberIds').val().contains(auth.uid) || root.child('groups').child($groupId).child('matchedGroupId').exists())",
+        ".write": "auth != null && (root.child('groups').child($groupId).child('memberIds').val().contains(auth.uid) || root.child('groups').child($groupId).child('matchedGroupId').exists())",
+        
+        "messages": {
+          "$messageId": {
+            ".validate": "newData.hasChildren(['senderId', 'content', 'timestamp', 'type'])",
+            "senderId": {
+              ".validate": "newData.val() === auth.uid"
+            },
+            "content": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "timestamp": {
+              ".validate": "newData.val() === now"
+            },
+            "type": {
+              ".validate": "newData.val() === 'text' || newData.val() === 'image' || newData.val() === 'system'"
+            }
+          }
+        },
+        
+        "typing": {
+          "$userId": {
+            ".read": "auth != null",
+            ".write": "auth != null && $userId === auth.uid",
+            ".validate": "newData.val() === true || newData.val() === false"
+          }
+        }
+      }
+    },
+    
+    "groups": {
+      "$groupId": {
+        ".read": "auth != null",
+        ".write": "auth != null && data.child('memberIds').val().contains(auth.uid)",
+        
+        "memberIds": {
+          ".validate": "newData.isString()"
+        },
+        "status": {
+          ".validate": "newData.val() === 'waiting' || newData.val() === 'matching' || newData.val() === 'matched' || newData.val() === 'inactive'"
+        }
+      }
+    },
+    
+    "presence": {
+      "$userId": {
+        ".read": "auth != null",
+        ".write": "auth != null && $userId === auth.uid",
+        ".validate": "newData.hasChildren(['isOnline', 'lastSeen'])",
+        
+        "isOnline": {
+          ".validate": "newData.val() === true || newData.val() === false"
+        },
+        "lastSeen": {
+          ".validate": "newData.val() === now"
+        }
+      }
+    }
+  }
+} 

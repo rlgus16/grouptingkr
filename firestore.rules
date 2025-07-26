@@ -1,0 +1,76 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 기본 규칙: 인증되지 않은 사용자는 모든 접근 차단
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // 사용자 컬렉션
+    match /users/{userId} {
+      // 본인의 사용자 문서만 생성, 읽기, 수정, 삭제 가능
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // 인증된 사용자는 다른 사용자 정보 읽기만 가능 (프로필 조회용)
+      allow read: if request.auth != null;
+    }
+    
+    // 그룹 컬렉션
+    match /groups/{groupId} {
+      // 인증된 사용자는 그룹 생성 가능
+      allow create: if request.auth != null;
+      
+      // 그룹 멤버만 읽기, 수정 가능
+      allow read, update: if request.auth != null && 
+        request.auth.uid in resource.data.memberIds;
+      
+      // 그룹 소유자(방장)만 삭제 가능
+      allow delete: if request.auth != null && 
+        request.auth.uid == resource.data.ownerId;
+    }
+    
+    // 메시지 컬렉션
+    match /messages/{messageId} {
+      // 메시지 작성자만 생성 가능
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.senderId;
+      
+      // 메시지가 속한 그룹의 멤버만 읽기 가능
+      allow read: if request.auth != null && 
+        isGroupMember(resource.data.groupId, request.auth.uid);
+      
+      // 메시지 작성자만 수정, 삭제 가능
+      allow update, delete: if request.auth != null && 
+        request.auth.uid == resource.data.senderId;
+    }
+    
+    // 초대 컬렉션
+    match /invitations/{invitationId} {
+      // 초대 보낸 사람만 생성 가능
+      allow create: if request.auth != null && 
+        request.auth.uid == request.resource.data.fromUserId;
+      
+      // 초대 보낸 사람과 받는 사람만 읽기 가능
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.fromUserId ||
+        request.auth.uid == resource.data.toUserId
+      );
+      
+      // 초대 받는 사람만 수정 가능 (수락/거절)
+      allow update: if request.auth != null && 
+        request.auth.uid == resource.data.toUserId;
+      
+      // 초대 보낸 사람만 삭제 가능
+      allow delete: if request.auth != null && 
+        request.auth.uid == resource.data.fromUserId;
+    }
+    
+    // 헬퍼 함수: 그룹 멤버 확인
+    function isGroupMember(groupId, userId) {
+      return exists(/databases/$(database)/documents/groups/$(groupId)) &&
+        userId in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
+    }
+  }
+} 

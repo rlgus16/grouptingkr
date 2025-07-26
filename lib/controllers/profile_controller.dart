@@ -30,8 +30,9 @@ class ProfileController extends ChangeNotifier {
 
   // 프로필 생성 (회원가입 시)
   Future<bool> createProfile({
-    String? userId,
-    String? phoneNumber,
+    // String? userId,
+    // String? phoneNumber,
+    required String phoneNumber,
     required String nickname,
     required String birthDate,
     required String gender,
@@ -99,11 +100,20 @@ class ProfileController extends ChangeNotifier {
         }
       }
 
-      // 사용자 모델 생성
-      final userModel = UserModel(
-        uid: currentUser.uid,
-        userId: userId ?? currentUser.email?.split('@')[0] ?? '',
-        phoneNumber: phoneNumber ?? '',
+      // final userModel = UserModel(
+      //   uid: currentUser.uid,
+      //   userId: userId ?? currentUser.email?.split('@')[0] ?? '',
+      //   phoneNumber: phoneNumber ?? '',
+      // 기존 사용자 정보 가져오기
+      final existingUser = await _userService.getUserById(currentUser.uid);
+      if (existingUser == null) {
+        _setError('기존 사용자 정보를 찾을 수 없습니다.');
+        return false;
+      }
+
+      // 사용자 모델 업데이트
+      final updatedUserModel = existingUser.copyWith(
+        phoneNumber: phoneNumber,
         birthDate: birthDate,
         gender: gender,
         nickname: nickname,
@@ -116,8 +126,10 @@ class ProfileController extends ChangeNotifier {
         isProfileComplete: true,
       );
 
-      // Firestore에 저장
-      await _userService.createUser(userModel);
+      // // Firestore에 저장
+      // await _userService.createUser(userModel);
+      // Firestore에 업데이트
+      await _userService.updateUser(updatedUserModel);
 
       _setLoading(false);
       return true;
