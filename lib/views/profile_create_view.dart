@@ -196,29 +196,27 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // null이 아닌 이미지 개수 체크
-    final hasImages = _selectedImages.any((image) => image != null);
-    if (!hasImages) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('프로필 사진을 최소 1장 선택해주세요.')));
-      return;
-    }
+    // 이미지는 선택사항으로 변경 (나중에 업로드 가능)
 
     final authController = context.read<AuthController>();
 
     // 실제 Firebase 계정 생성과 프로필 완성 (이미지 포함)
     List<XFile> sortedImages = [];
     
-    // 메인 프로필 이미지가 있다면 첫 번째로 추가
-    if (_selectedImages[_mainProfileIndex] != null) {
-      sortedImages.add(_selectedImages[_mainProfileIndex]!);
-    }
+    // 선택된 이미지가 있는지 확인
+    final hasImages = _selectedImages.any((image) => image != null);
     
-    // 나머지 이미지들 추가 (메인 프로필 제외)
-    for (int i = 0; i < _selectedImages.length; i++) {
-      if (i != _mainProfileIndex && _selectedImages[i] != null) {
-        sortedImages.add(_selectedImages[i]!);
+    if (hasImages) {
+      // 메인 프로필 이미지가 있다면 첫 번째로 추가
+      if (_selectedImages[_mainProfileIndex] != null) {
+        sortedImages.add(_selectedImages[_mainProfileIndex]!);
+      }
+      
+      // 나머지 이미지들 추가 (메인 프로필 제외)
+      for (int i = 0; i < _selectedImages.length; i++) {
+        if (i != _mainProfileIndex && _selectedImages[i] != null) {
+          sortedImages.add(_selectedImages[i]!);
+        }
       }
     }
     
@@ -227,7 +225,7 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
       introduction: _introductionController.text.trim(),
       height: int.parse(_heightController.text.trim()),
       activityArea: _activityAreaController.text.trim(),
-      profileImages: sortedImages, // 정렬된 XFile 리스트 전달
+      profileImages: sortedImages.isNotEmpty ? sortedImages : null, // 이미지가 없으면 null 전달
     );
 
     if (mounted) {

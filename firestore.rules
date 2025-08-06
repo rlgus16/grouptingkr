@@ -10,8 +10,13 @@ service cloud.firestore {
     
     // 사용자 컬렉션
     match /users/{userId} {
-      // 본인의 사용자 문서만 생성, 읽기, 수정, 삭제 가능
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // 사용자 문서 생성: 인증된 사용자가 본인의 문서 생성 (회원가입 시)
+      allow create: if request.auth != null && 
+        request.auth.uid == userId &&
+        request.resource.data.uid == request.auth.uid;
+      
+      // 본인의 사용자 문서 읽기, 수정, 삭제 가능
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
       
       // 인증된 사용자는 다른 사용자 정보 읽기만 가능 (프로필 조회용)
       allow read: if request.auth != null;
@@ -85,14 +90,6 @@ service cloud.firestore {
     function isGroupMember(groupId, userId) {
       return exists(/databases/$(database)/documents/groups/$(groupId)) &&
         userId in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
-    }
-    
-    // 헬퍼 함수: 매칭된 그룹의 멤버인지 확인
-    function isMatchedGroupMember(groupId, userId) {
-      let groupDoc = get(/databases/$(database)/documents/groups/$(groupId));
-      return groupDoc.data.keys().hasAll(['matchedGroupId']) &&
-        exists(/databases/$(database)/documents/groups/$(groupDoc.data.matchedGroupId)) &&
-        userId in get(/databases/$(database)/documents/groups/$(groupDoc.data.matchedGroupId)).data.memberIds;
     }
   }
 } 

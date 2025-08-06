@@ -42,7 +42,7 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Firebase Auth 에러를 한국어로 변환
+  // Firebase Auth 에러를 한국어로 변환 (로그인용)
   String _getKoreanErrorMessage(dynamic error) {
     if (error is FirebaseAuthException) {
       switch (error.code) {
@@ -69,6 +69,29 @@ class AuthController extends ChangeNotifier {
       }
     }
     return '로그인 중 오류가 발생했습니다. 다시 시도해주세요.';
+  }
+
+  // Firebase Auth 에러를 한국어로 변환 (회원가입용)
+  String _getKoreanRegisterErrorMessage(dynamic error) {
+    if (error is FirebaseAuthException) {
+      switch (error.code) {
+        case 'email-already-in-use':
+          return '이미 사용 중인 아이디입니다. 다른 아이디를 사용해주세요.';
+        case 'weak-password':
+          return '비밀번호가 너무 간단합니다. 8자 이상의 복잡한 비밀번호를 사용해주세요.';
+        case 'invalid-email':
+          return '올바르지 않은 아이디 형식입니다.';
+        case 'network-request-failed':
+          return '네트워크 연결을 확인해주세요.';
+        case 'too-many-requests':
+          return '회원가입 시도가 너무 많습니다. 잠시 후 다시 시도해주세요.';
+        case 'operation-not-allowed':
+          return '이메일/비밀번호 회원가입이 비활성화되어 있습니다. 관리자에게 문의해주세요.';
+        default:
+          return '회원가입 중 오류가 발생했습니다. 입력 정보를 확인해주세요.';
+      }
+    }
+    return '회원가입 중 오류가 발생했습니다. 다시 시도해주세요.';
   }
 
   // 로그아웃
@@ -125,16 +148,16 @@ class AuthController extends ChangeNotifier {
       );
 
       await currentUser.reauthenticateWithCredential(credential);
-      print('재인증 성공');
+      // print('재인증 성공');
 
       // 2. 새 비밀번호로 변경
       await currentUser.updatePassword(newPassword);
-      print('비밀번호 변경 완료');
+      // print('비밀번호 변경 완료');
 
       _setLoading(false);
       return true;
     } catch (e) {
-      print('비밀번호 변경 실패: $e');
+      // print('비밀번호 변경 실패: $e');
       String errorMessage = '비밀번호 변경에 실패했습니다';
       
       if (e is FirebaseAuthException) {
@@ -174,16 +197,16 @@ class AuthController extends ChangeNotifier {
       }
 
       final userId = currentUser.uid;
-      print('계정 삭제 시작: $userId');
+      // print('계정 삭제 시작: $userId');
 
       // 1. 현재 사용자가 속한 그룹에서 제거
       if (_currentUserModel?.currentGroupId != null) {
-        print('그룹에서 사용자 제거 중...');
+        // print('그룹에서 사용자 제거 중...');
         await _groupService.leaveGroup(_currentUserModel!.currentGroupId!, userId);
       }
 
       // 2. 사용자와 관련된 초대들 정리
-      print('초대 데이터 정리 중...');
+      // print('초대 데이터 정리 중...');
       try {
         final invitationsRef = _firebaseService.getCollection('invitations');
         
@@ -203,13 +226,13 @@ class AuthController extends ChangeNotifier {
           await doc.reference.delete();
         }
         
-        print('초대 데이터 정리 완료');
+        // print('초대 데이터 정리 완료');
       } catch (e) {
-        print('초대 데이터 정리 실패 (계속 진행): $e');
+        // print('초대 데이터 정리 실패 (계속 진행): $e');
       }
 
       // 3. 사용자가 작성한 메시지들 정리 (시스템 메시지는 제외)
-      print('메시지 데이터 정리 중...');
+      // print('메시지 데이터 정리 중...');
       try {
         final messagesRef = _firebaseService.getCollection('messages');
         final userMessages = await messagesRef
@@ -221,31 +244,31 @@ class AuthController extends ChangeNotifier {
           await doc.reference.delete();
         }
         
-        print('메시지 데이터 정리 완료');
+        // print('메시지 데이터 정리 완료');
       } catch (e) {
-        print('메시지 데이터 정리 실패 (계속 진행): $e');
+        // print('메시지 데이터 정리 실패 (계속 진행): $e');
       }
 
       // 4. Firebase Storage에서 프로필 이미지 삭제
       if (_currentUserModel?.profileImages != null && _currentUserModel!.profileImages.isNotEmpty) {
-        print('프로필 이미지 삭제 중...');
+        // print('프로필 이미지 삭제 중...');
         for (final imageUrl in _currentUserModel!.profileImages) {
           if (imageUrl.startsWith('http')) {
             try {
               await FirebaseStorage.instance.refFromURL(imageUrl).delete();
             } catch (e) {
-              print('이미지 삭제 실패 (계속 진행): $e');
+              // print('이미지 삭제 실패 (계속 진행): $e');
             }
           }
         }
       }
 
       // 5. Firestore에서 사용자 데이터 삭제
-      print('Firestore에서 사용자 데이터 삭제 중...');
+      // print('Firestore에서 사용자 데이터 삭제 중...');
       await _userService.deleteUser(userId);
 
       // 6. Firebase Authentication에서 계정 삭제
-      print('Firebase Auth에서 계정 삭제 중...');
+      // print('Firebase Auth에서 계정 삭제 중...');
       await currentUser.delete();
 
       // 7. 로컬 상태 정리
@@ -257,10 +280,10 @@ class AuthController extends ChangeNotifier {
       }
 
       _setLoading(false);
-      print('계정 삭제 완료');
+      // print('계정 삭제 완료');
       return true;
     } catch (e) {
-      print('계정 삭제 실패: $e');
+      // print('계정 삭제 실패: $e');
       String errorMessage = '계정 삭제에 실패했습니다';
       
       if (e is FirebaseAuthException) {
@@ -287,12 +310,22 @@ class AuthController extends ChangeNotifier {
       _setLoading(true);
       _setError(null);
 
+      // print('로그인 시도: email=$email');
       final userCredential = await _firebaseService.auth
           .signInWithEmailAndPassword(email: email, password: password);
 
       if (userCredential.user != null) {
+        // print('Firebase Auth 로그인 성공: UID=${userCredential.user!.uid}');
+        // print('사용자 이메일: ${userCredential.user!.email}');
+        
         // 사용자 정보 로드
         await _loadUserData(userCredential.user!.uid);
+        
+        if (_currentUserModel != null) {
+          // print('로그인 완료: 사용자=${_currentUserModel!.nickname}');
+        } else {
+          // print('경고: Firebase Auth는 성공했지만 사용자 프로필을 찾을 수 없습니다');
+        }
       }
 
       _setLoading(false);
@@ -322,7 +355,7 @@ class AuthController extends ChangeNotifier {
 
       _setLoading(false);
     } catch (e) {
-      _setError('회원가입에 실패했습니다: $e');
+      _setError(_getKoreanRegisterErrorMessage(e));
       _setLoading(false);
     }
   }
@@ -366,14 +399,14 @@ class AuthController extends ChangeNotifier {
       final email = _tempRegistrationData!['email'];
       final password = _tempRegistrationData!['password'];
       
-      print('최종 회원가입 시작: $email');
+      // print('최종 회원가입 시작: $email');
       
       // Firebase Auth 계정 생성
       final userCredential = await _firebaseService.auth
           .createUserWithEmailAndPassword(email: email, password: password);
 
       if (userCredential.user != null) {
-        print('Firebase Auth 사용자 생성 완료: ${userCredential.user!.uid}');
+        // print('Firebase Auth 사용자 생성 완료: ${userCredential.user!.uid}');
         
         // 인증 상태가 완전히 반영될 때까지 잠시 대기
         await Future.delayed(const Duration(milliseconds: 500));
@@ -381,21 +414,21 @@ class AuthController extends ChangeNotifier {
         // ID 토큰 새로고침하여 권한 갱신
         try {
           await userCredential.user!.getIdToken(true);
-          print('ID 토큰 새로고침 완료');
+          // print('ID 토큰 새로고침 완료');
         } catch (e) {
-          print('ID 토큰 새로고침 실패: $e');
+          // print('ID 토큰 새로고침 실패: $e');
         }
         
         // 이미지 업로드 처리
         List<String> imageUrls = [];
         if (profileImages != null && profileImages.isNotEmpty) {
           try {
-            print('프로필 이미지 업로드 시작: ${profileImages.length}개');
+            // print('프로필 이미지 업로드 시작: ${profileImages.length}개');
             for (int i = 0; i < profileImages.length; i++) {
               final file = profileImages[i];
               final fileName = '${userCredential.user!.uid}_profile_$i.jpg';
 
-              print('Firebase Storage 업로드 시작: $fileName');
+              // print('Firebase Storage 업로드 시작: $fileName');
 
               // Firebase Storage에 업로드
               final ref = FirebaseStorage.instance
@@ -419,16 +452,15 @@ class AuthController extends ChangeNotifier {
               final snapshot = await uploadTask;
               final downloadUrl = await snapshot.ref.getDownloadURL();
 
-              print('Firebase Storage 업로드 성공: $downloadUrl');
+              // print('Firebase Storage 업로드 성공: $downloadUrl');
               imageUrls.add(downloadUrl);
             }
-            print('모든 프로필 이미지 업로드 완료: ${imageUrls.length}개');
+            // print('모든 프로필 이미지 업로드 완료: ${imageUrls.length}개');
           } catch (e) {
-            print('Firebase Storage 업로드 실패: $e');
-            // Storage 업로드 실패 시 전체 회원가입 실패로 처리
-            _setError('이미지 업로드에 실패했습니다. 다시 시도해주세요.');
-            _setLoading(false);
-            return;
+            // print('Firebase Storage 업로드 실패: $e');
+            // Firebase Storage 실패 시 빈 배열로 처리 (나중에 다시 업로드할 수 있도록)
+            imageUrls.clear();
+            _setError('이미지 업로드에 실패했습니다. 프로필은 생성되었으니 나중에 다시 업로드해주세요.');
           }
         }
         
@@ -446,7 +478,7 @@ class AuthController extends ChangeNotifier {
           imageUrls,
         );
 
-        print('Firestore 사용자 문서 생성 완료');
+        // print('Firestore 사용자 문서 생성 완료');
 
         // 사용자 정보 로드하여 자동 로그인 상태로 만들기
         await _loadUserData(userCredential.user!.uid);
@@ -454,13 +486,13 @@ class AuthController extends ChangeNotifier {
         // 임시 데이터 정리
         _tempRegistrationData = null;
         
-        print('사용자 데이터 로드 완료');
+        // print('사용자 데이터 로드 완료');
       }
 
       _setLoading(false);
     } catch (e) {
-      print('최종 회원가입 실패: $e');
-      _setError('회원가입에 실패했습니다: $e');
+      // print('최종 회원가입 실패: $e');
+      _setError(_getKoreanRegisterErrorMessage(e));
       _setLoading(false);
     }
   }
@@ -481,37 +513,58 @@ class AuthController extends ChangeNotifier {
       
       print('프로필 스킵 회원가입 시작: $email');
       
-      // Firebase Auth 계정 생성
-      final userCredential = await _firebaseService.auth
-          .createUserWithEmailAndPassword(email: email, password: password);
+      // 현재 Firebase Auth 사용자 확인
+      final currentUser = _firebaseService.currentUser;
+      
+      User? user;
+      if (currentUser != null && currentUser.email == email) {
+        // 이미 로그인된 사용자가 동일한 이메일이면 재사용
+        print('기존 Firebase Auth 사용자 재사용: ${currentUser.uid}');
+        user = currentUser;
+      } else {
+        // Firebase Auth 계정 생성
+        print('새로운 Firebase Auth 계정 생성 시도...');
+        final userCredential = await _firebaseService.auth
+            .createUserWithEmailAndPassword(email: email, password: password);
+        user = userCredential.user;
+        print('Firebase Auth 사용자 생성 완료: ${user?.uid}');
+      }
 
-      if (userCredential.user != null) {
-        print('Firebase Auth 사용자 생성 완료: ${userCredential.user!.uid}');
-        
+      if (user != null) {
         // 인증 상태가 완전히 반영될 때까지 잠시 대기
         await Future.delayed(const Duration(milliseconds: 500));
         
         // ID 토큰 새로고침하여 권한 갱신
         try {
-          await userCredential.user!.getIdToken(true);
+          await user.getIdToken(true);
           print('ID 토큰 새로고침 완료');
         } catch (e) {
           print('ID 토큰 새로고침 실패: $e');
         }
         
-        // 기본 사용자 정보만으로 사용자 문서 생성
-        await _createUserProfileWithInfo(
-          userCredential.user!.uid,
-          email,
-          _tempRegistrationData!['phoneNumber'],
-          _tempRegistrationData!['birthDate'],
-          _tempRegistrationData!['gender'],
-        );
+        // Firestore에 사용자 문서가 이미 존재하는지 확인
+        final userService = UserService();
+        final existingUser = await userService.getUserById(user.uid);
+        
+        if (existingUser == null) {
+          // 사용자 문서가 없으면 새로 생성 (프로필 미완성 상태)
+          await _createUserProfileWithInfo(
+            user.uid,
+            email,
+            _tempRegistrationData!['phoneNumber'],
+            _tempRegistrationData!['birthDate'],
+            _tempRegistrationData!['gender'],
+          );
+          print('새로운 Firestore 사용자 문서 생성 완료');
+        } else {
+          print('기존 Firestore 사용자 문서 발견, 재사용: ${existingUser.nickname}');
+          _currentUserModel = existingUser;
+        }
 
         print('Firestore 사용자 문서 생성 완료');
 
         // 사용자 정보 로드하여 자동 로그인 상태로 만들기
-        await _loadUserData(userCredential.user!.uid);
+        await _loadUserData(user.uid);
         
         // 임시 데이터 정리
         _tempRegistrationData = null;
@@ -522,7 +575,7 @@ class AuthController extends ChangeNotifier {
       _setLoading(false);
     } catch (e) {
       print('프로필 스킵 회원가입 실패: $e');
-      _setError('회원가입에 실패했습니다: $e');
+      _setError(_getKoreanRegisterErrorMessage(e));
       _setLoading(false);
     }
   }
@@ -530,9 +583,12 @@ class AuthController extends ChangeNotifier {
   // 사용자 데이터 로드
   Future<void> _loadUserData(String uid) async {
     try {
+      // print('사용자 데이터 로드 시작: UID=$uid');
       final userService = UserService();
       _currentUserModel = await userService.getUserById(uid);
+      // print('사용자 데이터 로드 성공: ${_currentUserModel?.nickname}');
     } catch (e) {
+      // print('사용자 데이터 로드 실패: $e');
       _setError('사용자 정보를 로드하는데 실패했습니다: $e');
     }
   }
@@ -541,14 +597,9 @@ class AuthController extends ChangeNotifier {
   Future<void> _createUserProfile(String uid, String email) async {
     try {
       final userService = UserService();
-      // 고유한 사용자 ID 생성 (이메일의 @ 앞부분 + 타임스탬프 마지막 4자리)
-      final emailPrefix = email.split('@')[0];
-      final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      final uniqueUserId = '${emailPrefix}_${timestamp.substring(timestamp.length - 4)}';
-      
       final user = UserModel(
         uid: uid,
-        userId: uniqueUserId,
+        userId: email.split('@')[0], // 이메일에서 @ 앞부분을 userId로 사용
         phoneNumber: '',
         birthDate: '',
         gender: '',
@@ -578,25 +629,20 @@ class AuthController extends ChangeNotifier {
     String gender,
   ) async {
     try {
-      print('사용자 프로필 생성 시작: UID=$uid');
+      // print('사용자 프로필 생성 시작: UID=$uid');
       
       // Firebase Auth의 현재 사용자 확인
       final currentUser = _firebaseService.currentUser;
-      print('현재 Firebase Auth 사용자: ${currentUser?.uid}');
+      // print('현재 Firebase Auth 사용자: ${currentUser?.uid}');
       
       if (currentUser == null || currentUser.uid != uid) {
         throw Exception('인증 상태가 일치하지 않습니다.');
       }
       
       final userService = UserService();
-      // 고유한 사용자 ID 생성 (이메일의 @ 앞부분 + 타임스탬프 마지막 4자리)
-      final emailPrefix = email.split('@')[0];
-      final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      final uniqueUserId = '${emailPrefix}_${timestamp.substring(timestamp.length - 4)}';
-      
       final user = UserModel(
         uid: uid,
-        userId: uniqueUserId,
+        userId: email.split('@')[0], // 이메일에서 @ 앞부분을 userId로 사용
         phoneNumber: phoneNumber,
         birthDate: birthDate,
         gender: gender,
@@ -610,12 +656,12 @@ class AuthController extends ChangeNotifier {
         isProfileComplete: false,
       );
 
-      print('Firestore에 사용자 문서 생성 중...');
+      // print('Firestore에 사용자 문서 생성 중...');
       await userService.createUser(user);
       _currentUserModel = user;
-      print('사용자 프로필 생성 완료');
+      // print('사용자 프로필 생성 완료');
     } catch (e) {
-      print('사용자 프로필 생성 오류: $e');
+      // print('사용자 프로필 생성 오류: $e');
       _setError('사용자 프로필 생성에 실패했습니다: $e');
       rethrow;
     }
@@ -635,25 +681,20 @@ class AuthController extends ChangeNotifier {
     List<String> profileImages,
   ) async {
     try {
-      print('완전한 사용자 프로필 생성 시작: UID=$uid');
+      // print('완전한 사용자 프로필 생성 시작: UID=$uid');
       
       // Firebase Auth의 현재 사용자 확인
       final currentUser = _firebaseService.currentUser;
-      print('현재 Firebase Auth 사용자: ${currentUser?.uid}');
+      // print('현재 Firebase Auth 사용자: ${currentUser?.uid}');
       
       if (currentUser == null || currentUser.uid != uid) {
         throw Exception('인증 상태가 일치하지 않습니다.');
       }
       
       final userService = UserService();
-      // 고유한 사용자 ID 생성 (이메일의 @ 앞부분 + 타임스탬프 마지막 4자리)
-      final emailPrefix = email.split('@')[0];
-      final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
-      final uniqueUserId = '${emailPrefix}_${timestamp.substring(timestamp.length - 4)}';
-      
       final user = UserModel(
         uid: uid,
-        userId: uniqueUserId,
+        userId: email.split('@')[0], // 이메일에서 @ 앞부분을 userId로 사용
         phoneNumber: phoneNumber,
         birthDate: birthDate,
         gender: gender,
@@ -667,12 +708,12 @@ class AuthController extends ChangeNotifier {
         isProfileComplete: true, // 프로필 완성됨
       );
 
-      print('Firestore에 완전한 사용자 문서 생성 중...');
+      // print('Firestore에 완전한 사용자 문서 생성 중...');
       await userService.createUser(user);
       _currentUserModel = user;
-      print('완전한 사용자 프로필 생성 완료');
+      // print('완전한 사용자 프로필 생성 완료');
     } catch (e) {
-      print('완전한 사용자 프로필 생성 오류: $e');
+      //  print('완전한 사용자 프로필 생성 오류: $e');
       _setError('사용자 프로필 생성에 실패했습니다: $e');
       rethrow;
     }

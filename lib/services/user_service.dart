@@ -16,10 +16,21 @@ class UserService {
   // 사용자 ID로 사용자 정보 가져오기
   Future<UserModel?> getUserById(String userId) async {
     try {
+      // print('UserService: 사용자 조회 시도 - UID: $userId');
       final doc = await _usersCollection.doc(userId).get();
-      if (!doc.exists) return null;
-      return UserModel.fromFirestore(doc);
+      // print('UserService: 문서 존재 여부: ${doc.exists}');
+      
+      // if (!doc.exists) {
+        // print('UserService: 문서가 존재하지 않습니다 - UID: $userId');
+        // return null;
+      // }
+      
+      // print('UserService: 문서 데이터: ${doc.data()}');
+      final user = UserModel.fromFirestore(doc);
+      // print('UserService: 사용자 조회 성공 - 닉네임: ${user.nickname}');
+      return user;
     } catch (e) {
+      // print('UserService: 사용자 조회 실패 - $e');
       throw Exception('사용자 정보를 가져오는데 실패했습니다: $e');
     }
   }
@@ -51,9 +62,9 @@ class UserService {
   // 사용자 생성
   Future<void> createUser(UserModel user) async {
     try {
-      print('UserService: 사용자 생성 시도 - UID: ${user.uid}');
-      print('UserService: 현재 Firebase Auth 사용자: ${_firebaseService.currentUser?.uid}');
-      print('UserService: 사용자 이메일: ${_firebaseService.currentUser?.email}');
+      // print('UserService: 사용자 생성 시도 - UID: ${user.uid}');
+      // print('UserService: 현재 Firebase Auth 사용자: ${_firebaseService.currentUser?.uid}');
+      // print('UserService: 사용자 이메일: ${_firebaseService.currentUser?.email}');
       
       // 현재 인증된 사용자와 생성하려는 사용자 UID가 일치하는지 확인
       if (_firebaseService.currentUser?.uid != user.uid) {
@@ -63,21 +74,21 @@ class UserService {
       // ID 토큰 확인
       try {
         final idToken = await _firebaseService.currentUser?.getIdToken();
-        print('UserService: ID 토큰 존재 여부: ${idToken != null}');
+        // print('UserService: ID 토큰 존재 여부: ${idToken != null}');
         if (idToken != null) {
-          print('UserService: ID 토큰 길이: ${idToken.length}');
+          // print('UserService: ID 토큰 길이: ${idToken.length}');
         }
       } catch (e) {
-        print('UserService: ID 토큰 확인 실패: $e');
+        // print('UserService: ID 토큰 확인 실패: $e');
       }
       
-      print('UserService: Firestore 컬렉션 경로: ${_usersCollection.path}');
-      print('UserService: 생성할 문서 데이터: ${user.toFirestore()}');
+      // print('UserService: Firestore 컬렉션 경로: ${_usersCollection.path}');
+      // print('UserService: 생성할 문서 데이터: ${user.toFirestore()}');
       
       await _usersCollection.doc(user.uid).set(user.toFirestore());
-      print('UserService: 사용자 생성 성공');
+      // print('UserService: 사용자 생성 성공');
     } catch (e) {
-      print('UserService: 사용자 생성 실패 - $e');
+      // print('UserService: 사용자 생성 실패 - $e');
       throw Exception('사용자 생성에 실패했습니다: $e');
     }
   }

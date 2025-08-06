@@ -489,6 +489,9 @@ class _RegisterViewState extends State<RegisterView> {
                   // 로그인 버튼
                   TextButton(
                     onPressed: () {
+                      // 로그인 페이지로 이동할 때 오류 메시지 클리어
+                      final authController = context.read<AuthController>();
+                      authController.clearError();
                       Navigator.pushNamed(context, '/login');
                     },
                     child: const Text('이미 계정이 있으신가요? 로그인하기'),

@@ -189,6 +189,9 @@ class _LoginViewState extends State<LoginView> {
                   // 회원가입 버튼
                   TextButton(
                     onPressed: () {
+                      // 회원가입 페이지로 이동할 때 오류 메시지 클리어
+                      final authController = context.read<AuthController>();
+                      authController.clearError();
                       Navigator.pushNamed(context, '/register');
                     },
                     child: const Text('회원가입'),
