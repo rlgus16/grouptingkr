@@ -657,36 +657,8 @@ class _ProfileEditViewState extends State<ProfileEditView> {
   }
 
   Widget _buildProfileImage(String imageUrl, double size) {
-    // 로컬 이미지인지 확인 (local:// 또는 temp://)
-    if (imageUrl.startsWith('local://') || imageUrl.startsWith('temp://')) {
-      if (kIsWeb) {
-        // 웹에서는 로컬 이미지 표시 불가
-        return Icon(
-          Icons.person,
-          size: size * 0.5,
-          color: AppTheme.textSecondary,
-        );
-      } else {
-        // 모바일에서만 로컬 파일 접근
-        String localPath;
-        if (imageUrl.startsWith('local://')) {
-          localPath = imageUrl.substring(8); // 'local://' 제거
-        } else {
-          localPath = imageUrl.substring(7); // 'temp://' 제거
-        }
-        
-        return Image.file(
-          File(localPath),
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => Icon(
-            Icons.person,
-            size: size * 0.5,
-            color: AppTheme.textSecondary,
-          ),
-        );
-      }
-    } else {
-      // 네트워크 이미지
+    // 유효한 네트워크 이미지만 표시
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return CachedNetworkImage(
         imageUrl: imageUrl,
         fit: BoxFit.cover,
@@ -694,6 +666,13 @@ class _ProfileEditViewState extends State<ProfileEditView> {
             const Center(child: CircularProgressIndicator()),
         errorWidget: (context, url, error) =>
             Icon(Icons.person, size: size * 0.5, color: AppTheme.textSecondary),
+      );
+    } else {
+      // 로컬 이미지나 잘못된 URL은 기본 아이콘으로 표시 -> 추후 정리 도움드리면 될 것으로 보임.
+      return Icon(
+        Icons.person,
+        size: size * 0.5,
+        color: AppTheme.textSecondary,
       );
     }
   }

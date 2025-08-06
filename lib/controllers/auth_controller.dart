@@ -182,7 +182,51 @@ class AuthController extends ChangeNotifier {
         await _groupService.leaveGroup(_currentUserModel!.currentGroupId!, userId);
       }
 
-      // 2. Firebase Storage에서 프로필 이미지 삭제
+      // 2. 사용자와 관련된 초대들 정리
+      print('초대 데이터 정리 중...');
+      try {
+        final invitationsRef = _firebaseService.getCollection('invitations');
+        
+        // 사용자가 보낸 초대들 삭제
+        final sentInvitations = await invitationsRef
+            .where('fromUserId', isEqualTo: userId)
+            .get();
+        for (final doc in sentInvitations.docs) {
+          await doc.reference.delete();
+        }
+        
+        // 사용자가 받은 초대들 삭제
+        final receivedInvitations = await invitationsRef
+            .where('toUserId', isEqualTo: userId)
+            .get();
+        for (final doc in receivedInvitations.docs) {
+          await doc.reference.delete();
+        }
+        
+        print('초대 데이터 정리 완료');
+      } catch (e) {
+        print('초대 데이터 정리 실패 (계속 진행): $e');
+      }
+
+      // 3. 사용자가 작성한 메시지들 정리 (시스템 메시지는 제외)
+      print('메시지 데이터 정리 중...');
+      try {
+        final messagesRef = _firebaseService.getCollection('messages');
+        final userMessages = await messagesRef
+            .where('senderId', isEqualTo: userId)
+            .where('type', isNotEqualTo: 'system')
+            .get();
+        
+        for (final doc in userMessages.docs) {
+          await doc.reference.delete();
+        }
+        
+        print('메시지 데이터 정리 완료');
+      } catch (e) {
+        print('메시지 데이터 정리 실패 (계속 진행): $e');
+      }
+
+      // 4. Firebase Storage에서 프로필 이미지 삭제
       if (_currentUserModel?.profileImages != null && _currentUserModel!.profileImages.isNotEmpty) {
         print('프로필 이미지 삭제 중...');
         for (final imageUrl in _currentUserModel!.profileImages) {
@@ -196,15 +240,15 @@ class AuthController extends ChangeNotifier {
         }
       }
 
-      // 3. Firestore에서 사용자 데이터 삭제
+      // 5. Firestore에서 사용자 데이터 삭제
       print('Firestore에서 사용자 데이터 삭제 중...');
       await _userService.deleteUser(userId);
 
-      // 4. Firebase Authentication에서 계정 삭제
+      // 6. Firebase Authentication에서 계정 삭제
       print('Firebase Auth에서 계정 삭제 중...');
       await currentUser.delete();
 
-      // 5. 로컬 상태 정리
+      // 7. 로컬 상태 정리
       _currentUserModel = null;
 
       // 로그아웃 콜백 호출 (다른 컨트롤러들 정리)
@@ -381,9 +425,10 @@ class AuthController extends ChangeNotifier {
             print('모든 프로필 이미지 업로드 완료: ${imageUrls.length}개');
           } catch (e) {
             print('Firebase Storage 업로드 실패: $e');
-            // Firebase Storage 실패 시 빈 배열로 처리 (나중에 다시 업로드할 수 있도록)
-            imageUrls.clear();
-            _setError('이미지 업로드에 실패했습니다. 프로필은 생성되었으니 나중에 다시 업로드해주세요.');
+            // Storage 업로드 실패 시 전체 회원가입 실패로 처리
+            _setError('이미지 업로드에 실패했습니다. 다시 시도해주세요.');
+            _setLoading(false);
+            return;
           }
         }
         
@@ -496,9 +541,14 @@ class AuthController extends ChangeNotifier {
   Future<void> _createUserProfile(String uid, String email) async {
     try {
       final userService = UserService();
+      // 고유한 사용자 ID 생성 (이메일의 @ 앞부분 + 타임스탬프 마지막 4자리)
+      final emailPrefix = email.split('@')[0];
+      final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final uniqueUserId = '${emailPrefix}_${timestamp.substring(timestamp.length - 4)}';
+      
       final user = UserModel(
         uid: uid,
-        userId: email.split('@')[0], // 이메일에서 @ 앞부분을 userId로 사용
+        userId: uniqueUserId,
         phoneNumber: '',
         birthDate: '',
         gender: '',
@@ -539,9 +589,14 @@ class AuthController extends ChangeNotifier {
       }
       
       final userService = UserService();
+      // 고유한 사용자 ID 생성 (이메일의 @ 앞부분 + 타임스탬프 마지막 4자리)
+      final emailPrefix = email.split('@')[0];
+      final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final uniqueUserId = '${emailPrefix}_${timestamp.substring(timestamp.length - 4)}';
+      
       final user = UserModel(
         uid: uid,
-        userId: email.split('@')[0], // 이메일에서 @ 앞부분을 userId로 사용
+        userId: uniqueUserId,
         phoneNumber: phoneNumber,
         birthDate: birthDate,
         gender: gender,
@@ -591,9 +646,14 @@ class AuthController extends ChangeNotifier {
       }
       
       final userService = UserService();
+      // 고유한 사용자 ID 생성 (이메일의 @ 앞부분 + 타임스탬프 마지막 4자리)
+      final emailPrefix = email.split('@')[0];
+      final timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final uniqueUserId = '${emailPrefix}_${timestamp.substring(timestamp.length - 4)}';
+      
       final user = UserModel(
         uid: uid,
-        userId: email.split('@')[0], // 이메일에서 @ 앞부분을 userId로 사용
+        userId: uniqueUserId,
         phoneNumber: phoneNumber,
         birthDate: birthDate,
         gender: gender,

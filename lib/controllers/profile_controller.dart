@@ -87,24 +87,11 @@ class ProfileController extends ChangeNotifier {
           }
         } catch (e) {
           print('Firebase Storage 업로드 실패: $e');
-          // Firebase Storage 실패 시 로컬 경로 사용 (모바일만)
+          // Storage 업로드 실패 시 빈 배열로 처리 (사용자에게 다시 업로드 요청)
           imageUrls.clear();
-          if (!kIsWeb) {
-            for (int i = 0; i < profileImages.length; i++) {
-              String filePath = profileImages[i].path;
-              // 이미 local:// 또는 temp:// 접두사가 있는지 확인
-              if (!filePath.startsWith('local://') && !filePath.startsWith('temp://')) {
-                // 접두사가 없으면 local:// 추가
-                imageUrls.add('local://$filePath');
-              } else {
-                // 이미 접두사가 있으면 그대로 사용
-                imageUrls.add(filePath);
-              }
-            }
-          } else {
-            // 웹에서는 빈 배열로 두기
-            print('웹에서는 로컬 이미지 저장 불가');
-          }
+          _setError('이미지 업로드에 실패했습니다. 다시 시도해주세요.');
+          _setLoading(false);
+          return false;
         }
       }
       // 기존 사용자 정보 가져오기
@@ -129,8 +116,6 @@ class ProfileController extends ChangeNotifier {
         isProfileComplete: true,
       );
 
-      // // Firestore에 저장
-      // await _userService.createUser(userModel);
       // Firestore에 업데이트
       await _userService.updateUser(updatedUserModel);
 

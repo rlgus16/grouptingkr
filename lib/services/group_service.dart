@@ -684,10 +684,33 @@ class GroupService {
       final group = GroupModel.fromFirestore(groupDoc);
       print('현재 그룹 상태: ${group.status}, 멤버수: ${group.memberCount}');
 
+      // 나가는 사용자 정보 가져오기 (시스템 메시지용)
+      final leavingUser = await _userService.getUserById(userId);
+      final leavingUserNickname = leavingUser?.nickname ?? '알 수 없는 사용자';
+
       // 매칭 중이었다면 리스너 정리
       if (group.status == GroupStatus.matching) {
         _stopMatchingListener(groupId);
         print('매칭 중인 그룹 나가기로 인한 리스너 정리');
+      }
+
+      // 매칭된 상태에서 나가는 경우 채팅방에 시스템 메시지 전송
+      if (group.status == GroupStatus.matched && group.matchedGroupId != null) {
+        try {
+          final chatRoomId = groupId.compareTo(group.matchedGroupId!) < 0
+              ? '${groupId}_${group.matchedGroupId!}'
+              : '${group.matchedGroupId!}_${groupId}';
+          
+          final realtimeChatService = RealtimeChatService();
+          await realtimeChatService.sendSystemMessage(
+            groupId: chatRoomId,
+            content: '$leavingUserNickname님이 채팅을 나갔습니다.',
+          );
+          print('사용자 나가기 시스템 메시지 전송 완료');
+        } catch (e) {
+          print('시스템 메시지 전송 실패: $e');
+          // 시스템 메시지 실패는 그룹 나가기에 영향을 주지 않음
+        }
       }
 
       // 멤버가 1명인 경우 (그룹 소유자) - 그룹 삭제
@@ -707,8 +730,16 @@ class GroupService {
       final updatedMemberIds = List<String>.from(group.memberIds)
         ..remove(userId);
 
+      // 방장이 나가는 경우 새로운 방장 선정
+      String newOwnerId = group.ownerId;
+      if (group.ownerId == userId && updatedMemberIds.isNotEmpty) {
+        newOwnerId = updatedMemberIds.first;
+        print('새로운 방장 선정: $newOwnerId');
+      }
+
       await _groupsCollection.doc(groupId).update({
         'memberIds': updatedMemberIds,
+        'ownerId': newOwnerId,
         'memberCount': updatedMemberIds.length,
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       });

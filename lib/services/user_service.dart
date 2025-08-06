@@ -139,7 +139,7 @@ class UserService {
     }
   }
 
-  // 닉네임으로 사용자 검색 (여러 결과)
+  // 닉네임으로 사용자 검색 (여러 결과 - 부분 일치)
   Future<List<UserModel>> searchUsersByNickname(String nickname) async {
     try {
       final query = await _usersCollection
@@ -149,6 +149,21 @@ class UserService {
           .get();
 
       return query.docs.map((doc) => UserModel.fromFirestore(doc)).toList();
+    } catch (e) {
+      throw Exception('사용자 검색에 실패했습니다: $e');
+    }
+  }
+
+  // 정확한 닉네임으로 사용자 검색
+  Future<UserModel?> getUserByExactNickname(String nickname) async {
+    try {
+      final query = await _usersCollection
+          .where('nickname', isEqualTo: nickname)
+          .limit(1)
+          .get();
+
+      if (query.docs.isEmpty) return null;
+      return UserModel.fromFirestore(query.docs.first);
     } catch (e) {
       throw Exception('사용자 검색에 실패했습니다: $e');
     }

@@ -88,15 +88,11 @@ class InvitationService {
         throw Exception('사용자 정보를 찾을 수 없습니다.');
       }
 
-      // 대상 사용자 찾기
-      final targetUsers = await _userService.searchUsersByNickname(
-        toUserNickname,
-      );
-      if (targetUsers.isEmpty) {
+      // 대상 사용자 찾기 (정확한 닉네임 매칭)
+      final toUser = await _userService.getUserByExactNickname(toUserNickname);
+      if (toUser == null) {
         throw Exception('해당 닉네임의 사용자를 찾을 수 없습니다.');
       }
-
-      final toUser = targetUsers.first;
 
       // 자기 자신에게 초대 방지
       if (toUser.uid == currentUser.uid) {

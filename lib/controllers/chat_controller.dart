@@ -27,6 +27,7 @@ class ChatController extends ChangeNotifier {
   // Subscriptions
   StreamSubscription<List<MessageModel>>? _messagesSubscription;
   StreamSubscription<Map<String, bool>>? _onlineUsersSubscription;
+  StreamSubscription<GroupModel?>? _groupSubscription;
   String? _currentGroupId;
 
   // Getters
@@ -62,11 +63,15 @@ class ChatController extends ChangeNotifier {
       // 기존 구독 해제
       _messagesSubscription?.cancel();
       _onlineUsersSubscription?.cancel();
+      _groupSubscription?.cancel();
 
       // 채팅방 초기화
       print('ChatController: 채팅방 초기화');
       await _realtimeChatService.initializeChatRoom(groupId);
       print('ChatController: 채팅방 초기화 완료');
+
+      // 그룹 상태 실시간 감지 시작
+      _startGroupStatusListener(groupId);
 
       // 그룹 멤버 로드 (매칭 전/후 구분)
       await _loadGroupMembers();
@@ -179,6 +184,8 @@ class ChatController extends ChangeNotifier {
       _messagesSubscription = null;
       _onlineUsersSubscription?.cancel();
       _onlineUsersSubscription = null;
+      _groupSubscription?.cancel();
+      _groupSubscription = null;
 
       // 오프라인 상태로 변경 (임시 비활성화)
       // if (_currentGroupId != null) {
@@ -207,6 +214,8 @@ class ChatController extends ChangeNotifier {
       _messagesSubscription = null;
       _onlineUsersSubscription?.cancel();
       _onlineUsersSubscription = null;
+      _groupSubscription?.cancel();
+      _groupSubscription = null;
 
       if (_currentGroupId != null) {
         final currentUserId = _firebaseService.currentUserId;
@@ -216,6 +225,33 @@ class ChatController extends ChangeNotifier {
       }
     } catch (e) {
       print('ChatController stopMessageStream 중 에러: $e');
+    }
+  }
+
+  // 그룹 상태 실시간 감지
+  void _startGroupStatusListener(String groupId) {
+    try {
+      print('ChatController: 그룹 상태 실시간 감지 시작');
+      
+      _groupSubscription = _groupService.getGroupStream(groupId).listen(
+        (group) {
+          if (group != null) {
+            print('ChatController: 그룹 상태 변경 감지 - 멤버수: ${group.memberCount}');
+            
+            // 그룹 멤버 변경 감지 시 멤버 목록 다시 로드
+            _loadGroupMembers();
+          } else {
+            print('ChatController: 그룹이 삭제되었거나 존재하지 않음');
+            // 그룹이 삭제된 경우 채팅 종료
+            clearData();
+          }
+        },
+        onError: (error) {
+          print('ChatController: 그룹 상태 감지 오류 - $error');
+        },
+      );
+    } catch (e) {
+      print('ChatController: 그룹 상태 리스너 시작 실패 - $e');
     }
   }
 

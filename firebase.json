@@ -1,1 +1,78 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"groupting-aebab","appId":"1:826622552589:android:b8cd6195c9eca66aeb4344","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"groupting-aebab","appId":"1:826622552589:ios:8edb281a853c4f31eb4344","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"groupting-aebab","configurations":{"android":"1:826622552589:android:b8cd6195c9eca66aeb4344","ios":"1:826622552589:ios:8edb281a853c4f31eb4344","web":"1:826622552589:web:c3c37ae751d231d5eb4344"}}}}},"firestore":{"rules":"firestore.rules","indexes":"firestore.indexes.json"},"database":{"rules":"database.rules.json"},"storage":{"rules":"storage.rules"},"hosting":{"public":"build/web","ignore":["firebase.json","**/.*","**/node_modules/**"],"rewrites":[{"source":"**","destination":"/index.html"}]},"emulators":{"auth":{"port":9099},"firestore":{"port":8080},"database":{"port":9000},"storage":{"port":9199},"ui":{"enabled":true,"port":4000},"singleProjectMode":true}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "groupting-aebab",
+          "appId": "1:826622552589:android:b8cd6195c9eca66aeb4344",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "groupting-aebab",
+          "appId": "1:826622552589:ios:8edb281a853c4f31eb4344",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "groupting-aebab",
+          "configurations": {
+            "android": "1:826622552589:android:b8cd6195c9eca66aeb4344",
+            "ios": "1:826622552589:ios:8edb281a853c4f31eb4344",
+            "web": "1:826622552589:web:c3c37ae751d231d5eb4344"
+          }
+        }
+      }
+    }
+  },
+  "functions": {
+    "source": "functions",
+    "predeploy": ["npm --prefix \"$RESOURCE_DIR\" run build"],
+    "runtime": "nodejs18"
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "database": {
+    "rules": "database.rules.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "hosting": {
+    "public": "build/web",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "database": {
+      "port": 9000
+    },
+    "storage": {
+      "port": 9199
+    },
+    "functions": {
+      "port": 5001
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
+    },
+    "singleProjectMode": true
+  }
+}
