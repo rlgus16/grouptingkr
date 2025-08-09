@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/profile_controller.dart';
@@ -13,6 +14,7 @@ import 'views/register_view.dart';
 import 'views/profile_create_view.dart';
 import 'views/chat_view.dart';
 import 'utils/app_theme.dart';
+import 'services/fcm_service.dart';
 
 import 'firebase_options.dart';
 
@@ -29,6 +31,9 @@ void main() async {
     FirebaseDatabase.instance.databaseURL =
         'https://groupting-aebab-default-rtdb.firebaseio.com';
 
+    // FCM 백그라운드 메시지 핸들러 설정
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
     print('Firebase 초기화 성공');
   } catch (e) {
     print('Firebase 초기화 오류: $e');
@@ -36,6 +41,16 @@ void main() async {
 
   runApp(const MyApp());
 }
+
+// FCM 백그라운드 메시지 핸들러
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // print('백그라운드에서 메시지 수신: ${message.messageId}');
+  // print('제목: ${message.notification?.title}');
+  // print('내용: ${message.notification?.body}');
+  // print('데이터: ${message.data}');
+}
+
 // 추후 앱 명칭 및 라우팅 위치, 상태관리 전환 분리 권장.
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -107,9 +122,15 @@ class _AuthWrapperState extends State<AuthWrapper> {
         print('AuthController 로그아웃 콜백 실행');
         _groupController?.onSignOut();
         _chatController?.onSignOut();
+        
+        // FCM 토큰 정리
+        FCMService().clearToken();
       };
       
       authController.initialize();
+      
+      // FCM 초기화
+      FCMService().initialize();
     });
   }
 

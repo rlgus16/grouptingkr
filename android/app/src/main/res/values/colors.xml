@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 그룹팅 앱의 기본 색상 추후 원하는 색상으로 변경해주세요. -->
+    <color name="colorAccent">#FF6B35</color>
+    <color name="colorPrimary">#FF6B35</color>
+    <color name="colorPrimaryDark">#E55A2B</color>
+</resources>

@@ -12,6 +12,7 @@ class UserModel {
   final String activityArea;
   final List<String> profileImages;
   final String? currentGroupId;
+  final String? fcmToken; // FCM 푸시 알림 토큰
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isProfileComplete;
@@ -28,6 +29,7 @@ class UserModel {
     required this.activityArea,
     required this.profileImages,
     this.currentGroupId,
+    this.fcmToken,
     required this.createdAt,
     required this.updatedAt,
     required this.isProfileComplete,
@@ -76,6 +78,7 @@ class UserModel {
       activityArea: dataMap['activityArea'] ?? '',
       profileImages: List<String>.from(dataMap['profileImages'] ?? []),
       currentGroupId: dataMap['currentGroupId'],
+      fcmToken: dataMap['fcmToken'],
       createdAt: (dataMap['createdAt'] as Timestamp).toDate(),
       updatedAt: (dataMap['updatedAt'] as Timestamp).toDate(),
       isProfileComplete: dataMap['isProfileComplete'] ?? false,
@@ -96,6 +99,7 @@ class UserModel {
       'activityArea': activityArea,
       'profileImages': profileImages,
       'currentGroupId': currentGroupId,
+      'fcmToken': fcmToken,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'isProfileComplete': isProfileComplete,
@@ -115,6 +119,7 @@ class UserModel {
     String? activityArea,
     List<String>? profileImages,
     String? currentGroupId,
+    String? fcmToken,
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isProfileComplete,
@@ -131,6 +136,7 @@ class UserModel {
       activityArea: activityArea ?? this.activityArea,
       profileImages: profileImages ?? this.profileImages,
       currentGroupId: currentGroupId ?? this.currentGroupId,
+      fcmToken: fcmToken ?? this.fcmToken,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isProfileComplete: isProfileComplete ?? this.isProfileComplete,
