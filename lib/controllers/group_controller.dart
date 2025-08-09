@@ -97,7 +97,7 @@ class GroupController extends ChangeNotifier {
   void _startGroupStatusStream() {
     if (_currentGroup == null) return;
 
-    print('그룹 상태 스트림 시작: ${_currentGroup!.id}');
+    // print('그룹 상태 스트림 시작: ${_currentGroup!.id}');
 
     // 기존 구독 취소
     _groupSubscription?.cancel();
@@ -111,21 +111,21 @@ class GroupController extends ChangeNotifier {
           final oldMatchedGroupId = _currentGroup?.matchedGroupId;
           _currentGroup = group;
 
-          print('그룹 상태 업데이트: ${group.status}');
+          // print('그룹 상태 업데이트: ${group.status}');
           if (group.matchedGroupId != null) {
-            print('매칭된 그룹 ID: ${group.matchedGroupId}');
+            // print('매칭된 그룹 ID: ${group.matchedGroupId}');
           }
 
           // 매칭 완료 감지
           if (oldStatus == GroupStatus.matching &&
               group.status == GroupStatus.matched) {
-            print('매칭 완료 감지! 매칭된 그룹: ${group.matchedGroupId}');
+            // print('매칭 완료 감지! 매칭된 그룹: ${group.matchedGroupId}');
             _handleMatchingCompleted();
           }
 
           // 매칭된 그룹이 변경된 경우 멤버 다시 로드
           if (oldMatchedGroupId != group.matchedGroupId) {
-            print('매칭된 그룹 변경 감지, 멤버 다시 로드');
+            // print('매칭된 그룹 변경 감지, 멤버 다시 로드');
             _loadGroupMembers();
           }
 
@@ -133,11 +133,11 @@ class GroupController extends ChangeNotifier {
         }
       },
       onError: (error) {
-        print('그룹 상태 스트림 오류: $error');
+        // print('그룹 상태 스트림 오류: $error');
         _scheduleReconnect();
       },
       onDone: () {
-        print('그룹 상태 스트림 종료, 재연결 시도');
+        // print('그룹 상태 스트림 종료, 재연결 시도');
         _scheduleReconnect();
       },
     );
@@ -147,21 +147,21 @@ class GroupController extends ChangeNotifier {
   void _scheduleReconnect() {
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(const Duration(seconds: 5), () {
-      print('그룹 스트림 재연결 시도');
+      // print('그룹 스트림 재연결 시도');
       _startGroupStatusStream();
     });
   }
 
   // 매칭 완료 처리
   void _handleMatchingCompleted() {
-    print('매칭 완료 처리 시작');
+    // print('매칭 완료 처리 시작');
 
     // UI 콜백 호출 (null 체크)
     if (onMatchingCompleted != null) {
       try {
         onMatchingCompleted!();
       } catch (e) {
-        print('매칭 완료 콜백 실행 중 오류: $e');
+        // print('매칭 완료 콜백 실행 중 오류: $e');
       }
     }
 
@@ -172,7 +172,7 @@ class GroupController extends ChangeNotifier {
     Future.delayed(const Duration(seconds: 2), () {
       // 컨트롤러가 여전히 유효한지 확인
       if (_currentGroup != null && _currentGroup!.status == GroupStatus.matched) {
-        print('매칭 완료 2초 후 추가 멤버 로드');
+        // print('매칭 완료 2초 후 추가 멤버 로드');
         _loadGroupMembers();
       }
     });
@@ -254,7 +254,7 @@ class GroupController extends ChangeNotifier {
         _receivedInvitations = invitations;
         notifyListeners();
       }, onError: (error) {
-        print('받은 초대 스트림 오류: $error');
+        // print('받은 초대 스트림 오류: $error');
         _setError('받은 초대를 로드하는데 실패했습니다: $error');
       });
     } catch (e) {
@@ -277,7 +277,7 @@ class GroupController extends ChangeNotifier {
         _sentInvitations = invitations;
         notifyListeners();
       }, onError: (error) {
-        print('보낸 초대 스트림 오류: $error');
+        // print('보낸 초대 스트림 오류: $error');
         _setError('보낸 초대를 로드하는데 실패했습니다: $error');
       });
     } catch (e) {
@@ -364,10 +364,10 @@ class GroupController extends ChangeNotifier {
       await _groupService.startMatching(_currentGroup!.id);
       _isMatching = true;
       
-      print('=== 매칭 시작 완료 ===');
-      print('그룹 ID: ${_currentGroup!.id}');
-      print('멤버 수: ${_currentGroup!.memberCount}');
-      print('==================');
+      // print('=== 매칭 시작 완료 ===');
+      // print('그룹 ID: ${_currentGroup!.id}');
+      // print('멤버 수: ${_currentGroup!.memberCount}');
+      // print('==================');
 
       _setLoading(false);
       return true;
@@ -414,24 +414,24 @@ class GroupController extends ChangeNotifier {
         return false;
       }
 
-      print('그룹 나가기 시작: 그룹ID=${_currentGroup!.id}, 사용자ID=$currentUserId');
+      // print('그룹 나가기 시작: 그룹ID=${_currentGroup!.id}, 사용자ID=$currentUserId');
 
       final success = await _groupService.leaveGroup(
         _currentGroup!.id,
         currentUserId,
       );
 
-      print('그룹 나가기 결과: $success');
+      // print('그룹 나가기 결과: $success');
 
       if (success) {
         _clearData();
-        print('그룹 데이터 클리어 완료');
+        // print('그룹 데이터 클리어 완료');
       }
 
       _setLoading(false);
       return success;
     } catch (e) {
-      print('그룹 나가기 오류: $e');
+      // print('그룹 나가기 오류: $e');
       _setError('그룹 나가기에 실패했습니다: $e');
       _setLoading(false);
       return false;
@@ -456,21 +456,21 @@ class GroupController extends ChangeNotifier {
 
   // 수동 새로고침
   Future<void> refreshData() async {
-    print('수동 새로고침 시작');
+    // print('수동 새로고침 시작');
     try {
       await loadCurrentGroup();
       await _loadReceivedInvitations();
       await _loadSentInvitations();
-      print('수동 새로고침 완료');
+      // print('수동 새로고침 완료');
     } catch (e) {
-      print('수동 새로고침 실패: $e');
+      // print('수동 새로고침 실패: $e');
       _setError('데이터 새로고침에 실패했습니다: $e');
     }
   }
 
   // 포그라운드 복귀 시 자동 새로고침
   void onAppResumed() {
-    print('앱 포그라운드 복귀, 자동 새로고침');
+    // print('앱 포그라운드 복귀, 자동 새로고침');
     refreshData();
 
     // 스트림 재연결
@@ -481,7 +481,7 @@ class GroupController extends ChangeNotifier {
 
   // 로그아웃 시 모든 스트림 정리
   void onSignOut() {
-    print('로그아웃: 모든 스트림과 데이터 정리');
+    // print('로그아웃: 모든 스트림과 데이터 정리');
     _groupSubscription?.cancel();
     _receivedInvitationsSubscription?.cancel();
     _sentInvitationsSubscription?.cancel();
@@ -491,7 +491,7 @@ class GroupController extends ChangeNotifier {
     GroupService.stopAllMatchingListeners();
     
     _clearData();
-    print('GroupController: 모든 스트림 정리 완료');
+    // print('GroupController: 모든 스트림 정리 완료');
   }
 
   // 정리

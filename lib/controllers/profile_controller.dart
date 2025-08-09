@@ -59,7 +59,7 @@ class ProfileController extends ChangeNotifier {
             final file = profileImages[i];
             final fileName = '${currentUser.uid}_profile_$i.jpg';
 
-            print('Firebase Storage 업로드 시작: $fileName');
+            // print('Firebase Storage 업로드 시작: $fileName');
 
             // Firebase Storage에 업로드
             final ref = FirebaseStorage.instance
@@ -82,11 +82,11 @@ class ProfileController extends ChangeNotifier {
             final snapshot = await uploadTask;
             final downloadUrl = await snapshot.ref.getDownloadURL();
 
-            print('Firebase Storage 업로드 성공: $downloadUrl');
+            // print('Firebase Storage 업로드 성공: $downloadUrl');
             imageUrls.add(downloadUrl);
           }
         } catch (e) {
-          print('Firebase Storage 업로드 실패: $e');
+          // print('Firebase Storage 업로드 실패: $e');
           // Firebase Storage 실패 시 빈 배열로 처리 (나중에 다시 업로드할 수 있도록)
           imageUrls.clear();
           _setError('이미지 업로드에 실패했습니다. 프로필은 생성되었으니 나중에 다시 업로드해주세요.');
@@ -243,7 +243,7 @@ class ProfileController extends ChangeNotifier {
         );
 
         await _userService.updateUser(updatedUser);
-        print('프로필 이미지 정리 완료: ${currentUserModel.profileImages.length} → ${validImages.length}');
+        // print('프로필 이미지 정리 완료: ${currentUserModel.profileImages.length} → ${validImages.length}');
       }
 
       _setLoading(false);

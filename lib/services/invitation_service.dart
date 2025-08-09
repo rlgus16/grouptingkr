@@ -21,7 +21,7 @@ class InvitationService {
 
   // 사용자가 받은 초대 목록 스트림
   Stream<List<InvitationModel>> getReceivedInvitationsStream(String userId) {
-    print('받은 초대 스트림 시작: $userId');
+    // print('받은 초대 스트림 시작: $userId');
 
     return _invitationsCollection
         .where('toUserId', isEqualTo: userId)
@@ -29,11 +29,11 @@ class InvitationService {
           'status',
           isEqualTo: InvitationStatus.pending.toString().split('.').last,
         )
-        // 임시로 orderBy 제거 (색인 생성 완료 후 다시 추가)
+        // 임시로 orderBy 제거 (색인 생성 완료 후 다시 추가하시길 바랍니다!)
         // .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-          print('받은 초대 문서 수: ${snapshot.docs.length}');
+          // print('받은 초대 문서 수: ${snapshot.docs.length}');
 
           final invitations = snapshot.docs
               .map((doc) => InvitationModel.fromFirestore(doc))
@@ -75,7 +75,7 @@ class InvitationService {
     String? message,
   }) async {
     try {
-      print('초대 전송 시작: $toUserNickname, groupId: $groupId');
+      // print('초대 전송 시작: $toUserNickname, groupId: $groupId');
 
       final currentUser = _firebaseService.currentUser;
       if (currentUser == null) {
@@ -153,7 +153,7 @@ class InvitationService {
 
       // Firestore에 저장
       final docRef = _invitationsCollection.doc();
-      print('초대 문서 생성: ${docRef.id}');
+      // print('초대 문서 생성: ${docRef.id}');
 
       await docRef.set(
         invitation
@@ -161,7 +161,7 @@ class InvitationService {
             .toFirestore(),
       );
 
-      print('초대 저장 완료: ${toUser.uid}님에게 초대 전송됨');
+      // print('초대 저장 완료: ${toUser.uid}님에게 초대 전송됨');
 
       // 초대 메시지 전송
       final invitationMessage = message != null
@@ -174,9 +174,9 @@ class InvitationService {
         content: invitationMessage,
       );
 
-      print('초대 전송 완료');
+      // print('초대 전송 완료');
     } catch (e) {
-      print('초대 전송 실패: $e');
+      // print('초대 전송 실패: $e');
       throw Exception('초대 전송에 실패했습니다: $e');
     }
   }
@@ -197,78 +197,78 @@ class InvitationService {
   // 초대 수락
   Future<void> acceptInvitation(String invitationId) async {
     try {
-      print('초대 수락 시작: invitationId=$invitationId');
+      // print('초대 수락 시작: invitationId=$invitationId');
 
       final currentUser = _firebaseService.currentUser;
       if (currentUser == null) {
-        print('초대 수락 실패: 로그인 필요');
+        // print('초대 수락 실패: 로그인 필요');
         throw Exception('로그인이 필요합니다.');
       }
 
-      print('현재 사용자: ${currentUser.uid}');
+      // print('현재 사용자: ${currentUser.uid}');
 
       // 초대 정보 가져오기
       final invitationDoc = await _invitationsCollection
           .doc(invitationId)
           .get();
       if (!invitationDoc.exists) {
-        print('초대 수락 실패: 초대 문서 없음');
+        // print('초대 수락 실패: 초대 문서 없음');
         throw Exception('초대를 찾을 수 없습니다.');
       }
 
       final invitation = InvitationModel.fromFirestore(invitationDoc);
-      print(
-        '초대 정보: fromUserId=${invitation.fromUserId}, toUserId=${invitation.toUserId}, groupId=${invitation.groupId}',
-      );
+      // print(
+      //   '초대 정보: fromUserId=${invitation.fromUserId}, toUserId=${invitation.toUserId}, groupId=${invitation.groupId}',
+      // );
 
       // 초대 대상 확인
       if (invitation.toUserId != currentUser.uid) {
-        print(
-          '초대 수락 실패: 권한 없음 - 초대받는자=${invitation.toUserId}, 현재사용자=${currentUser.uid}',
-        );
+        // print(
+        //   '초대 수락 실패: 권한 없음 - 초대받는자=${invitation.toUserId}, 현재사용자=${currentUser.uid}',
+        // );
         throw Exception('해당 초대를 수락할 권한이 없습니다.');
       }
 
       // 초대 유효성 확인
       if (!invitation.canRespond) {
-        print(
-          '초대 수락 실패: 유효하지 않음 - status=${invitation.status}, expired=${invitation.isExpired}',
-        );
+        // print(
+        //   '초대 수락 실패: 유효하지 않음 - status=${invitation.status}, expired=${invitation.isExpired}',
+        // );
         throw Exception('만료되었거나 이미 처리된 초대입니다.');
       }
 
-      print('초대 유효성 확인 완료');
+      // print('초대 유효성 확인 완료');
 
       // 현재 사용자 정보 확인
-      print('사용자 정보 확인 중...');
+      // print('사용자 정보 확인 중...');
       final currentUserInfo = await _userService.getUserById(currentUser.uid);
       if (currentUserInfo == null) {
         print('초대 수락 실패: 사용자 정보 없음');
         throw Exception('사용자 정보를 찾을 수 없습니다.');
       }
 
-      print('사용자 정보: currentGroupId=${currentUserInfo.currentGroupId}');
+      // print('사용자 정보: currentGroupId=${currentUserInfo.currentGroupId}');
 
       // 이미 다른 그룹에 속해있는지 확인
       if (currentUserInfo.currentGroupId != null) {
-        print(
-          '초대 수락 실패: 이미 그룹에 속함 - currentGroupId=${currentUserInfo.currentGroupId}',
-        );
+        // print(
+        //   '초대 수락 실패: 이미 그룹에 속함 - currentGroupId=${currentUserInfo.currentGroupId}',
+        // );
         throw Exception('이미 다른 그룹에 속해있습니다.');
       }
 
       // 순차적으로 초대 수락 처리 (웹 호환성을 위해 트랜잭션 대신)
-      print('초대 상태 업데이트 시작...');
+      // print('초대 상태 업데이트 시작...');
 
       // 1. 초대 상태 업데이트
       await _invitationsCollection.doc(invitationId).update({
         'status': InvitationStatus.accepted.toString().split('.').last,
         'respondedAt': Timestamp.fromDate(DateTime.now()),
       });
-      print('초대 상태 업데이트 완료');
+      // print('초대 상태 업데이트 완료');
 
       // 2. 그룹에 멤버 추가
-      print('그룹 멤버 추가 시작...');
+      // print('그룹 멤버 추가 시작...');
       final groupDoc = await _firebaseService
           .getDocument('groups/${invitation.groupId}')
           .get();
@@ -279,37 +279,37 @@ class InvitationService {
         );
         final updatedMemberIds = [...currentMemberIds, currentUser.uid];
 
-        print('그룹 멤버 업데이트 - 기존=$currentMemberIds, 새로운=$updatedMemberIds');
+        // print('그룹 멤버 업데이트 - 기존=$currentMemberIds, 새로운=$updatedMemberIds');
 
         await groupDoc.reference.update({
           'memberIds': updatedMemberIds,
           'updatedAt': Timestamp.fromDate(DateTime.now()),
         });
-        print('그룹 멤버 업데이트 완료');
+        // print('그룹 멤버 업데이트 완료');
       } else {
-        print('그룹 문서가 존재하지 않음');
+        // print('그룹 문서가 존재하지 않음');
         throw Exception('그룹을 찾을 수 없습니다.');
       }
 
       // 3. 사용자의 현재 그룹 ID 업데이트
-      print('사용자 그룹 ID 업데이트 시작...');
+      // print('사용자 그룹 ID 업데이트 시작...');
       await _userService.usersCollection.doc(currentUser.uid).update({
         'currentGroupId': invitation.groupId,
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
-      print('사용자 그룹 ID 업데이트 완료');
+      // print('사용자 그룹 ID 업데이트 완료');
 
       // 시스템 메시지 전송
-      print('시스템 메시지 전송');
+      // print('시스템 메시지 전송');
       await _messageService.sendSystemMessage(
         groupId: invitation.groupId,
         content: '${currentUserInfo.nickname}님이 그룹에 참여했습니다.',
         metadata: {'type': 'member_joined', 'userId': currentUser.uid},
       );
 
-      print('초대 수락 성공');
+      // print('초대 수락 성공');
     } catch (e) {
-      print('초대 수락 실패: $e');
+      // print('초대 수락 실패: $e');
       throw Exception('초대 수락에 실패했습니다: $e');
     }
   }
@@ -395,7 +395,7 @@ class InvitationService {
         await batch.commit();
       }
     } catch (e) {
-      print('만료된 초대 정리 실패: $e');
+      // print('만료된 초대 정리 실패: $e');
     }
   }
 

@@ -100,24 +100,24 @@ class AuthController extends ChangeNotifier {
       _setLoading(true);
       _setError(null);
       
-      print('로그아웃 시작');
+      // print('로그아웃 시작');
 
       // 먼저 로컬 상태 정리
       _currentUserModel = null;
       
       // 로그아웃 콜백 호출 (다른 컨트롤러들 정리)
       if (onSignOutCallback != null) {
-        print('로그아웃 콜백 호출');
+        // print('로그아웃 콜백 호출');
         onSignOutCallback!();
       }
 
       // Firebase 로그아웃
       await _firebaseService.signOut();
-      print('Firebase 로그아웃 완료');
+      // print('Firebase 로그아웃 완료');
 
       _setLoading(false);
     } catch (e) {
-      print('로그아웃 실패: $e');
+      // print('로그아웃 실패: $e');
       _setError('로그아웃에 실패했습니다: $e');
       _setLoading(false);
     }
@@ -147,7 +147,7 @@ class AuthController extends ChangeNotifier {
         return false;
       }
 
-      print('비밀번호 변경 시작');
+      // print('비밀번호 변경 시작');
 
       // 1. 현재 비밀번호로 재인증
       final credential = EmailAuthProvider.credential(
@@ -338,7 +338,7 @@ class AuthController extends ChangeNotifier {
 
       _setLoading(false);
     } catch (e) {
-      print('로그인 에러: $e');
+      // print('로그인 에러: $e');
       _setError(_getKoreanErrorMessage(e));
       _setLoading(false);
     }
@@ -383,7 +383,7 @@ class AuthController extends ChangeNotifier {
       'birthDate': birthDate,
       'gender': gender,
     };
-    print('회원가입 데이터 임시 저장: $_tempRegistrationData');
+    // print('회원가입 데이터 임시 저장: $_tempRegistrationData');
     notifyListeners();
   }
 
@@ -519,7 +519,7 @@ class AuthController extends ChangeNotifier {
       final email = _tempRegistrationData!['email'];
       final password = _tempRegistrationData!['password'];
       
-      print('프로필 스킵 회원가입 시작: $email');
+      // print('프로필 스킵 회원가입 시작: $email');
       
       // 현재 Firebase Auth 사용자 확인
       final currentUser = _firebaseService.currentUser;
@@ -527,15 +527,15 @@ class AuthController extends ChangeNotifier {
       User? user;
       if (currentUser != null && currentUser.email == email) {
         // 이미 로그인된 사용자가 동일한 이메일이면 재사용
-        print('기존 Firebase Auth 사용자 재사용: ${currentUser.uid}');
+        // print('기존 Firebase Auth 사용자 재사용: ${currentUser.uid}');
         user = currentUser;
       } else {
         // Firebase Auth 계정 생성
-        print('새로운 Firebase Auth 계정 생성 시도...');
+        // print('새로운 Firebase Auth 계정 생성 시도...');
         final userCredential = await _firebaseService.auth
             .createUserWithEmailAndPassword(email: email, password: password);
         user = userCredential.user;
-        print('Firebase Auth 사용자 생성 완료: ${user?.uid}');
+        // print('Firebase Auth 사용자 생성 완료: ${user?.uid}');
       }
 
       if (user != null) {
@@ -545,9 +545,9 @@ class AuthController extends ChangeNotifier {
         // ID 토큰 새로고침하여 권한 갱신
         try {
           await user.getIdToken(true);
-          print('ID 토큰 새로고침 완료');
+          // print('ID 토큰 새로고침 완료');
         } catch (e) {
-          print('ID 토큰 새로고침 실패: $e');
+          // print('ID 토큰 새로고침 실패: $e');
         }
         
         // Firestore에 사용자 문서가 이미 존재하는지 확인
@@ -563,26 +563,26 @@ class AuthController extends ChangeNotifier {
             _tempRegistrationData!['birthDate'],
             _tempRegistrationData!['gender'],
           );
-          print('새로운 Firestore 사용자 문서 생성 완료');
+          // print('새로운 Firestore 사용자 문서 생성 완료');
         } else {
-          print('기존 Firestore 사용자 문서 발견, 재사용: ${existingUser.nickname}');
+          // print('기존 Firestore 사용자 문서 발견, 재사용: ${existingUser.nickname}');
           _currentUserModel = existingUser;
         }
 
-        print('Firestore 사용자 문서 생성 완료');
+        // print('Firestore 사용자 문서 생성 완료');
 
         // 사용자 정보 로드하여 자동 로그인 상태로 만들기
         await _loadUserData(user.uid);
         
         // 임시 데이터 정리
         _tempRegistrationData = null;
-        
-        print('사용자 데이터 로드 완료');
+
+        // print('사용자 데이터 로드 완료');
       }
 
       _setLoading(false);
     } catch (e) {
-      print('프로필 스킵 회원가입 실패: $e');
+      // print('프로필 스킵 회원가입 실패: $e');
       _setError(_getKoreanRegisterErrorMessage(e));
       _setLoading(false);
     }

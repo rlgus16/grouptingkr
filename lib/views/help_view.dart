@@ -435,7 +435,7 @@ class HelpView extends StatelessWidget {
         throw 'Could not launch email';
       }
     } catch (e) {
-      print('이메일 실행 실패: $e');
+      // print('이메일 실행 실패: $e');
       // 이메일 앱이 없는 경우 클립보드에 복사
     }
   }
@@ -450,7 +450,7 @@ class HelpView extends StatelessWidget {
         throw 'Could not launch phone';
       }
     } catch (e) {
-      print('전화 실행 실패: $e');
+      // print('전화 실행 실패: $e');
     }
   }
 
@@ -465,7 +465,7 @@ class HelpView extends StatelessWidget {
         throw 'Could not launch KakaoTalk';
       }
     } catch (e) {
-      print('카카오톡 실행 실패: $e');
+      // print('카카오톡 실행 실패: $e');
     }
   }
 

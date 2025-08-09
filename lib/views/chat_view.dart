@@ -30,7 +30,7 @@ class _ChatViewState extends State<ChatView> {
           _chatController = chatController;
           chatController.startMessageStream(widget.groupId);
         } catch (e) {
-          print('ChatView initState 에러: $e');
+          // print('ChatView initState 에러: $e');
         }
       }
     });
@@ -44,7 +44,7 @@ class _ChatViewState extends State<ChatView> {
       try {
         _chatController = context.read<ChatController>();
       } catch (e) {
-        print('ChatController 참조 저장 실패: $e');
+        // print('ChatController 참조 저장 실패: $e');
       }
     }
   }
@@ -55,7 +55,7 @@ class _ChatViewState extends State<ChatView> {
     try {
       _chatController?.clearData();
     } catch (e) {
-      print('ChatController 정리 중 에러: $e');
+      // print('ChatController 정리 중 에러: $e');
     }
     _chatController = null;
     super.dispose();

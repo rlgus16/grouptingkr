@@ -111,11 +111,11 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
         chatRoomId = currentGroupId.compareTo(matchedGroupId) < 0
             ? '${currentGroupId}_${matchedGroupId}'
             : '${matchedGroupId}_${currentGroupId}';
-        print('매칭된 그룹 통합 채팅방 ID: $chatRoomId');
+        // print('매칭된 그룹 통합 채팅방 ID: $chatRoomId');
       } else {
         // 매칭되지 않은 경우 기존 그룹 ID 사용
         chatRoomId = groupController.currentGroup!.id;
-        print('일반 그룹 채팅방 ID: $chatRoomId');
+        // print('일반 그룹 채팅방 ID: $chatRoomId');
       }
 
       Navigator.push(
@@ -827,11 +827,11 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                   chatRoomId = currentGroupId.compareTo(matchedGroupId) < 0
                       ? '${currentGroupId}_${matchedGroupId}'
                       : '${matchedGroupId}_${currentGroupId}';
-                  print('매칭된 그룹 통합 채팅방 ID: $chatRoomId');
+                  // print('매칭된 그룹 통합 채팅방 ID: $chatRoomId');
                 } else {
                   // 매칭되지 않은 경우 그룹 ID 사용
                   chatRoomId = groupController.currentGroup!.id;
-                  print('그룹 채팅방 ID: $chatRoomId');
+                  // print('그룹 채팅방 ID: $chatRoomId');
                 }
 
                 Navigator.push(

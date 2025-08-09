@@ -31,13 +31,13 @@ class RealtimeChatService {
         throw Exception('로그인이 필요합니다');
       }
 
-      print('메시지 전송 시작: $content');
+      // print('메시지 전송 시작: $content');
 
       // 사용자 닉네임 가져오기
       final userModel = await _userService.getUserById(currentUser.uid);
       final senderNickname = userModel?.nickname ?? 'Unknown User';
 
-      print('발송자: $senderNickname');
+      // print('발송자: $senderNickname');
 
       final messageRef = _database.child('chats').child(groupId).push();
       final message = MessageModel(
@@ -51,12 +51,12 @@ class RealtimeChatService {
         readBy: [],
       );
 
-      print('메시지 데이터: ${message.toMap()}');
+      // print('메시지 데이터: ${message.toMap()}');
 
       await messageRef.set(message.toMap());
-      print('메시지 전송 완료');
+      // print('메시지 전송 완료');
     } catch (e) {
-      print('메시지 전송 오류: $e');
+      // print('메시지 전송 오류: $e');
       throw Exception('메시지 전송에 실패했습니다: $e');
     }
   }
@@ -72,13 +72,13 @@ class RealtimeChatService {
           final data = event.snapshot.value;
           if (data == null) return <MessageModel>[];
 
-          print('받은 데이터: $data');
+          // print('받은 데이터: $data');
 
           final Map<String, dynamic> messagesMap;
           try {
             messagesMap = Map<String, dynamic>.from(data as Map);
           } catch (e) {
-            print('메시지 맵 변환 오류: $e');
+            // print('메시지 맵 변환 오류: $e');
             return <MessageModel>[];
           }
 
@@ -90,7 +90,7 @@ class RealtimeChatService {
               .map((entry) {
                 try {
                   if (entry.value is! Map) {
-                    print('잘못된 메시지 데이터 타입: ${entry.key} = ${entry.value}');
+                    // print('잘못된 메시지 데이터 타입: ${entry.key} = ${entry.value}');
                     return null;
                   }
 
@@ -99,11 +99,11 @@ class RealtimeChatService {
                   );
                   messageData['id'] = entry.key;
 
-                  print('파싱할 메시지 데이터: $messageData');
+                  // print('파싱할 메시지 데이터: $messageData');
                   return MessageModel.fromMap(messageData);
                 } catch (e) {
-                  print('메시지 파싱 오류 (${entry.key}): $e');
-                  print('문제가 된 데이터: ${entry.value}');
+                  // print('메시지 파싱 오류 (${entry.key}): $e');
+                  // print('문제가 된 데이터: ${entry.value}');
                   return null;
                 }
               })
@@ -113,7 +113,7 @@ class RealtimeChatService {
 
           // 시간순으로 정렬
           messages.sort((a, b) => a.createdAt.compareTo(b.createdAt));
-          print('파싱된 메시지 개수: ${messages.length}');
+          // print('파싱된 메시지 개수: ${messages.length}');
           return messages;
         });
   }
@@ -143,7 +143,7 @@ class RealtimeChatService {
         'last_updated': ServerValue.timestamp,
       });
     } catch (e) {
-      print('마지막 활동 시간 업데이트 실패: $e');
+      // print('마지막 활동 시간 업데이트 실패: $e');
     }
   }
 
@@ -196,7 +196,7 @@ class RealtimeChatService {
           .onDisconnect()
           .update({'online': false, 'last_seen': ServerValue.timestamp});
     } catch (e) {
-      print('온라인 상태 설정 실패: $e');
+      // print('온라인 상태 설정 실패: $e');
     }
   }
 
@@ -208,7 +208,7 @@ class RealtimeChatService {
         'last_seen': ServerValue.timestamp,
       });
     } catch (e) {
-      print('오프라인 상태 설정 실패: $e');
+      // print('오프라인 상태 설정 실패: $e');
     }
   }
 

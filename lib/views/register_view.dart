@@ -47,7 +47,7 @@ class _RegisterViewState extends State<RegisterView> {
     final tempData = authController.tempRegistrationData;
     
     if (tempData != null) {
-      print('임시 저장된 회원가입 데이터 복원: $tempData');
+      // print('임시 저장된 회원가입 데이터 복원: $tempData');
       setState(() {
         _idController.text = tempData['email']?.split('@')[0] ?? '';
         _phoneController.text = tempData['phoneNumber'] ?? '';

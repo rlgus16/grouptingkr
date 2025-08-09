@@ -86,6 +86,10 @@ class AuthWrapper extends StatefulWidget {
 
 class _AuthWrapperState extends State<AuthWrapper> {
   bool _wasLoggedIn = false;
+  
+  // 컨트롤러 인스턴스를 미리 저장 -> 조금 더 깔끔한 로그아웃을 위한 정리 코드.
+  GroupController? _groupController;
+  ChatController? _chatController;
 
   @override
   void initState() {
@@ -94,11 +98,15 @@ class _AuthWrapperState extends State<AuthWrapper> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final authController = context.read<AuthController>();
       
-      // 로그아웃 콜백 설정
+      // 컨트롤러 인스턴스 저장
+      _groupController = context.read<GroupController>();
+      _chatController = context.read<ChatController>();
+      
+      // 로그아웃 콜백 설정 (context 사용하지 않고 직접 인스턴스 사용)
       authController.onSignOutCallback = () {
         print('AuthController 로그아웃 콜백 실행');
-        context.read<GroupController>().onSignOut();
-        context.read<ChatController>().onSignOut();
+        _groupController?.onSignOut();
+        _chatController?.onSignOut();
       };
       
       authController.initialize();

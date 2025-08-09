@@ -62,7 +62,7 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
   }
 
   void _initializeWithRegisterData() {
-    print('회원가입 데이터 초기화: $_registerData');
+    // print('회원가입 데이터 초기화: $_registerData');
     _userIdController.text = _registerData!['userId'] ?? '';
     _phoneController.text = _registerData!['phoneNumber'] ?? '';
     _birthDateController.text = _registerData!['birthDate'] ?? '';
@@ -79,7 +79,7 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
           int.parse(birthStr.substring(6, 8)),
         );
       } catch (e) {
-        print('생년월일 파싱 오류: $e');
+        // print('생년월일 파싱 오류: $e');
       }
     }
     
@@ -93,7 +93,7 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
     final currentUser = authController.currentUserModel;
     
     if (currentUser != null) {
-      print('현재 사용자 정보로 초기화: ${currentUser.userId}');
+      // print('현재 사용자 정보로 초기화: ${currentUser.userId}');
       _userIdController.text = currentUser.userId;
       _phoneController.text = currentUser.phoneNumber;
       _birthDateController.text = currentUser.birthDate;
@@ -111,7 +111,7 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
             int.parse(birthStr.substring(6, 8)),
           );
         } catch (e) {
-          print('생년월일 파싱 오류: $e');
+          // print('생년월일 파싱 오류: $e');
         }
       }
       
@@ -120,7 +120,7 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
       });
     } else {
       // 현재 사용자 정보가 없는 경우 (프로필이 없는 상태)
-      print('현재 사용자 정보가 없음 - 빈 폼으로 초기화');
+      // print('현재 사용자 정보가 없음 - 빈 폼으로 초기화');
       _initializeEmptyForm();
     }
   }
@@ -181,7 +181,7 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
         ).showSnackBar(const SnackBar(content: Text('최대 6장까지 선택할 수 있습니다.')));
       }
     } catch (e) {
-      print('이미지 선택 오류: $e');
+      // print('이미지 선택 오류: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('이미지 선택 중 오류가 발생했습니다.')),
@@ -205,7 +205,7 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
         });
       }
     } catch (e) {
-      print('이미지 선택 오류: $e');
+      // print('이미지 선택 오류: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('이미지 선택 중 오류가 발생했습니다.')),
@@ -300,7 +300,7 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
             final file = sortedImages[i];
             final fileName = '${currentUser.uid}_profile_$i.jpg';
 
-            print('Firebase Storage 업로드 시작: $fileName');
+            // print('Firebase Storage 업로드 시작: $fileName');
 
             // Firebase Storage에 업로드
             final ref = FirebaseStorage.instance
@@ -324,11 +324,11 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
             final snapshot = await uploadTask;
             final downloadUrl = await snapshot.ref.getDownloadURL();
 
-            print('Firebase Storage 업로드 성공: $downloadUrl');
+            // print('Firebase Storage 업로드 성공: $downloadUrl');
             imageUrls.add(downloadUrl);
           }
         } catch (e) {
-          print('이미지 업로드 실패: $e');
+          // print('이미지 업로드 실패: $e');
           // 이미지 업로드 실패해도 계속 진행
           authController.setError('이미지 업로드에 실패했습니다. 프로필은 생성되었으니 나중에 다시 업로드해주세요.');
         }
@@ -351,7 +351,7 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
       await authController.refreshCurrentUser();
       
     } catch (e) {
-      print('새 프로필 생성 실패: $e');
+      // print('새 프로필 생성 실패: $e');
       authController.setError('프로필 생성에 실패했습니다: $e');
     }
   }
