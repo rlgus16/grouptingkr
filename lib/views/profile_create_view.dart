@@ -62,21 +62,32 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
   }
 
   void _initializeWithRegisterData() {
-    // print('회원가입 데이터 초기화: $_registerData');
-    _userIdController.text = _registerData!['userId'] ?? '';
-    _phoneController.text = _registerData!['phoneNumber'] ?? '';
-    _birthDateController.text = _registerData!['birthDate'] ?? '';
-    _selectedGender = _registerData!['gender'] ?? '';
+    // 회원가입에서 전달받은 데이터로 초기화
+    final authController = context.read<AuthController>();
+    final tempData = authController.tempRegistrationData;
+    
+    // 우선 tempRegistrationData를 사용하고, 없으면 arguments 사용
+    if (tempData != null) {
+      _userIdController.text = tempData['userId'] ?? '';
+      _phoneController.text = tempData['phoneNumber'] ?? '';
+      _birthDateController.text = tempData['birthDate'] ?? '';
+      _selectedGender = tempData['gender'] ?? '';
+    } else if (_registerData != null) {
+      _userIdController.text = _registerData!['userId'] ?? '';
+      _phoneController.text = _registerData!['phoneNumber'] ?? '';
+      _birthDateController.text = _registerData!['birthDate'] ?? '';
+      _selectedGender = _registerData!['gender'] ?? '';
+    }
     // 키는 프로필 생성 시 입력받으므로 초기화하지 않음
     
     // 생년월일을 DateTime으로 변환
-    if (_registerData!['birthDate'] != null && _registerData!['birthDate'].length == 8) {
-      final birthStr = _registerData!['birthDate'];
+    final birthDate = tempData?['birthDate'] ?? _registerData?['birthDate'];
+    if (birthDate != null && birthDate.length == 8) {
       try {
         _selectedDate = DateTime(
-          int.parse(birthStr.substring(0, 4)),
-          int.parse(birthStr.substring(4, 6)),
-          int.parse(birthStr.substring(6, 8)),
+          int.parse(birthDate.substring(0, 4)),
+          int.parse(birthDate.substring(4, 6)),
+          int.parse(birthDate.substring(6, 8)),
         );
       } catch (e) {
         // print('생년월일 파싱 오류: $e');
@@ -280,7 +291,7 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
         
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('기본 정보(아이디, 전화번호, 생년월일, 성별)를 모두 입력해주세요.'),
+            content: Text('프로필을 완성하려면 먼저 회원가입을 완료해주세요. 로그아웃 후 회원가입을 진행해주세요.'),
           ),
         );
         return;
@@ -336,6 +347,7 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
 
       await authController.createCompleteUserProfile(
         currentUser.uid,
+        _userIdController.text.trim(), // 아이디 사용
         currentUser.email ?? '',
         _phoneController.text.trim(),
         _birthDateController.text.trim(),
@@ -562,9 +574,10 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
                 TextFormField(
                   controller: _userIdController,
                   decoration: const InputDecoration(
-                    labelText: '아이디',
+                    labelText: '아이디 (로그인 시 사용)',
                     prefixIcon: Icon(Icons.person),
                     suffixIcon: Icon(Icons.lock, color: AppTheme.textSecondary),
+                    helperText: '회원가입 시 입력한 아이디 (변경 불가)',
                     enabled: false,
                   ),
                   readOnly: true,

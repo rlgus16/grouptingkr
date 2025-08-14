@@ -312,7 +312,53 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  // 이메일과 비밀번호로 로그인
+  // 아이디와 비밀번호로 로그인 (아이디를 통해 이메일을 찾은 후 로그인)
+  Future<void> signInWithUserIdAndPassword(String userId, String password) async {
+    try {
+      _setLoading(true);
+      _setError(null);
+      
+      // 1. 아이디로 사용자 검색
+      final userService = UserService();
+      final users = await _firebaseService.getCollection('users')
+          .where('userId', isEqualTo: userId)
+          .limit(1)
+          .get();
+
+      if (users.docs.isEmpty) {
+        _setError('등록되지 않은 아이디입니다. 아이디를 확인하거나 회원가입을 진행해주세요.');
+        _setLoading(false);
+        return;
+      }
+
+      // 2. 사용자의 이메일 가져오기
+      final userData = users.docs.first.data() as Map<String, dynamic>;
+      final email = userData['email'] as String?;
+      
+      if (email == null || email.isEmpty) {
+        _setError('사용자 이메일 정보를 찾을 수 없습니다. 고객센터에 문의해주세요.');
+        _setLoading(false);
+        return;
+      }
+
+      // 3. 이메일과 비밀번호로 Firebase Auth 로그인
+      final userCredential = await _firebaseService.auth
+          .signInWithEmailAndPassword(email: email, password: password);
+
+      if (userCredential.user != null) {
+        
+        // 사용자 정보 로드
+        await _loadUserData(userCredential.user!.uid);
+      }
+
+      _setLoading(false);
+    } catch (e) {
+      _setError(_getKoreanErrorMessage(e));
+      _setLoading(false);
+    }
+  }
+
+  // 이메일과 비밀번호로 로그인 (기존 메서드는 유지)
   Future<void> signInWithEmailAndPassword(String email, String password) async {
     try {
       _setLoading(true);
@@ -370,6 +416,7 @@ class AuthController extends ChangeNotifier {
 
   // 회원가입 데이터 임시 저장 (Firebase 계정 생성하지 않는 방식으로 구현했습니다.) -> 생명 주기 관리
   void saveTemporaryRegistrationData({
+    required String userId,
     required String email,
     required String password,
     required String phoneNumber,
@@ -377,6 +424,7 @@ class AuthController extends ChangeNotifier {
     required String gender,
   }) {
     _tempRegistrationData = {
+      'userId': userId,
       'email': email,
       'password': password,
       'phoneNumber': phoneNumber,
@@ -465,8 +513,6 @@ class AuthController extends ChangeNotifier {
             }
             // print('모든 프로필 이미지 업로드 완료: ${imageUrls.length}개');
           } catch (e) {
-            // print('Firebase Storage 업로드 실패: $e');
-            // Firebase Storage 실패 시 빈 배열로 처리 (나중에 다시 업로드할 수 있도록)
             imageUrls.clear();
             _setError('이미지 업로드에 실패했습니다. 프로필은 생성되었으니 나중에 다시 업로드해주세요.');
           }
@@ -475,6 +521,7 @@ class AuthController extends ChangeNotifier {
         // 완전한 사용자 정보와 함께 사용자 문서 생성
         await createCompleteUserProfile(
           userCredential.user!.uid,
+          _tempRegistrationData!['userId'],
           email,
           _tempRegistrationData!['phoneNumber'],
           _tempRegistrationData!['birthDate'],
@@ -558,6 +605,7 @@ class AuthController extends ChangeNotifier {
           // 사용자 문서가 없으면 새로 생성 (프로필 미완성 상태)
           await _createUserProfileWithInfo(
             user.uid,
+            _tempRegistrationData!['userId'],
             email,
             _tempRegistrationData!['phoneNumber'],
             _tempRegistrationData!['birthDate'],
@@ -614,7 +662,8 @@ class AuthController extends ChangeNotifier {
       final userService = UserService();
       final user = UserModel(
         uid: uid,
-        userId: email.split('@')[0], // 이메일에서 @ 앞부분을 userId로 사용
+        userId: '', // 기본 프로필 생성 시에는 userId를 빈 값으로 설정 (나중에 회원가입에서 설정)
+        email: email,
         phoneNumber: '',
         birthDate: '',
         gender: '',
@@ -638,6 +687,7 @@ class AuthController extends ChangeNotifier {
   // 추가 정보와 함께 사용자 프로필 생성 (기본 정보만)
   Future<void> _createUserProfileWithInfo(
     String uid,
+    String userId,
     String email,
     String phoneNumber,
     String birthDate,
@@ -657,7 +707,8 @@ class AuthController extends ChangeNotifier {
       final userService = UserService();
       final user = UserModel(
         uid: uid,
-        userId: email.split('@')[0], // 이메일에서 @ 앞부분을 userId로 사용
+        userId: userId, // 회원가입 시 입력받은 userId 사용
+        email: email,
         phoneNumber: phoneNumber,
         birthDate: birthDate,
         gender: gender,
@@ -685,6 +736,7 @@ class AuthController extends ChangeNotifier {
   // 완전한 프로필 정보와 함께 사용자 문서 생성
   Future<void> createCompleteUserProfile(
     String uid,
+    String userId,
     String email,
     String phoneNumber,
     String birthDate,
@@ -709,7 +761,8 @@ class AuthController extends ChangeNotifier {
       final userService = UserService();
       final user = UserModel(
         uid: uid,
-        userId: email.split('@')[0], // 이메일에서 @ 앞부분을 userId로 사용
+        userId: userId, // 회원가입 시 입력받은 userId 사용
+        email: email,
         phoneNumber: phoneNumber,
         birthDate: birthDate,
         gender: gender,
@@ -723,12 +776,9 @@ class AuthController extends ChangeNotifier {
         isProfileComplete: true, // 프로필 완성됨
       );
 
-      // print('Firestore에 완전한 사용자 문서 생성 중...');
       await userService.createUser(user);
       _currentUserModel = user;
-      // print('완전한 사용자 프로필 생성 완료');
     } catch (e) {
-      //  print('완전한 사용자 프로필 생성 오류: $e');
       _setError('사용자 프로필 생성에 실패했습니다: $e');
       rethrow;
     }

@@ -14,6 +14,7 @@ class RegisterView extends StatefulWidget {
 class _RegisterViewState extends State<RegisterView> {
   final _formKey = GlobalKey<FormState>();
   final _idController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -35,6 +36,7 @@ class _RegisterViewState extends State<RegisterView> {
   @override
   void dispose() {
     _idController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _phoneController.dispose();
@@ -49,7 +51,8 @@ class _RegisterViewState extends State<RegisterView> {
     if (tempData != null) {
       // print('임시 저장된 회원가입 데이터 복원: $tempData');
       setState(() {
-        _idController.text = tempData['email']?.split('@')[0] ?? '';
+        _idController.text = tempData['userId'] ?? '';
+        _emailController.text = tempData['email'] ?? '';
         _phoneController.text = tempData['phoneNumber'] ?? '';
         _birthDateController.text = tempData['birthDate'] ?? '';
         _selectedGender = tempData['gender'] ?? '';
@@ -73,15 +76,10 @@ class _RegisterViewState extends State<RegisterView> {
     // 이전 에러 메시지 클리어
     authController.clearError();
 
-    /// TODO -> 메모 남겨드려요.
-    /// 아이디에 @groupting.com을 붙여서 이메일 형식으로 만들었어요.
-    /// 나중에 자체 그룹팅 도메인을 도입할 예정이라면 수정하면서 개발해 주시면 됩니다. 또는 전달 받을 이메일을 입력하는 것도 좋은 방법으로 보입니다.
-
-    final email = '${_idController.text}@groupting.com';
-    
     // 회원가입 데이터를 임시 저장 (Firebase 계정은 생성하지 않음)
     authController.saveTemporaryRegistrationData(
-      email: email,
+      userId: _idController.text,
+      email: _emailController.text,
       password: _passwordController.text,
       phoneNumber: _phoneController.text,
       birthDate: _birthDateController.text,
@@ -173,7 +171,7 @@ class _RegisterViewState extends State<RegisterView> {
                       labelText: '아이디',
                       prefixIcon: Icon(Icons.person),
                       suffixIcon: Icon(Icons.lock, color: AppTheme.textSecondary),
-                      helperText: '4자 이상, 영문과 숫자만 사용 가능',
+                      helperText: '4자 이상, 영문과 숫자만 사용 가능 (로그인 시 사용)',
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
@@ -184,6 +182,28 @@ class _RegisterViewState extends State<RegisterView> {
                       }
                       if (!RegExp(r'^[a-zA-Z0-9]+$').hasMatch(value)) {
                         return '영문과 숫자만 사용할 수 있습니다.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // 이메일 입력 (자물쇠 표시)
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: '이메일',
+                      prefixIcon: Icon(Icons.email),
+                      suffixIcon: Icon(Icons.lock, color: AppTheme.textSecondary),
+                      helperText: '비밀번호 찾기 등에 사용할 이메일',
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return '이메일을 입력해주세요.';
+                      }
+                      if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
+                        return '올바른 이메일 형식을 입력해주세요.';
                       }
                       return null;
                     },

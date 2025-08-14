@@ -31,10 +31,9 @@ class _LoginViewState extends State<LoginView> {
     // 이전 에러 메시지 클리어
     authController.clearError();
 
-    // 아이디에 @groupting.com을 붙여서 이메일 형식으로 만듦
-    final email = '${_idController.text}@groupting.com';
-    await authController.signInWithEmailAndPassword(
-      email,
+    // 아이디와 비밀번호로 로그인
+    await authController.signInWithUserIdAndPassword(
+      _idController.text,
       _passwordController.text,
     );
   }
