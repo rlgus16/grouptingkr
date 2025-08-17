@@ -13,27 +13,40 @@ class UserService {
   CollectionReference<Map<String, dynamic>> get _usersCollection =>
       _firebaseService.getCollection('users');
 
-  // 사용자 ID로 사용자 정보 가져오기
-  Future<UserModel?> getUserById(String userId) async {
-    try {
-      // print('UserService: 사용자 조회 시도 - UID: $userId');
-      final doc = await _usersCollection.doc(userId).get();
-      // print('UserService: 문서 존재 여부: ${doc.exists}');
-      
-      // 문서가 존재하지 않거나 데이터가 null인 경우 null 반환
-      if (!doc.exists || doc.data() == null) {
-        // print('UserService: 문서가 존재하지 않거나 데이터가 null입니다 - UID: $userId');
-        return null;
+  // 사용자 ID로 사용자 정보 가져오기 (재시도 로직 포함)
+  Future<UserModel?> getUserById(String userId, {int maxRetries = 3}) async {
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        print('UserService: 사용자 조회 시도 ($attempt/$maxRetries) - UID: $userId');
+        
+        // Firestore에서 문서 가져오기
+        final doc = await _usersCollection.doc(userId).get();
+        print('UserService: 문서 존재 여부: ${doc.exists}');
+        
+        // 문서가 존재하지 않거나 데이터가 null인 경우 null 반환
+        if (!doc.exists || doc.data() == null) {
+          print('UserService: 문서가 존재하지 않거나 데이터가 null입니다 - UID: $userId');
+          return null;
+        }
+        
+        // print('UserService: 문서 데이터: ${doc.data()}');
+        final user = UserModel.fromFirestore(doc);
+        print('UserService: 사용자 조회 성공 - 닉네임: ${user.nickname.isNotEmpty ? user.nickname : "프로필 미완성"}');
+        return user;
+      } catch (e) {
+        print('UserService: 사용자 조회 실패 (시도 $attempt/$maxRetries) - $e');
+        
+        if (attempt == maxRetries) {
+          // 최종 실패
+          throw Exception('사용자 정보를 가져오는데 실패했습니다: $e');
+        }
+        
+        // 재시도 전 잠시 대기
+        await Future.delayed(Duration(milliseconds: 500 * attempt));
       }
-      
-      // print('UserService: 문서 데이터: ${doc.data()}');
-      final user = UserModel.fromFirestore(doc);
-      // print('UserService: 사용자 조회 성공 - 닉네임: ${user.nickname}');
-      return user;
-    } catch (e) {
-      // print('UserService: 사용자 조회 실패 - $e');
-      throw Exception('사용자 정보를 가져오는데 실패했습니다: $e');
     }
+    
+    return null; // 이 코드는 실행되지 않지만 타입 안전성을 위해 추가
   }
 
   // 닉네임으로 사용자 검색

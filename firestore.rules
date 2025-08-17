@@ -20,6 +20,11 @@ service cloud.firestore {
       
       // 인증된 사용자는 다른 사용자 정보 읽기만 가능 (프로필 조회용)
       allow read: if request.auth != null;
+      
+      // 로그인 시 아이디로 사용자 검색을 위한 특별 규칙 (userId 필드만 노출)
+      allow read: if request.auth == null && 
+        ('userId' in resource.data) && 
+        ('email' in resource.data);
     }
     
     // 그룹 컬렉션

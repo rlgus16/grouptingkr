@@ -3,7 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image/image.dart' as img;
 import 'dart:io';
+import 'dart:typed_data';
 import '../services/firebase_service.dart';
 import '../services/user_service.dart';
 import '../services/group_service.dart';
@@ -24,13 +26,18 @@ class AuthController extends ChangeNotifier {
 
   // 임시 회원가입 데이터 저장
   Map<String, dynamic>? _tempRegistrationData;
+  
+  // 임시 프로필 데이터 저장 (뒤로가기 시 복원용)
+  Map<String, dynamic>? _tempProfileData;
 
   // Getters
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   UserModel? get currentUserModel => _currentUserModel;
   bool get isInitialized => _isInitialized;
+  bool get isLoggedIn => _firebaseService.currentUser != null;
   Map<String, dynamic>? get tempRegistrationData => _tempRegistrationData;
+  Map<String, dynamic>? get tempProfileData => _tempProfileData;
 
   void _setLoading(bool loading) {
     _isLoading = loading;
@@ -319,7 +326,6 @@ class AuthController extends ChangeNotifier {
       _setError(null);
       
       // 1. 아이디로 사용자 검색
-      final userService = UserService();
       final users = await _firebaseService.getCollection('users')
           .where('userId', isEqualTo: userId)
           .limit(1)
@@ -332,7 +338,7 @@ class AuthController extends ChangeNotifier {
       }
 
       // 2. 사용자의 이메일 가져오기
-      final userData = users.docs.first.data() as Map<String, dynamic>;
+      final userData = users.docs.first.data();
       final email = userData['email'] as String?;
       
       if (email == null || email.isEmpty) {
@@ -431,7 +437,8 @@ class AuthController extends ChangeNotifier {
       'birthDate': birthDate,
       'gender': gender,
     };
-    // print('회원가입 데이터 임시 저장: $_tempRegistrationData');
+    debugPrint('=== 회원가입 데이터 임시 저장 ===');
+    debugPrint('저장되는 데이터: $_tempRegistrationData');
     notifyListeners();
   }
 
@@ -482,37 +489,30 @@ class AuthController extends ChangeNotifier {
             // print('프로필 이미지 업로드 시작: ${profileImages.length}개');
             for (int i = 0; i < profileImages.length; i++) {
               final file = profileImages[i];
-              final fileName = '${userCredential.user!.uid}_profile_$i.jpg';
-
-              // print('Firebase Storage 업로드 시작: $fileName');
-
-              // Firebase Storage에 업로드
-              final ref = FirebaseStorage.instance
-                  .ref()
-                  .child('profile_images')
-                  .child(userCredential.user!.uid)
-                  .child(fileName);
-
-              // 플랫폼별 업로드 처리
-              late UploadTask uploadTask;
-              if (kIsWeb) {
-                // 웹에서는 XFile에서 bytes 사용
-                final bytes = await file.readAsBytes();
-                uploadTask = ref.putData(bytes);
-              } else {
-                // 모바일에서는 XFile을 File로 변환
-                final ioFile = File(file.path);
-                uploadTask = ref.putFile(ioFile);
+              
+              // 파일 유효성 검사 및 압축
+              final validatedFile = await _validateAndCompressImageFile(file);
+              if (validatedFile == null) {
+                // print('파일 유효성 검사 실패 또는 압축 실패: ${file.name}');
+                continue; // 유효하지 않은 파일은 스킵
               }
+              
+              final fileName = '${userCredential.user!.uid}_profile_${DateTime.now().millisecondsSinceEpoch}_$i.jpg';
 
-              final snapshot = await uploadTask;
-              final downloadUrl = await snapshot.ref.getDownloadURL();
-
-              // print('Firebase Storage 업로드 성공: $downloadUrl');
-              imageUrls.add(downloadUrl);
+              // Firebase Storage에 업로드 (재시도 포함)
+              final downloadUrl = await _uploadImageWithRetry(
+                validatedFile, 
+                'profile_images/${userCredential.user!.uid}/$fileName',
+                maxRetries: 3
+              );
+              
+              if (downloadUrl != null) {
+                imageUrls.add(downloadUrl);
+              }
             }
             // print('모든 프로필 이미지 업로드 완료: ${imageUrls.length}개');
           } catch (e) {
+            // print('이미지 업로드 에러: $e');
             imageUrls.clear();
             _setError('이미지 업로드에 실패했습니다. 프로필은 생성되었으니 나중에 다시 업로드해주세요.');
           }
@@ -563,8 +563,17 @@ class AuthController extends ChangeNotifier {
       _setLoading(true);
       _setError(null);
 
+      debugPrint('=== 프로필 스킵 회원가입 시작 ===');
+      debugPrint('tempRegistrationData: $_tempRegistrationData');
+      
       final email = _tempRegistrationData!['email'];
       final password = _tempRegistrationData!['password'];
+      final userId = _tempRegistrationData!['userId'];
+      final phoneNumber = _tempRegistrationData!['phoneNumber'];
+      final birthDate = _tempRegistrationData!['birthDate'];
+      final gender = _tempRegistrationData!['gender'];
+      
+      debugPrint('추출된 데이터: userId=$userId, email=$email, phone=$phoneNumber, birth=$birthDate, gender=$gender');
       
       // print('프로필 스킵 회원가입 시작: $email');
       
@@ -603,6 +612,14 @@ class AuthController extends ChangeNotifier {
         
         if (existingUser == null) {
           // 사용자 문서가 없으면 새로 생성 (프로필 미완성 상태)
+          debugPrint('_createUserProfileWithInfo 호출 시 전달되는 값:');
+          debugPrint('  - uid: ${user.uid}');
+          debugPrint('  - userId: ${_tempRegistrationData!['userId']}');
+          debugPrint('  - email: $email');
+          debugPrint('  - phoneNumber: ${_tempRegistrationData!['phoneNumber']}');
+          debugPrint('  - birthDate: ${_tempRegistrationData!['birthDate']}');
+          debugPrint('  - gender: ${_tempRegistrationData!['gender']}');
+          
           await _createUserProfileWithInfo(
             user.uid,
             _tempRegistrationData!['userId'],
@@ -617,15 +634,23 @@ class AuthController extends ChangeNotifier {
           _currentUserModel = existingUser;
         }
 
-        // print('Firestore 사용자 문서 생성 완료');
+        debugPrint('Firestore 사용자 문서 생성 완료');
 
         // 사용자 정보 로드하여 자동 로그인 상태로 만들기
         await _loadUserData(user.uid);
         
+        // 데이터가 제대로 로드되었는지 확인
+        if (_currentUserModel == null) {
+          // 재시도 한 번 더
+          debugPrint('첫 번째 로드 실패, 재시도 중...');
+          await Future.delayed(const Duration(milliseconds: 1000));
+          await _loadUserData(user.uid);
+        }
+        
         // 임시 데이터 정리
         _tempRegistrationData = null;
 
-        // print('사용자 데이터 로드 완료');
+        debugPrint('사용자 데이터 로드 완료: ${_currentUserModel != null ? "성공" : "실패(하지만 계속 진행)"}');
       }
 
       _setLoading(false);
@@ -639,20 +664,26 @@ class AuthController extends ChangeNotifier {
   // 사용자 데이터 로드
   Future<void> _loadUserData(String uid) async {
     try {
-      // print('사용자 데이터 로드 시작: UID=$uid');
+      debugPrint('사용자 데이터 로드 시작: UID=$uid');
       final userService = UserService();
       _currentUserModel = await userService.getUserById(uid);
       
       // 프로필이 완성되지 않은 사용자의 경우 null일 수 있음
       if (_currentUserModel == null) {
-        // print('사용자 프로필이 존재하지 않습니다. "나중에 입력하기"로 스킵한 사용자일 수 있습니다.');
+        debugPrint('사용자 프로필이 존재하지 않습니다. "나중에 입력하기"로 스킵한 사용자일 수 있습니다.');
         // 이 경우에도 정상적으로 홈 화면에 진입할 수 있도록 함
+        // Firebase Auth는 로그인 상태이지만 Firestore에 프로필이 없는 상태
       } else {
-        // print('사용자 데이터 로드 성공: ${_currentUserModel!.nickname}');
+        debugPrint('사용자 데이터 로드 성공: ${_currentUserModel!.nickname.isNotEmpty ? _currentUserModel!.nickname : "프로필 미완성"}');
       }
+      
+      // 로딩 상태 해제는 호출하는 곳에서 처리
+      notifyListeners();
     } catch (e) {
-      // print('사용자 데이터 로드 실패: $e');
-      _setError('사용자 정보를 로드하는데 실패했습니다: $e');
+      debugPrint('사용자 데이터 로드 실패: $e');
+      // 에러가 발생해도 로그인 상태는 유지 (Firebase Auth는 정상) Firestore에서 데이터를 가져오지 못한 경우 문제 확인이 필요 할 것으로 보임
+      _currentUserModel = null;
+      notifyListeners();
     }
   }
 
@@ -722,10 +753,11 @@ class AuthController extends ChangeNotifier {
         isProfileComplete: false,
       );
 
-      // print('Firestore에 사용자 문서 생성 중...');
+      debugPrint('Firestore에 사용자 문서 생성 중...');
+      debugPrint('생성할 사용자 정보: userId=${user.userId}, email=${user.email}, phone=${user.phoneNumber}, birth=${user.birthDate}, gender=${user.gender}');
       await userService.createUser(user);
       _currentUserModel = user;
-      // print('사용자 프로필 생성 완료');
+      debugPrint('사용자 프로필 생성 완료');
     } catch (e) {
       // print('사용자 프로필 생성 오류: $e');
       _setError('사용자 프로필 생성에 실패했습니다: $e');
@@ -784,8 +816,7 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  // 로그인 상태 확인
-  bool get isLoggedIn => _firebaseService.currentUser != null;
+
   
   // FirebaseService getter (외부에서 접근 가능)
   FirebaseService get firebaseService => _firebaseService;
@@ -800,24 +831,48 @@ class AuthController extends ChangeNotifier {
   Future<void> initialize() async {
     try {
       _setLoading(true);
+      debugPrint('AuthController 초기화 시작');
+
+      // 현재 Firebase Auth 상태 먼저 확인
+      final currentUser = _firebaseService.currentUser;
+      if (currentUser != null) {
+        debugPrint('기존 로그인 사용자 발견: ${currentUser.uid}, email: ${currentUser.email}');
+        await _loadUserData(currentUser.uid);
+        
+        // 로드 후 상태 확인
+        if (_currentUserModel != null) {
+          debugPrint('초기화 - 사용자 데이터 로드 성공: userId=${_currentUserModel!.userId}, phone=${_currentUserModel!.phoneNumber}');
+        } else {
+          debugPrint('초기화 - 사용자 데이터 로드 실패, Firebase Auth는 로그인 상태이지만 Firestore에 데이터 없음');
+        }
+      } else {
+        debugPrint('로그인된 사용자 없음');
+        _currentUserModel = null;
+      }
 
       // Firebase Auth 상태 변경 리스너 설정
       _firebaseService.auth.authStateChanges().listen((user) async {
+        debugPrint('Auth 상태 변경 감지: ${user?.uid ?? "로그아웃"}');
         if (user != null) {
           // 로그인된 사용자가 있으면 정보 로드
           await _loadUserData(user.uid);
         } else {
           // 로그아웃된 상태
           _currentUserModel = null;
+          notifyListeners();
         }
-        _isInitialized = true;
-        _setLoading(false);
-        notifyListeners();
       });
+
+      _isInitialized = true;
+      _setLoading(false);
+      notifyListeners();
+      debugPrint('AuthController 초기화 완료');
     } catch (e) {
+      debugPrint('AuthController 초기화 실패: $e');
       _setError('초기화에 실패했습니다: $e');
       _isInitialized = true;
       _setLoading(false);
+      notifyListeners();
     }
   }
 
@@ -843,9 +898,290 @@ class AuthController extends ChangeNotifier {
     _setError(null);
   }
 
+  // 프로필 데이터 임시 저장 (이미지 포함)
+  void saveTemporaryProfileData({
+    required String nickname,
+    required String introduction,
+    required String height,
+    required String activityArea,
+    List<String>? profileImagePaths,
+    List<String>? profileImageBytes, // Base64 인코딩된 이미지 데이터
+    int? mainProfileIndex,
+  }) {
+    _tempProfileData = {
+      'nickname': nickname,
+      'introduction': introduction,
+      'height': height,
+      'activityArea': activityArea,
+      'profileImagePaths': profileImagePaths ?? [],
+      'profileImageBytes': profileImageBytes ?? [],
+      'mainProfileIndex': mainProfileIndex ?? 0,
+      'savedAt': DateTime.now().toIso8601String(),
+    };
+    notifyListeners();
+  }
+
   // 임시 데이터 정리
   void clearTemporaryData() {
     _tempRegistrationData = null;
+    _tempProfileData = null;
     notifyListeners();
+  }
+
+  // 프로필 데이터만 정리
+  void clearTemporaryProfileData() {
+    _tempProfileData = null;
+    notifyListeners();
+  }
+
+  // 이미지 파일 유효성 검사 및 압축
+  Future<XFile?> _validateAndCompressImageFile(XFile file) async {
+    try {
+      // 파일 형식 검사 (확장자와 MIME 타입 모두 확인)
+      final fileName = file.name.toLowerCase();
+      final mimeType = file.mimeType ?? '';
+      
+      // 지원하는 이미지 확장자
+      final supportedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+      final hasValidExtension = supportedExtensions.any((ext) => fileName.endsWith(ext));
+      
+      // MIME 타입 확인 (null이거나 비어있을 경우 확장자로 판단)
+      final hasValidMimeType = mimeType.isEmpty || mimeType.startsWith('image/');
+      
+      if (!hasValidExtension || !hasValidMimeType) {
+        // print('이미지 파일이 아닙니다: $fileName ($mimeType)');
+        return null;
+      }
+
+      // 파일 크기 검사
+      final bytes = await file.readAsBytes();
+      if (bytes.isEmpty) {
+        // print('빈 파일입니다');
+        return null;
+      }
+
+      // 바이트 헤더로 이미지 파일 검증 (추가 안전장치)
+      if (!_isValidImageByHeader(bytes)) {
+        // print('올바른 이미지 파일이 아닙니다');
+        return null;
+      }
+
+      // 5MB 이하면 원본 파일 반환
+      if (bytes.length <= 5 * 1024 * 1024) {
+        return file;
+      }
+
+      // 5MB 초과 시 압축 처리
+      // print('파일 크기가 5MB를 초과합니다 (${(bytes.length / 1024 / 1024).toStringAsFixed(2)}MB). 압축을 진행합니다.');
+      
+      final compressedBytes = await _compressImage(bytes);
+      if (compressedBytes == null) {
+        // print('이미지 압축에 실패했습니다');
+        return null;
+      }
+
+      // 압축된 파일을 임시 XFile로 생성
+      final compressedFile = XFile.fromData(
+        compressedBytes,
+        name: file.name,
+        mimeType: 'image/jpeg', // 압축 후 JPEG 형식으로 통일
+      );
+
+      // print('이미지 압축 완료: ${(bytes.length / 1024 / 1024).toStringAsFixed(2)}MB → ${(compressedBytes.length / 1024 / 1024).toStringAsFixed(2)}MB');
+      
+      return compressedFile;
+    } catch (e) {
+      // print('파일 유효성 검사 및 압축 실패: $e');
+      return null;
+    }
+  }
+
+  // 이미지 압축 함수
+  Future<Uint8List?> _compressImage(Uint8List originalBytes) async {
+    try {
+      // 이미지 디코딩
+      final originalImage = img.decodeImage(originalBytes);
+      if (originalImage == null) {
+        // print('이미지 디코딩 실패');
+        return null;
+      }
+
+      const targetSize = 5 * 1024 * 1024; // 5MB
+      int quality = 85; // 초기 품질
+      int maxWidth = originalImage.width;
+      int maxHeight = originalImage.height;
+
+      Uint8List? compressedBytes;
+
+      // 품질을 점진적으로 낮추면서 압축
+      while (quality >= 20) {
+        // 크기가 너무 크면 이미지 크기도 줄임
+        if (compressedBytes != null && compressedBytes.length > targetSize && 
+            (maxWidth > 1000 || maxHeight > 1000)) {
+          maxWidth = (maxWidth * 0.8).round();
+          maxHeight = (maxHeight * 0.8).round();
+        }
+
+        // 이미지 리사이즈 (필요한 경우)
+        img.Image resizedImage = originalImage;
+        if (originalImage.width > maxWidth || originalImage.height > maxHeight) {
+          resizedImage = img.copyResize(
+            originalImage,
+            width: maxWidth,
+            height: maxHeight,
+            interpolation: img.Interpolation.linear,
+          );
+        }
+
+        // JPEG로 압축
+        compressedBytes = Uint8List.fromList(
+          img.encodeJpg(resizedImage, quality: quality)
+        );
+
+        // 목표 크기 이하이면 완료
+        if (compressedBytes.length <= targetSize) {
+          // print('압축 성공: 품질 $quality%, 크기 ${(compressedBytes.length / 1024 / 1024).toStringAsFixed(2)}MB');
+          return compressedBytes;
+        }
+
+        // 품질을 10씩 낮춤
+        quality -= 10;
+      }
+
+      // 최종적으로도 크기가 크면 크기를 더 줄임
+      if (compressedBytes != null && compressedBytes.length > targetSize) {
+        // 강제로 크기를 줄여서 재시도
+        maxWidth = (originalImage.width * 0.6).round();
+        maxHeight = (originalImage.height * 0.6).round();
+        
+        final finalImage = img.copyResize(
+          originalImage,
+          width: maxWidth,
+          height: maxHeight,
+          interpolation: img.Interpolation.linear,
+        );
+
+        compressedBytes = Uint8List.fromList(
+          img.encodeJpg(finalImage, quality: 60)
+        );
+
+        // print('강제 압축 완료: 크기 ${(compressedBytes.length / 1024 / 1024).toStringAsFixed(2)}MB');
+      }
+
+      return compressedBytes;
+    } catch (e) {
+      // print('이미지 압축 중 오류 발생: $e');
+      return null;
+    }
+  }
+
+  // 바이트 헤더로 이미지 파일 여부 확인
+  bool _isValidImageByHeader(Uint8List bytes) {
+    if (bytes.length < 4) return false;
+
+    // JPEG
+    if (bytes.length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xD8) return true;
+    
+    // PNG
+    if (bytes.length >= 8 && 
+        bytes[0] == 0x89 && bytes[1] == 0x50 && bytes[2] == 0x4E && bytes[3] == 0x47 &&
+        bytes[4] == 0x0D && bytes[5] == 0x0A && bytes[6] == 0x1A && bytes[7] == 0x0A) return true;
+    
+    // GIF
+    if (bytes.length >= 6 && 
+        bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46 &&
+        bytes[3] == 0x38 && (bytes[4] == 0x37 || bytes[4] == 0x39) && bytes[5] == 0x61) return true;
+    
+    // BMP
+    if (bytes.length >= 2 && bytes[0] == 0x42 && bytes[1] == 0x4D) return true;
+    
+    // WebP
+    if (bytes.length >= 12 && 
+        bytes[0] == 0x52 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x46 &&
+        bytes[8] == 0x57 && bytes[9] == 0x45 && bytes[10] == 0x42 && bytes[11] == 0x50) return true;
+    
+    // TIFF
+    if (bytes.length >= 4 && 
+        ((bytes[0] == 0x49 && bytes[1] == 0x49 && bytes[2] == 0x2A && bytes[3] == 0x00) ||
+         (bytes[0] == 0x4D && bytes[1] == 0x4D && bytes[2] == 0x00 && bytes[3] == 0x2A))) return true;
+    
+    return false;
+  }
+
+  // 기존 유효성 검사 함수도 유지 (하위 호환성)
+  Future<bool> _validateImageFile(XFile file) async {
+    final validatedFile = await _validateAndCompressImageFile(file);
+    return validatedFile != null;
+  }
+
+  // 재시도 메커니즘이 포함된 이미지 업로드
+  Future<String?> _uploadImageWithRetry(
+    XFile file, 
+    String storagePath, 
+    {int maxRetries = 3}
+  ) async {
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // print('이미지 업로드 시도 $attempt/$maxRetries: $storagePath');
+        
+        final ref = FirebaseStorage.instance.ref().child(storagePath);
+        
+        // 메타데이터 설정
+        final metadata = SettableMetadata(
+          contentType: file.mimeType ?? 'image/jpeg',
+          customMetadata: {
+            'uploadedBy': _firebaseService.currentUser?.uid ?? 'unknown',
+            'uploadTimestamp': DateTime.now().toIso8601String(),
+          },
+        );
+
+        // 플랫폼별 업로드 처리
+        late UploadTask uploadTask;
+        if (kIsWeb) {
+          // 웹에서는 XFile에서 bytes 사용
+          final bytes = await file.readAsBytes();
+          uploadTask = ref.putData(bytes, metadata);
+        } else {
+          // 모바일에서는 XFile을 File로 변환
+          final ioFile = File(file.path);
+          
+          // 파일 존재 여부 확인
+          if (!await ioFile.exists()) {
+            // print('파일이 존재하지 않습니다: ${file.path}');
+            // 바이트 데이터로 대체 시도
+            final bytes = await file.readAsBytes();
+            uploadTask = ref.putData(bytes, metadata);
+          } else {
+            uploadTask = ref.putFile(ioFile, metadata);
+          }
+        }
+
+        // 업로드 진행 상황 모니터링
+        uploadTask.snapshotEvents.listen((taskSnapshot) {
+          final progress = (taskSnapshot.bytesTransferred / taskSnapshot.totalBytes) * 100;
+          // print('업로드 진행률: ${progress.toStringAsFixed(1)}%');
+        });
+
+        final snapshot = await uploadTask;
+        final downloadUrl = await snapshot.ref.getDownloadURL();
+        
+        // print('이미지 업로드 성공: $downloadUrl');
+        return downloadUrl;
+        
+      } catch (e) {
+        // print('업로드 시도 $attempt 실패: $e');
+        
+        if (attempt == maxRetries) {
+          // 최종 실패
+          // print('최대 재시도 횟수 초과. 업로드 실패: $e');
+          return null;
+        }
+        
+        // 재시도 전 잠시 대기 (지수 백오프)
+        await Future.delayed(Duration(seconds: attempt * 2));
+      }
+    }
+    
+    return null;
   }
 }

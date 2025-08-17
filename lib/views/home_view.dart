@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/group_controller.dart';
 import '../controllers/chat_controller.dart';
@@ -21,11 +22,16 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
+  bool _isProfileCardHidden = false;
+  
   @override
   void initState() {
     super.initState();
     // 앱 생명주기 감지 시작
     WidgetsBinding.instance.addObserver(this);
+    
+    // 프로필 카드 숨김 상태 로드
+    _loadProfileCardVisibility();
 
     // 그룹 컨트롤러 초기화
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -46,6 +52,55 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     // 앱 생명주기 감지 해제
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  // 프로필 카드 숨김 상태 로드
+  Future<void> _loadProfileCardVisibility() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final authController = context.read<AuthController>();
+      final userId = authController.currentUserModel?.uid ?? 
+                     authController.firebaseService.currentUser?.uid;
+      
+      if (userId != null) {
+        final isHidden = prefs.getBool('profile_card_hidden_$userId') ?? false;
+        if (mounted) {
+          setState(() {
+            _isProfileCardHidden = isHidden;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('프로필 카드 상태 로드 실패: $e');
+    }
+  }
+
+  // 프로필 카드 숨김 상태 저장
+  Future<void> _hideProfileCard() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final authController = context.read<AuthController>();
+      final userId = authController.currentUserModel?.uid ?? 
+                     authController.firebaseService.currentUser?.uid;
+      
+      if (userId != null) {
+        await prefs.setBool('profile_card_hidden_$userId', true);
+        if (mounted) {
+          setState(() {
+            _isProfileCardHidden = true;
+          });
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('프로필 완성하기 알림을 숨겼습니다. 마이페이지에서 언제든 프로필을 완성할 수 있습니다.'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('프로필 카드 숨김 실패: $e');
+    }
   }
 
   @override
@@ -580,8 +635,11 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 프로필 미완성 알림 (최우선)
-                if (authController.currentUserModel == null) ...[
+                // 프로필 미완성 알림 (최우선, 숨김 상태가 아닐 때만)
+                if (!_isProfileCardHidden && 
+                    (authController.currentUserModel == null || 
+                     (authController.currentUserModel != null && 
+                      !authController.currentUserModel!.isProfileComplete))) ...[
                   _buildProfileIncompleteCard(),
                   const SizedBox(height: 16),
                 ],
@@ -605,7 +663,26 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
   }
 
   Widget _buildProfileIncompleteCard() {
-    return Container(
+    return Consumer<AuthController>(
+      builder: (context, authController, _) {
+        final user = authController.currentUserModel;
+        // 기본 정보가 있는지 더 정확하게 판단
+        final hasBasicInfo = user != null && 
+            user.userId.isNotEmpty && 
+            user.email.isNotEmpty && 
+            user.phoneNumber.isNotEmpty && 
+            user.birthDate.isNotEmpty && 
+            user.gender.isNotEmpty;
+        
+        // 디버깅용 로그
+        if (user != null) {
+          debugPrint('홈 화면 - 사용자 정보: userId=${user.userId}, email=${user.email}, phone=${user.phoneNumber}, isComplete=${user.isProfileComplete}');
+        } else {
+          debugPrint('홈 화면 - 사용자 정보 없음 (currentUserModel이 null)');
+          debugPrint('홈 화면 - Firebase Auth 상태: ${authController.isLoggedIn}');
+        }
+        
+        return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -641,7 +718,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '프로필 완성하기',
+                        hasBasicInfo ? '프로필 완성하기' : '프로필 등록하기',
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           color: Colors.orange.shade800,
@@ -650,7 +727,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '기본 정보는 등록 완료!',
+                        hasBasicInfo ? '기본 정보는 등록 완료!' : '회원가입을 완료해주세요!',
                         style: TextStyle(
                           color: Colors.orange.shade600,
                           fontSize: 12,
@@ -664,7 +741,9 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
             ),
             const SizedBox(height: 16),
             Text(
-              '닉네임, 키, 소개글, 프로필 사진을 추가하면\n그룹 생성과 매칭 기능을 사용할 수 있어요!',
+              hasBasicInfo 
+                ? '닉네임, 키, 소개글, 프로필 사진을 추가하면\n그룹 생성과 매칭 기능을 사용할 수 있어요!'
+                : '먼저 회원가입을 완료하신 후\n프로필을 작성해주세요!',
               style: TextStyle(
                 color: Colors.orange.shade700,
                 fontSize: 14,
@@ -677,9 +756,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                 Expanded(
                   flex: 1,
                   child: OutlinedButton(
-                    onPressed: () {
-                      // 카드를 숨기는 기능 (나중에 추가 가능)
-                    },
+                    onPressed: _hideProfileCard,
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.orange.shade600,
                       side: BorderSide(color: Colors.orange.shade300),
@@ -695,10 +772,14 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                   flex: 2,
                   child: ElevatedButton.icon(
                     onPressed: () {
-                      Navigator.pushNamed(context, '/profile-create');
+                      if (hasBasicInfo) {
+                        Navigator.pushNamed(context, '/profile-create');
+                      } else {
+                        Navigator.pushNamed(context, '/register');
+                      }
                     },
                     icon: const Icon(Icons.arrow_forward, size: 18),
-                    label: const Text('지금 완성하기'),
+                    label: Text(hasBasicInfo ? '지금 완성하기' : '회원가입하기'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange.shade600,
                       foregroundColor: Colors.white,
@@ -714,6 +795,8 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
           ],
         ),
       ),
+        );
+      },
     );
   }
 

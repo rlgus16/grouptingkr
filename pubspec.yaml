@@ -28,6 +28,7 @@ dependencies:
   # Image Handling
   image_picker: ^1.0.4
   cached_network_image: ^3.3.0
+  image: ^4.1.7
 
   # UI Components
   cupertino_icons: ^1.0.8
@@ -37,6 +38,7 @@ dependencies:
   intl: ^0.20.2
   uuid: ^4.2.1
   url_launcher: ^6.2.2
+  shared_preferences: ^2.5.2
 
 dev_dependencies:
   flutter_test:

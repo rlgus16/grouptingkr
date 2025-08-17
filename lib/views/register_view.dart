@@ -71,6 +71,21 @@ class _RegisterViewState extends State<RegisterView> {
       return;
     }
 
+    // 필수 데이터 검증 강화
+    final userId = _idController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    final phoneNumber = _phoneController.text.trim();
+    final birthDate = _birthDateController.text.trim();
+    
+    if (userId.isEmpty || email.isEmpty || password.isEmpty || 
+        phoneNumber.isEmpty || birthDate.isEmpty || _selectedGender.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('모든 필수 정보를 입력해주세요.')),
+      );
+      return;
+    }
+
     final authController = context.read<AuthController>();
     
     // 이전 에러 메시지 클리어
@@ -78,11 +93,11 @@ class _RegisterViewState extends State<RegisterView> {
 
     // 회원가입 데이터를 임시 저장 (Firebase 계정은 생성하지 않음)
     authController.saveTemporaryRegistrationData(
-      userId: _idController.text,
-      email: _emailController.text,
-      password: _passwordController.text,
-      phoneNumber: _phoneController.text,
-      birthDate: _birthDateController.text,
+      userId: userId,
+      email: email,
+      password: password,
+      phoneNumber: phoneNumber,
+      birthDate: birthDate,
       gender: _selectedGender,
     );
 
@@ -93,9 +108,9 @@ class _RegisterViewState extends State<RegisterView> {
         '/profile-create',
         (route) => false,
         arguments: {
-          'userId': _idController.text,
-          'phoneNumber': _phoneController.text,
-          'birthDate': _birthDateController.text,
+          'userId': userId,
+          'phoneNumber': phoneNumber,
+          'birthDate': birthDate,
           'gender': _selectedGender,
         },
       );

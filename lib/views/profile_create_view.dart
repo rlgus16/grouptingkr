@@ -4,10 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'dart:typed_data';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image/image.dart' as img;
 import 'dart:io' if (dart.library.html) '';
+import 'dart:convert';
 import '../controllers/auth_controller.dart';
-import '../controllers/profile_controller.dart';
 import '../utils/app_theme.dart';
 
 class ProfileCreateView extends StatefulWidget {
@@ -17,7 +18,7 @@ class ProfileCreateView extends StatefulWidget {
   State<ProfileCreateView> createState() => _ProfileCreateViewState();
 }
 
-class _ProfileCreateViewState extends State<ProfileCreateView> {
+class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindingObserver {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _nicknameController = TextEditingController();
@@ -42,8 +43,8 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
   @override
   void initState() {
     super.initState();
-    // initState에서는 ModalRoute.of(context)를 사용할 수 없으므로 
-    // didChangeDependencies에서 처리
+    // WidgetsBindingObserver 등록 (앱 상태 변화 감지용)
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
@@ -58,6 +59,9 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
         // AuthWrapper에서 온 경우 현재 사용자 정보로 초기화
         _initializeWithCurrentUser();
       }
+      
+      // 임시 저장된 프로필 데이터 복원 체크
+      _checkAndRestoreTemporaryData();
     }
   }
 
@@ -154,8 +158,182 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
     });
   }
 
+
+
+  // 데이터 복원 확인 다이얼로그 표시
+  void _showRestoreConfirmDialog(Map<String, dynamic> tempProfileData, AuthController authController) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('이전 입력 정보 발견'),
+        content: const Text(
+          '이전에 입력하던 프로필 정보가 있습니다.\n복원하시겠습니까?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // 복원하지 않고 임시 데이터 정리
+              authController.clearTemporaryProfileData();
+            },
+            child: const Text('새로 작성'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // 데이터 복원 (이미지 포함)
+              _performDataRestoreWithImages(tempProfileData, authController);
+            },
+            child: const Text('복원하기'),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+
+  // 현재 입력 중인 프로필 데이터 백업
+  Future<void> _backupCurrentProfileData() async {
+    final authController = context.read<AuthController>();
+    
+    // 최소한 하나 이상의 필드가 입력되었을 때만 백업
+    if (_nicknameController.text.isNotEmpty || 
+        _introductionController.text.isNotEmpty ||
+        _heightController.text.isNotEmpty ||
+        _activityAreaController.text.isNotEmpty ||
+        _selectedImages.any((image) => image != null)) {
+      
+      // 이미지들을 Base64로 인코딩
+      List<String> imageBytes = [];
+      for (final image in _selectedImages) {
+        if (image != null) {
+          try {
+            final bytes = await image.readAsBytes();
+            final base64String = base64Encode(bytes);
+            imageBytes.add(base64String);
+          } catch (e) {
+            imageBytes.add(''); // 실패한 경우 빈 문자열
+          }
+        } else {
+          imageBytes.add(''); // null인 경우 빈 문자열
+        }
+      }
+      
+      authController.saveTemporaryProfileData(
+        nickname: _nicknameController.text.trim(),
+        introduction: _introductionController.text.trim(),
+        height: _heightController.text.trim(),
+        activityArea: _activityAreaController.text.trim(),
+        profileImageBytes: imageBytes,
+        mainProfileIndex: _mainProfileIndex,
+      );
+    }
+  }
+
+  // 뒤로가기 처리
+  void _handleBackPress() {
+    // 현재 입력된 데이터가 있는지 확인
+    final hasInputData = _nicknameController.text.isNotEmpty || 
+        _introductionController.text.isNotEmpty ||
+        _heightController.text.isNotEmpty ||
+        _activityAreaController.text.isNotEmpty ||
+        _selectedImages.any((image) => image != null);
+
+    if (hasInputData) {
+      // 입력된 데이터가 있으면 저장 여부 확인
+      _showSaveConfirmDialog();
+    } else {
+      // 입력된 데이터가 없으면 바로 뒤로가기
+      _navigateBack();
+    }
+  }
+
+  // 저장 확인 다이얼로그 표시
+  void _showSaveConfirmDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('입력 중인 정보가 있습니다'),
+        content: const Text(
+          '현재 입력하신 프로필 정보를 임시 저장할까요?\n다음에 프로필 생성 화면에 진입할 때 복원할 수 있습니다.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // 저장하지 않고 뒤로가기
+              final authController = context.read<AuthController>();
+              authController.clearTemporaryProfileData();
+              _navigateBack();
+            },
+            child: const Text('저장 안함'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // 계속 작성
+            },
+            child: const Text('계속 작성'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.of(context).pop();
+              // 저장하고 뒤로가기
+              await _backupCurrentProfileData();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('입력 중인 정보를 임시 저장했습니다.'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+                _navigateBack();
+              }
+            },
+            child: const Text('저장하고 나가기'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 실제 뒤로가기 네비게이션
+  void _navigateBack() {
+    if (_registerData != null) {
+      // 회원가입에서 온 경우 회원가입 페이지로 돌아가기
+      Navigator.pushReplacementNamed(context, '/register');
+    } else {
+      // AuthWrapper에서 온 경우 로그아웃 확인
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('프로필 생성 취소'),
+          content: const Text('프로필 생성을 취소하고 로그아웃하시겠습니까?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                final authController = context.read<AuthController>();
+                authController.clearTemporaryData();
+                authController.signOut();
+              },
+              child: const Text('로그아웃'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
+    // WidgetsBindingObserver 해제
+    WidgetsBinding.instance.removeObserver(this);
     _phoneController.dispose();
     _nicknameController.dispose();
     _birthDateController.dispose();
@@ -164,6 +342,154 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
     _activityAreaController.dispose();
     _userIdController.dispose();
     super.dispose();
+  }
+
+  // 앱 상태 변화 감지 (백그라운드/포그라운드)
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    
+    switch (state) {
+      case AppLifecycleState.paused:
+      case AppLifecycleState.inactive:
+        // 백그라운드로 갈 때 임시 저장
+        _saveTemporaryData();
+        break;
+      case AppLifecycleState.resumed:
+        // 포그라운드로 돌아올 때 임시 데이터 복원 체크
+        _checkAndRestoreTemporaryData();
+        break;
+      default:
+        break;
+    }
+  }
+
+  // 임시 데이터 저장 (이미지 포함)
+  Future<void> _saveTemporaryData() async {
+    try {
+      // 입력된 데이터가 있는지 확인
+      final hasInputData = _nicknameController.text.isNotEmpty || 
+          _introductionController.text.isNotEmpty ||
+          _heightController.text.isNotEmpty ||
+          _activityAreaController.text.isNotEmpty ||
+          _selectedImages.any((image) => image != null);
+
+      if (!hasInputData) return;
+
+      // 이미지들을 Base64로 인코딩
+      List<String> imageBytes = [];
+      for (final image in _selectedImages) {
+        if (image != null) {
+          try {
+            final bytes = await image.readAsBytes();
+            final base64String = base64Encode(bytes);
+            imageBytes.add(base64String);
+          } catch (e) {
+            imageBytes.add(''); // 실패한 경우 빈 문자열
+          }
+        } else {
+          imageBytes.add(''); // null인 경우 빈 문자열
+        }
+      }
+
+      final authController = context.read<AuthController>();
+      authController.saveTemporaryProfileData(
+        nickname: _nicknameController.text.trim(),
+        introduction: _introductionController.text.trim(),
+        height: _heightController.text.trim(),
+        activityArea: _activityAreaController.text.trim(),
+        profileImageBytes: imageBytes,
+        mainProfileIndex: _mainProfileIndex,
+      );
+    } catch (e) {
+      // 임시 저장 실패해도 앱 동작에 영향 없도록
+      debugPrint('임시 데이터 저장 실패: $e');
+    }
+  }
+
+  // 임시 데이터 복원 체크
+  void _checkAndRestoreTemporaryData() {
+    final authController = context.read<AuthController>();
+    final tempProfileData = authController.tempProfileData;
+    
+    if (tempProfileData != null) {
+      // 저장된 시간 확인 (24시간 이내만 유효)
+      final savedAtStr = tempProfileData['savedAt'] as String?;
+      if (savedAtStr != null) {
+        final savedAt = DateTime.tryParse(savedAtStr);
+        if (savedAt != null && 
+            DateTime.now().difference(savedAt).inHours < 24) {
+          // 24시간 이내 데이터면 복원 다이얼로그 표시
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showRestoreConfirmDialog(tempProfileData, authController);
+          });
+        } else {
+          // 24시간 지났으면 데이터 정리
+          authController.clearTemporaryProfileData();
+        }
+      }
+    }
+  }
+
+  // 실제 데이터 복원 수행 (이미지 포함)
+  Future<void> _performDataRestoreWithImages(
+      Map<String, dynamic> tempProfileData, 
+      AuthController authController) async {
+    try {
+      setState(() {
+        _nicknameController.text = tempProfileData['nickname'] ?? '';
+        _introductionController.text = tempProfileData['introduction'] ?? '';
+        _heightController.text = tempProfileData['height'] ?? '';
+        _activityAreaController.text = tempProfileData['activityArea'] ?? '';
+        _mainProfileIndex = tempProfileData['mainProfileIndex'] ?? 0;
+      });
+
+      // 이미지 복원
+      final imageBytesList = tempProfileData['profileImageBytes'] as List<dynamic>?;
+      if (imageBytesList != null) {
+        for (int i = 0; i < imageBytesList.length && i < 6; i++) {
+          final base64String = imageBytesList[i] as String?;
+          if (base64String != null && base64String.isNotEmpty) {
+            try {
+              final bytes = base64Decode(base64String);
+              final xFile = XFile.fromData(
+                bytes,
+                name: 'restored_image_$i.jpg',
+                mimeType: 'image/jpeg',
+              );
+              setState(() {
+                _selectedImages[i] = xFile;
+              });
+            } catch (e) {
+              debugPrint('이미지 복원 실패 (인덱스 $i): $e');
+            }
+          }
+        }
+      }
+
+      // 복원 후 임시 데이터 정리
+      authController.clearTemporaryProfileData();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('이전 입력 정보를 복원했습니다.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('데이터 복원 실패: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('데이터 복원 중 오류가 발생했습니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   // 생년월일 선택은 회원가입에서 이미 완료되어 더 이상 사용하지 않음
@@ -210,10 +536,14 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
       _isPickerActive = true;
       final image = await _picker.pickImage(source: ImageSource.gallery);
       if (image != null) {
-        setState(() {
-          // 해당 인덱스에 직접 이미지 저장
-          _selectedImages[index] = image;
-        });
+        // 이미지 선택 후 즉시 검증
+        final validatedFile = await _validateAndCompressImageFile(image);
+        if (validatedFile != null) {
+          setState(() {
+            // 해당 인덱스에 검증된 이미지 저장
+            _selectedImages[index] = validatedFile;
+          });
+        }
       }
     } catch (e) {
       // print('이미지 선택 오류: $e');
@@ -309,37 +639,27 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
         try {
           for (int i = 0; i < sortedImages.length; i++) {
             final file = sortedImages[i];
-            final fileName = '${currentUser.uid}_profile_$i.jpg';
-
-            // print('Firebase Storage 업로드 시작: $fileName');
-
-            // Firebase Storage에 업로드
-            final ref = FirebaseStorage.instance
-                .ref()
-                .child('profile_images')
-                .child(currentUser.uid)
-                .child(fileName);
-
-            // 플랫폼별 업로드 처리
-            late UploadTask uploadTask;
-            if (kIsWeb) {
-              // 웹에서는 XFile에서 bytes 사용
-              final bytes = await file.readAsBytes();
-              uploadTask = ref.putData(bytes);
-            } else {
-              // 모바일에서는 XFile을 File로 변환
-              final ioFile = File(file.path);
-              uploadTask = ref.putFile(ioFile);
+            
+            // 파일 유효성 검사 및 압축
+            final validatedFile = await _validateAndCompressImageFile(file);
+            if (validatedFile == null) {
+              continue; // 유효하지 않은 파일은 스킵
             }
+            
+            final fileName = '${currentUser.uid}_profile_${DateTime.now().millisecondsSinceEpoch}_$i.jpg';
 
-            final snapshot = await uploadTask;
-            final downloadUrl = await snapshot.ref.getDownloadURL();
-
-            // print('Firebase Storage 업로드 성공: $downloadUrl');
-            imageUrls.add(downloadUrl);
+            // Firebase Storage에 업로드 (재시도 포함)
+            final downloadUrl = await _uploadImageWithRetry(
+              validatedFile, 
+              'profile_images/${currentUser.uid}/$fileName',
+              maxRetries: 3
+            );
+            
+            if (downloadUrl != null) {
+              imageUrls.add(downloadUrl);
+            }
           }
         } catch (e) {
-          // print('이미지 업로드 실패: $e');
           // 이미지 업로드 실패해도 계속 진행
           authController.setError('이미지 업로드에 실패했습니다. 프로필은 생성되었으니 나중에 다시 업로드해주세요.');
         }
@@ -393,7 +713,7 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
           );
 
       if (shouldSkip == true) {
-        // 프로필 없이 계정만 생성
+        // 기본 정보만으로 회원가입 완료 (프로필 이미지, 키, 위치, 자기소개 제외)
         await authController.completeRegistrationWithoutProfile();
 
         if (mounted) {
@@ -417,53 +737,24 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        title: const Text('프로필 생성'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            // 회원가입에서 온 경우에만 회원가입 페이지로 돌아가기
-            if (_registerData != null) {
-              Navigator.pushReplacementNamed(context, '/register');
-            } else {
-              // AuthWrapper에서 온 경우 로그아웃
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('프로필 생성 취소'),
-                  content: const Text('프로필 생성을 취소하고 로그아웃하시겠습니까?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      child: const Text('계속 작성'),
-                    ),
-                                         TextButton(
-                       onPressed: () {
-                         Navigator.of(context).pop();
-                         final authController = context.read<AuthController>();
-                         authController.clearTemporaryData(); // 임시 데이터 정리
-                         authController.signOut();
-                       },
-                       child: const Text('로그아웃'),
-                     ),
-                  ],
-                ),
-              );
-            }
-          },
+        backgroundColor: AppTheme.backgroundColor,
+        appBar: AppBar(
+          title: const Text('프로필 생성'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: _handleBackPress,
+          ),
         ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
                 const SizedBox(height: 2),
 
                 // 프로필 사진 섹션
@@ -994,7 +1285,301 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
         }
         _mainProfileIndex = newMainIndex >= 0 ? newMainIndex : 0;
       }
+
     });
+  }
+
+  // 이미지 파일 유효성 검사 및 압축
+  Future<XFile?> _validateAndCompressImageFile(XFile file) async {
+    try {
+      // 파일 형식 검사 (확장자와 MIME 타입 모두 확인)
+      final fileName = file.name.toLowerCase();
+      final mimeType = file.mimeType ?? '';
+      
+      // 지원하는 이미지 확장자
+      final supportedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+      final hasValidExtension = supportedExtensions.any((ext) => fileName.endsWith(ext));
+      
+      // MIME 타입 확인 (null이거나 비어있을 경우 확장자로 판단)
+      final hasValidMimeType = mimeType.isEmpty || mimeType.startsWith('image/');
+      
+      if (!hasValidExtension || !hasValidMimeType) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                '이미지 파일만 업로드 가능합니다.\n지원 형식: JPG, PNG, GIF, BMP, WebP\n선택된 파일: ${file.name}${mimeType.isNotEmpty ? ' ($mimeType)' : ''}'
+              ),
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
+        return null;
+      }
+
+      // 파일 크기 검사
+      final bytes = await file.readAsBytes();
+      if (bytes.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('빈 파일은 업로드할 수 없습니다.')),
+          );
+        }
+        return null;
+      }
+
+      // 바이트 헤더로 이미지 파일 검증 (추가 안전장치)
+      if (!_isValidImageByHeader(bytes)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('올바른 이미지 파일이 아닙니다. 파일이 손상되었을 수 있습니다.'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return null;
+      }
+
+      // 5MB 이하면 원본 파일 반환
+      if (bytes.length <= 5 * 1024 * 1024) {
+        return file;
+      }
+
+      // 5MB 초과 시 압축 처리
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '파일 크기가 5MB를 초과합니다 (${(bytes.length / 1024 / 1024).toStringAsFixed(2)}MB). 자동으로 압축합니다.',
+            ),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+      
+      final compressedBytes = await _compressImage(bytes);
+      if (compressedBytes == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('이미지 압축에 실패했습니다.')),
+          );
+        }
+        return null;
+      }
+
+      // 압축된 파일을 임시 XFile로 생성
+      final compressedFile = XFile.fromData(
+        compressedBytes,
+        name: file.name,
+        mimeType: 'image/jpeg', // 압축 후 JPEG 형식으로 통일
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              '이미지 압축 완료: ${(bytes.length / 1024 / 1024).toStringAsFixed(2)}MB → ${(compressedBytes.length / 1024 / 1024).toStringAsFixed(2)}MB',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      
+      return compressedFile;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('파일 처리 중 오류가 발생했습니다.')),
+        );
+      }
+      return null;
+    }
+  }
+
+  // 이미지 압축 함수
+  Future<Uint8List?> _compressImage(Uint8List originalBytes) async {
+    try {
+      // 이미지 디코딩
+      final originalImage = img.decodeImage(originalBytes);
+      if (originalImage == null) {
+        return null;
+      }
+
+      const targetSize = 5 * 1024 * 1024; // 5MB
+      int quality = 85; // 초기 품질
+      int maxWidth = originalImage.width;
+      int maxHeight = originalImage.height;
+
+      Uint8List? compressedBytes;
+
+      // 품질을 점진적으로 낮추면서 압축
+      while (quality >= 20) {
+        // 크기가 너무 크면 이미지 크기도 줄임
+        if (compressedBytes != null && compressedBytes.length > targetSize && 
+            (maxWidth > 1000 || maxHeight > 1000)) {
+          maxWidth = (maxWidth * 0.8).round();
+          maxHeight = (maxHeight * 0.8).round();
+        }
+
+        // 이미지 리사이즈 (필요한 경우)
+        img.Image resizedImage = originalImage;
+        if (originalImage.width > maxWidth || originalImage.height > maxHeight) {
+          resizedImage = img.copyResize(
+            originalImage,
+            width: maxWidth,
+            height: maxHeight,
+            interpolation: img.Interpolation.linear,
+          );
+        }
+
+        // JPEG로 압축
+        compressedBytes = Uint8List.fromList(
+          img.encodeJpg(resizedImage, quality: quality)
+        );
+
+        // 목표 크기 이하이면 완료
+        if (compressedBytes.length <= targetSize) {
+          return compressedBytes;
+        }
+
+        // 품질을 10씩 낮춤
+        quality -= 10;
+      }
+
+      // 최종적으로도 크기가 크면 크기를 더 줄임
+      if (compressedBytes != null && compressedBytes.length > targetSize) {
+        // 강제로 크기를 줄여서 재시도
+        maxWidth = (originalImage.width * 0.6).round();
+        maxHeight = (originalImage.height * 0.6).round();
+        
+        final finalImage = img.copyResize(
+          originalImage,
+          width: maxWidth,
+          height: maxHeight,
+          interpolation: img.Interpolation.linear,
+        );
+
+        compressedBytes = Uint8List.fromList(
+          img.encodeJpg(finalImage, quality: 60)
+        );
+      }
+
+      return compressedBytes;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // 바이트 헤더로 이미지 파일 여부 확인
+  bool _isValidImageByHeader(Uint8List bytes) {
+    if (bytes.length < 4) return false;
+
+    // JPEG
+    if (bytes.length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xD8) {
+      return true;
+    }
+    
+    // PNG
+    if (bytes.length >= 8 && 
+        bytes[0] == 0x89 && bytes[1] == 0x50 && 
+        bytes[2] == 0x4E && bytes[3] == 0x47 &&
+        bytes[4] == 0x0D && bytes[5] == 0x0A && 
+        bytes[6] == 0x1A && bytes[7] == 0x0A) {
+      return true;
+    }
+    
+    // GIF
+    if (bytes.length >= 6 && 
+        bytes[0] == 0x47 && bytes[1] == 0x49 && bytes[2] == 0x46 &&
+        bytes[3] == 0x38 && (bytes[4] == 0x37 || bytes[4] == 0x39) && bytes[5] == 0x61) {
+      return true;
+    }
+    
+    // BMP
+    if (bytes.length >= 2 && bytes[0] == 0x42 && bytes[1] == 0x4D) {
+      return true;
+    }
+    
+    // WebP
+    if (bytes.length >= 12 && 
+        bytes[0] == 0x52 && bytes[1] == 0x49 && bytes[2] == 0x46 && bytes[3] == 0x46 &&
+        bytes[8] == 0x57 && bytes[9] == 0x45 && bytes[10] == 0x42 && bytes[11] == 0x50) {
+      return true;
+    }
+    
+    // TIFF
+    if (bytes.length >= 4 && 
+        ((bytes[0] == 0x49 && bytes[1] == 0x49 && bytes[2] == 0x2A && bytes[3] == 0x00) ||
+         (bytes[0] == 0x4D && bytes[1] == 0x4D && bytes[2] == 0x00 && bytes[3] == 0x2A))) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  // 기존 유효성 검사 함수도 유지 (하위 호환성)
+  Future<bool> _validateImageFile(XFile file) async {
+    final validatedFile = await _validateAndCompressImageFile(file);
+    return validatedFile != null;
+  }
+
+  // 재시도 메커니즘이 포함된 이미지 업로드
+  Future<String?> _uploadImageWithRetry(
+    XFile file, 
+    String storagePath, 
+    {int maxRetries = 3}
+  ) async {
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        final ref = FirebaseStorage.instance.ref().child(storagePath);
+        
+        // 메타데이터 설정
+        final metadata = SettableMetadata(
+          contentType: file.mimeType ?? 'image/jpeg',
+          customMetadata: {
+            'uploadedBy': FirebaseAuth.instance.currentUser?.uid ?? 'unknown',
+            'uploadTimestamp': DateTime.now().toIso8601String(),
+          },
+        );
+
+        // 플랫폼별 업로드 처리
+        late UploadTask uploadTask;
+        if (kIsWeb) {
+          // 웹에서는 XFile에서 bytes 사용
+          final bytes = await file.readAsBytes();
+          uploadTask = ref.putData(bytes, metadata);
+        } else {
+          // 모바일에서는 XFile을 File로 변환
+          final ioFile = File(file.path);
+          
+          // 파일 존재 여부 확인
+          if (!await ioFile.exists()) {
+            // 바이트 데이터로 대체 시도
+            final bytes = await file.readAsBytes();
+            uploadTask = ref.putData(bytes, metadata);
+          } else {
+            uploadTask = ref.putFile(ioFile, metadata);
+          }
+        }
+
+        final snapshot = await uploadTask;
+        final downloadUrl = await snapshot.ref.getDownloadURL();
+        
+        return downloadUrl;
+        
+      } catch (e) {
+        if (attempt == maxRetries) {
+          // 최종 실패
+          return null;
+        }
+        
+        // 재시도 전 잠시 대기 (지수 백오프)
+        await Future.delayed(Duration(seconds: attempt * 2));
+      }
+    }
+    
+    return null;
   }
 
   // 새로운 그리드 이미지 슬롯 빌더
@@ -1096,3 +1681,4 @@ class _ProfileCreateViewState extends State<ProfileCreateView> {
     );
   }
 }
+
