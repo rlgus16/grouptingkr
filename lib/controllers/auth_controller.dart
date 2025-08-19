@@ -359,7 +359,33 @@ class AuthController extends ChangeNotifier {
         if (_currentUserModel != null) {
           debugPrint('로그인 완료: 사용자=${_currentUserModel!.nickname}');
         } else {
-          debugPrint('경고: Firebase Auth는 성공했지만 사용자 프로필을 찾을 수 없습니다');
+          // === 사용자 분류: 유령 계정 vs 프로필 미입력 유저 ===
+          debugPrint('_loadUserData에서 사용자 프로필을 찾을 수 없음');
+          debugPrint('기본 사용자 문서 존재 여부로 유형 분류 시작');
+          
+          // 기본 사용자 문서 존재 여부 재확인
+          final userService = UserService();
+          final basicUser = await userService.getUserById(userCredential.user!.uid);
+          
+          if (basicUser == null) {
+            // === 유령 계정 === Firebase Auth만 있고 Firestore 데이터 없음
+            debugPrint('🚨 유령 계정 감지: Firebase Auth 계정은 있지만 Firestore 사용자 문서가 없음');
+            debugPrint('원인: 회원가입 도중 실패하여 데이터 정리가 불완전했을 가능성');
+            
+            // 유령 계정은 로그아웃 후 재회원가입 유도
+            await _firebaseService.signOut();
+            _currentUserModel = null;
+            _setError('회원가입이 완료되지 않았습니다. 다시 회원가입을 진행해주세요.');
+            _setLoading(false);
+            return;
+          } else {
+            // === 프로필 미입력 유저 === 기본 정보는 있지만 프로필 미완성
+            debugPrint('✅ 프로필 미입력 유저: 기본 사용자 문서는 있음');
+            debugPrint('사용자 타입: ${basicUser.nickname.isEmpty ? "닉네임 미설정" : "프로필 부분 완성"} 사용자');
+            
+            _currentUserModel = basicUser;
+            // 이 경우는 정상적으로 홈 화면 진입 가능
+          }
         }
       }
 
@@ -630,16 +656,30 @@ class AuthController extends ChangeNotifier {
         _setLoading(false);
         
       } catch (profileError) {
-        // 프로필 생성 실패 시 선점 해제 및 계정 삭제
-        debugPrint('프로필 생성 실패: $profileError');
+        // 프로필 생성 실패 시 완전한 정리
+        debugPrint('🧹 프로필 생성 실패 - 완전한 정리 시작: $profileError');
         
         await releaseAllReservations(uid, userId: userId, nickname: nickname);
+        debugPrint('선점 해제 완료');
         
-        try {
-          await userCredential.user!.delete();
-          debugPrint('실패한 Firebase Auth 계정 삭제 완료');
-        } catch (deleteError) {
-          debugPrint('Firebase Auth 계정 삭제 실패: $deleteError');
+        // Firebase Auth 계정 삭제 (재시도 포함)
+        bool authAccountDeleted = false;
+        for (int attempt = 1; attempt <= 3; attempt++) {
+          try {
+            await userCredential.user!.delete();
+            debugPrint('실패한 Firebase Auth 계정 삭제 완료 (시도 $attempt)');
+            authAccountDeleted = true;
+            break;
+          } catch (deleteError) {
+            debugPrint('Firebase Auth 계정 삭제 실패 (시도 $attempt): $deleteError');
+            if (attempt < 3) {
+              await Future.delayed(Duration(milliseconds: 500 * attempt));
+            }
+          }
+        }
+        
+        if (!authAccountDeleted) {
+          debugPrint('🚨 Firebase Auth 계정 삭제 최종 실패 - 유령 계정 생성 위험');
         }
         
         throw profileError; // 상위 catch로 전달
@@ -729,17 +769,34 @@ class AuthController extends ChangeNotifier {
         }
         debugPrint('사용자ID 선점 완료: $userId');
       } catch (e) {
-        // 선점 실패 시 Firebase Auth 계정 삭제 (새로 생성한 경우에만)
+        // 선점 실패 시 Firebase Auth 계정 삭제 (새로 생성한 경우에만, 재시도 포함)
         if (currentUser == null) {
-          try {
-            await user!.delete();
-            debugPrint('실패한 Firebase Auth 계정 삭제 완료');
-          } catch (deleteError) {
-            debugPrint('Firebase Auth 계정 삭제 실패: $deleteError');
+          debugPrint('🧹 사용자ID 선점 실패 - Firebase Auth 계정 삭제 시작');
+          bool authAccountDeleted = false;
+          for (int attempt = 1; attempt <= 3; attempt++) {
+            try {
+              await user!.delete();
+              debugPrint('실패한 Firebase Auth 계정 삭제 완료 (시도 $attempt)');
+              authAccountDeleted = true;
+              break;
+            } catch (deleteError) {
+              debugPrint('Firebase Auth 계정 삭제 실패 (시도 $attempt): $deleteError');
+              if (attempt < 3) {
+                await Future.delayed(Duration(milliseconds: 500 * attempt));
+              }
+            }
           }
+          
+          if (!authAccountDeleted) {
+            debugPrint('🚨 Firebase Auth 계정 삭제 최종 실패 - 유령 계정 생성 위험');
+            _setError('회원가입 실패: 계정 정리 중 문제가 발생했습니다. 같은 이메일로 다시 시도하기 전에 잠시 기다려주세요.');
+          } else {
+            _setError('회원가입 실패: $e');
+          }
+        } else {
+          _setError('회원가입 실패: $e');
         }
         
-        _setError('회원가입 실패: $e');
         _setLoading(false);
         return;
       }
@@ -805,18 +862,31 @@ class AuthController extends ChangeNotifier {
         _setLoading(false);
         
       } catch (profileError) {
-        // 프로필 생성 실패 시 선점 해제 및 계정 삭제 (필요시)
-        debugPrint('프로필 생성 실패: $profileError');
+        // 프로필 생성 실패 시 완전한 정리
+        debugPrint('🧹 프로필 생성 실패 - 완전한 정리 시작: $profileError');
         
         await releaseUserId(userId, uid);
+        debugPrint('사용자ID 선점 해제 완료');
         
-        // 새로 생성한 계정인 경우에만 삭제
+        // 새로 생성한 계정인 경우에만 삭제 (재시도 포함)
         if (currentUser == null) {
-          try {
-            await user!.delete();
-            debugPrint('실패한 Firebase Auth 계정 삭제 완료');
-          } catch (deleteError) {
-            debugPrint('Firebase Auth 계정 삭제 실패: $deleteError');
+          bool authAccountDeleted = false;
+          for (int attempt = 1; attempt <= 3; attempt++) {
+            try {
+              await user!.delete();
+              debugPrint('실패한 Firebase Auth 계정 삭제 완료 (시도 $attempt)');
+              authAccountDeleted = true;
+              break;
+            } catch (deleteError) {
+              debugPrint('Firebase Auth 계정 삭제 실패 (시도 $attempt): $deleteError');
+              if (attempt < 3) {
+                await Future.delayed(Duration(milliseconds: 500 * attempt));
+              }
+            }
+          }
+          
+          if (!authAccountDeleted) {
+            debugPrint('🚨 Firebase Auth 계정 삭제 최종 실패 - 유령 계정 생성 위험');
           }
         }
         
