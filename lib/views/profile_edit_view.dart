@@ -30,6 +30,11 @@ class _ProfileEditViewState extends State<ProfileEditView> {
   final ImagePicker _picker = ImagePicker();
   bool _isPickerActive = false;
   int _mainProfileIndex = 0; // 메인 프로필 이미지 인덱스 (기본값: 0번)
+  
+  // 닉네임 중복 검증 관련
+  bool _isCheckingNickname = false;
+  String? _nicknameValidationMessage;
+  String _originalNickname = '';
 
   @override
   void initState() {
@@ -44,6 +49,7 @@ class _ProfileEditViewState extends State<ProfileEditView> {
 
     if (user != null) {
       _nicknameController.text = user.nickname;
+      _originalNickname = user.nickname; // 기존 닉네임 저장
       _introductionController.text = user.introduction;
       _heightController.text = user.height.toString();
       _activityAreaController.text = user.activityArea;
@@ -55,11 +61,7 @@ class _ProfileEditViewState extends State<ProfileEditView> {
       }).toList();
       
       // print('기존 프로필 이미지들: $_originalImages');
-      
-      // 로컬 경로가 있었다면 사용자에게 알림
-      // if (user.profileImages.length > _originalImages.length) {
-        // print('일부 로컬 이미지 경로가 제외되었습니다. 새로운 이미지를 업로드해주세요.');
-      // }
+
     }
   }
 
@@ -90,6 +92,42 @@ class _ProfileEditViewState extends State<ProfileEditView> {
     _heightController.dispose();
     _activityAreaController.dispose();
     super.dispose();
+  }
+
+  // 닉네임 중복 검증 (실시간)
+  Future<void> _checkNicknameDuplicate(String nickname) async {
+    // 기존 닉네임과 같거나 조건 미달 시 검증 안함
+    if (nickname.isEmpty || nickname.length < 2 || nickname.trim() == _originalNickname) {
+      setState(() {
+        _nicknameValidationMessage = null;
+        _isCheckingNickname = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isCheckingNickname = true;
+      _nicknameValidationMessage = null;
+    });
+
+    try {
+      final profileController = context.read<ProfileController>();
+      final isDuplicate = await profileController.isNicknameDuplicate(nickname);
+      
+      if (mounted) {
+        setState(() {
+          _isCheckingNickname = false;
+          _nicknameValidationMessage = isDuplicate ? '이미 사용 중인 닉네임입니다.' : '사용 가능한 닉네임입니다.';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isCheckingNickname = false;
+          _nicknameValidationMessage = '닉네임 확인 중 오류가 발생했습니다.';
+        });
+      }
+    }
   }
 
   // 이미지 선택 메서드들
@@ -264,23 +302,56 @@ class _ProfileEditViewState extends State<ProfileEditView> {
                   const SizedBox(height: 32),
 
                   // 닉네임 입력
-                  TextFormField(
-                    controller: _nicknameController,
-                    decoration: const InputDecoration(
-                      labelText: '닉네임',
-                      hintText: '닉네임을 입력하세요',
-                      prefixIcon: Icon(Icons.person_outline),
-                    ),
-                    maxLength: 10,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return '닉네임을 입력해주세요.';
-                      }
-                      if (value.trim().length < 2) {
-                        return '닉네임은 2자 이상이어야 합니다.';
-                      }
-                      return null;
-                    },
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        controller: _nicknameController,
+                        decoration: InputDecoration(
+                          labelText: '닉네임',
+                          hintText: '닉네임을 입력하세요',
+                          prefixIcon: const Icon(Icons.person_outline),
+                          suffixIcon: _isCheckingNickname
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : null,
+                        ),
+                        maxLength: 10,
+                        onChanged: (value) {
+                          // 디바운싱을 위해 타이머 사용
+                          Future.delayed(const Duration(milliseconds: 500), () {
+                            if (_nicknameController.text == value) {
+                              _checkNicknameDuplicate(value);
+                            }
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return '닉네임을 입력해주세요.';
+                          }
+                          if (value.trim().length < 2) {
+                            return '닉네임은 2자 이상이어야 합니다.';
+                          }
+                          return null;
+                        },
+                      ),
+                      if (_nicknameValidationMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 12, top: 4),
+                          child: Text(
+                            _nicknameValidationMessage!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _nicknameValidationMessage == '사용 가능한 닉네임입니다.'
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
 
                   const SizedBox(height: 16),
@@ -469,6 +540,14 @@ class _ProfileEditViewState extends State<ProfileEditView> {
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // 닉네임 중복 검증
+    if (_nicknameValidationMessage == '이미 사용 중인 닉네임입니다.') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('이미 사용 중인 닉네임입니다. 다른 닉네임을 사용해주세요.')),
+      );
+      return;
+    }
 
     final profileController = context.read<ProfileController>();
     final authController = context.read<AuthController>();

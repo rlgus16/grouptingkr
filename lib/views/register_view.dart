@@ -23,6 +23,12 @@ class _RegisterViewState extends State<RegisterView> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   String _selectedGender = '';
+  
+  // 중복 검증 상태
+  bool _isCheckingEmail = false;
+  bool _isCheckingUserId = false;
+  String? _emailValidationMessage;
+  String? _userIdValidationMessage;
 
   @override
   void initState() {
@@ -61,6 +67,76 @@ class _RegisterViewState extends State<RegisterView> {
     }
   }
 
+  // 이메일 중복 검증 (실시간)
+  Future<void> _checkEmailDuplicate(String email) async {
+    if (email.isEmpty || !RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email)) {
+      setState(() {
+        _emailValidationMessage = null;
+        _isCheckingEmail = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isCheckingEmail = true;
+      _emailValidationMessage = null;
+    });
+
+    try {
+      final authController = context.read<AuthController>();
+      final isDuplicate = await authController.isEmailDuplicate(email);
+      
+      if (mounted) {
+        setState(() {
+          _isCheckingEmail = false;
+          _emailValidationMessage = isDuplicate ? '이미 사용 중인 이메일입니다.' : '사용 가능한 이메일입니다.';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isCheckingEmail = false;
+          _emailValidationMessage = '이메일 확인 중 오류가 발생했습니다.';
+        });
+      }
+    }
+  }
+
+  // 아이디 중복 검증 (실시간)
+  Future<void> _checkUserIdDuplicate(String userId) async {
+    if (userId.isEmpty || userId.length < 4) {
+      setState(() {
+        _userIdValidationMessage = null;
+        _isCheckingUserId = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isCheckingUserId = true;
+      _userIdValidationMessage = null;
+    });
+
+    try {
+      final authController = context.read<AuthController>();
+      final isDuplicate = await authController.isUserIdDuplicate(userId);
+      
+      if (mounted) {
+        setState(() {
+          _isCheckingUserId = false;
+          _userIdValidationMessage = isDuplicate ? '이미 사용 중인 아이디입니다.' : '사용 가능한 아이디입니다.';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isCheckingUserId = false;
+          _userIdValidationMessage = '아이디 확인 중 오류가 발생했습니다.';
+        });
+      }
+    }
+  }
+
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -86,34 +162,83 @@ class _RegisterViewState extends State<RegisterView> {
       return;
     }
 
+    // 실시간 중복 검증이 완료되지 않았다면 강제로 재검증
+    if (_emailValidationMessage == null && email.isNotEmpty) {
+      // 이메일 중복 재검증
+      final authController = context.read<AuthController>();
+      final isEmailDuplicate = await authController.isEmailDuplicate(email);
+      if (isEmailDuplicate) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('이미 사용 중인 이메일입니다. 다른 이메일을 사용해주세요.')),
+        );
+        return;
+      }
+    }
+
+    if (_userIdValidationMessage == null && userId.isNotEmpty) {
+      // 아이디 중복 재검증
+      final authController = context.read<AuthController>();
+      final isUserIdDuplicate = await authController.isUserIdDuplicate(userId);
+      if (isUserIdDuplicate) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('이미 사용 중인 아이디입니다. 다른 아이디를 사용해주세요.')),
+        );
+        return;
+      }
+    }
+
+    // 중복 검증 확인
+    if (_emailValidationMessage == '이미 사용 중인 이메일입니다.') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('이미 사용 중인 이메일입니다. 다른 이메일을 사용해주세요.')),
+      );
+      return;
+    }
+
+    if (_userIdValidationMessage == '이미 사용 중인 아이디입니다.') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('이미 사용 중인 아이디입니다. 다른 아이디를 사용해주세요.')),
+      );
+      return;
+    }
+
     final authController = context.read<AuthController>();
     
     // 이전 에러 메시지 클리어
     authController.clearError();
 
-    // 회원가입 데이터를 임시 저장 (Firebase 계정은 생성하지 않음)
-    authController.saveTemporaryRegistrationData(
-      userId: userId,
-      email: email,
-      password: password,
-      phoneNumber: phoneNumber,
-      birthDate: birthDate,
-      gender: _selectedGender,
-    );
-
-    if (mounted) {
-      // 프로필 생성 화면으로 이동
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/profile-create',
-        (route) => false,
-        arguments: {
-          'userId': userId,
-          'phoneNumber': phoneNumber,
-          'birthDate': birthDate,
-          'gender': _selectedGender,
-        },
+    try {
+      // 회원가입 데이터를 임시 저장 (Firebase 계정은 생성하지 않음)
+      authController.saveTemporaryRegistrationData(
+        userId: userId,
+        email: email,
+        password: password,
+        phoneNumber: phoneNumber,
+        birthDate: birthDate,
+        gender: _selectedGender,
       );
+
+      if (mounted) {
+        // 프로필 생성 화면으로 이동
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          '/profile-create',
+          (route) => false,
+          arguments: {
+            'userId': userId,
+            'phoneNumber': phoneNumber,
+            'birthDate': birthDate,
+            'gender': _selectedGender,
+          },
+        );
+      }
+    } catch (e) {
+      debugPrint('회원가입 준비 중 오류: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('회원가입 준비 중 오류가 발생했습니다.')),
+        );
+      }
     }
   }
 
@@ -180,48 +305,122 @@ class _RegisterViewState extends State<RegisterView> {
                   const SizedBox(height: 32),
 
                   // 아이디 입력 (자물쇠 표시)
-                  TextFormField(
-                    controller: _idController,
-                    decoration: const InputDecoration(
-                      labelText: '아이디',
-                      prefixIcon: Icon(Icons.person),
-                      suffixIcon: Icon(Icons.lock, color: AppTheme.textSecondary),
-                      helperText: '4자 이상, 영문과 숫자만 사용 가능 (로그인 시 사용)',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '아이디를 입력해주세요.';
-                      }
-                      if (value.length < 4) {
-                        return '아이디는 4자 이상이어야 합니다.';
-                      }
-                      if (!RegExp(r'^[a-zA-Z0-9]+$').hasMatch(value)) {
-                        return '영문과 숫자만 사용할 수 있습니다.';
-                      }
-                      return null;
-                    },
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        controller: _idController,
+                        decoration: InputDecoration(
+                          labelText: '아이디',
+                          prefixIcon: const Icon(Icons.person),
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (_isCheckingUserId)
+                                const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              const Icon(Icons.lock, color: AppTheme.textSecondary),
+                            ],
+                          ),
+                          helperText: '4자 이상, 영문과 숫자만 사용 가능 (로그인 시 사용)',
+                        ),
+                        onChanged: (value) {
+                          // 디바운싱을 위해 타이머 사용
+                          Future.delayed(const Duration(milliseconds: 500), () {
+                            if (_idController.text == value) {
+                              _checkUserIdDuplicate(value);
+                            }
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return '아이디를 입력해주세요.';
+                          }
+                          if (value.length < 4) {
+                            return '아이디는 4자 이상이어야 합니다.';
+                          }
+                          if (!RegExp(r'^[a-zA-Z0-9]+$').hasMatch(value)) {
+                            return '영문과 숫자만 사용할 수 있습니다.';
+                          }
+                          return null;
+                        },
+                      ),
+                      if (_userIdValidationMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 12, top: 4),
+                          child: Text(
+                            _userIdValidationMessage!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _userIdValidationMessage == '사용 가능한 아이디입니다.'
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 16),
 
                   // 이메일 입력 (자물쇠 표시)
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: '이메일',
-                      prefixIcon: Icon(Icons.email),
-                      suffixIcon: Icon(Icons.lock, color: AppTheme.textSecondary),
-                      helperText: '비밀번호 찾기 등에 사용할 이메일',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '이메일을 입력해주세요.';
-                      }
-                      if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
-                        return '올바른 이메일 형식을 입력해주세요.';
-                      }
-                      return null;
-                    },
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: InputDecoration(
+                          labelText: '이메일',
+                          prefixIcon: const Icon(Icons.email),
+                          suffixIcon: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (_isCheckingEmail)
+                                const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              const Icon(Icons.lock, color: AppTheme.textSecondary),
+                            ],
+                          ),
+                          helperText: '비밀번호 찾기 등에 사용할 이메일',
+                        ),
+                        onChanged: (value) {
+                          // 디바운싱을 위해 타이머 사용
+                          Future.delayed(const Duration(milliseconds: 500), () {
+                            if (_emailController.text == value) {
+                              _checkEmailDuplicate(value);
+                            }
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return '이메일을 입력해주세요.';
+                          }
+                          if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
+                            return '올바른 이메일 형식을 입력해주세요.';
+                          }
+                          return null;
+                        },
+                      ),
+                      if (_emailValidationMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 12, top: 4),
+                          child: Text(
+                            _emailValidationMessage!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _emailValidationMessage == '사용 가능한 이메일입니다.'
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 16),
 

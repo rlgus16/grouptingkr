@@ -39,6 +39,10 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
   
   // 회원가입에서 전달받은 데이터
   Map<String, dynamic>? _registerData;
+  
+  // 닉네임 중복 검증 상태
+  bool _isCheckingNickname = false;
+  String? _nicknameValidationMessage;
 
   @override
   void initState() {
@@ -492,6 +496,41 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
     }
   }
 
+  // 닉네임 중복 검증 (실시간)
+  Future<void> _checkNicknameDuplicate(String nickname) async {
+    if (nickname.isEmpty || nickname.length < 2) {
+      setState(() {
+        _nicknameValidationMessage = null;
+        _isCheckingNickname = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _isCheckingNickname = true;
+      _nicknameValidationMessage = null;
+    });
+
+    try {
+      final authController = context.read<AuthController>();
+      final isDuplicate = await authController.isNicknameDuplicate(nickname);
+      
+      if (mounted) {
+        setState(() {
+          _isCheckingNickname = false;
+          _nicknameValidationMessage = isDuplicate ? '이미 사용 중인 닉네임입니다.' : '사용 가능한 닉네임입니다.';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isCheckingNickname = false;
+          _nicknameValidationMessage = '닉네임 확인 중 오류가 발생했습니다.';
+        });
+      }
+    }
+  }
+
   // 생년월일 선택은 회원가입에서 이미 완료되어 더 이상 사용하지 않음
   // Future<void> _selectBirthDate() async { ... }
 
@@ -559,6 +598,14 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // 닉네임 중복 검증
+    if (_nicknameValidationMessage == '이미 사용 중인 닉네임입니다.') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('이미 사용 중인 닉네임입니다. 다른 닉네임을 사용해주세요.')),
+      );
+      return;
+    }
 
     // 이미지는 선택사항으로 변경 (나중에 업로드 가능)
 
@@ -1078,23 +1125,56 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
                 const SizedBox(height: 16),
 
                 // 닉네임
-                TextFormField(
-                  controller: _nicknameController,
-                  decoration: const InputDecoration(
-                    labelText: '닉네임',
-                    prefixIcon: Icon(Icons.badge),
-                    helperText: '10자 이내',
-                  ),
-                  maxLength: 10,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return '닉네임을 입력해주세요.';
-                    }
-                    if (value.trim().length < 2) {
-                      return '닉네임은 2자 이상이어야 합니다.';
-                    }
-                    return null;
-                  },
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextFormField(
+                      controller: _nicknameController,
+                      decoration: InputDecoration(
+                        labelText: '닉네임',
+                        prefixIcon: const Icon(Icons.badge),
+                        suffixIcon: _isCheckingNickname
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : null,
+                        helperText: '10자 이내',
+                      ),
+                      maxLength: 10,
+                      onChanged: (value) {
+                        // 디바운싱을 위해 타이머 사용
+                        Future.delayed(const Duration(milliseconds: 500), () {
+                          if (_nicknameController.text == value) {
+                            _checkNicknameDuplicate(value);
+                          }
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return '닉네임을 입력해주세요.';
+                        }
+                        if (value.trim().length < 2) {
+                          return '닉네임은 2자 이상이어야 합니다.';
+                        }
+                        return null;
+                      },
+                    ),
+                    if (_nicknameValidationMessage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 12, top: 4),
+                        child: Text(
+                          _nicknameValidationMessage!,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _nicknameValidationMessage == '사용 가능한 닉네임입니다.'
+                                ? Colors.green
+                                : Colors.red,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 16),
 

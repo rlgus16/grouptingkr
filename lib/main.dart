@@ -105,33 +105,56 @@ class _AuthWrapperState extends State<AuthWrapper> {
   // 컨트롤러 인스턴스를 미리 저장 -> 조금 더 깔끔한 로그아웃을 위한 정리 코드.
   GroupController? _groupController;
   ChatController? _chatController;
+  bool _controllersInitialized = false;
 
   @override
   void initState() {
     super.initState();
     // AuthController 초기화
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeControllers();
+    });
+  }
+
+  void _initializeControllers() {
+    if (_controllersInitialized) return;
+    
+    try {
       final authController = context.read<AuthController>();
       
       // 컨트롤러 인스턴스 저장
       _groupController = context.read<GroupController>();
       _chatController = context.read<ChatController>();
       
-      // 로그아웃 콜백 설정 (context 사용하지 않고 직접 인스턴스 사용)
+      // 로그아웃 콜백 설정 (null 안전성 추가)
       authController.onSignOutCallback = () {
-        print('AuthController 로그아웃 콜백 실행');
-        _groupController?.onSignOut();
-        _chatController?.onSignOut();
-        
-        // FCM 토큰 정리
-        FCMService().clearToken();
+        debugPrint('AuthController 로그아웃 콜백 실행');
+        try {
+          _groupController?.onSignOut();
+          _chatController?.onSignOut();
+          
+          // FCM 토큰 정리
+          FCMService().clearToken();
+        } catch (e) {
+          debugPrint('로그아웃 콜백 실행 중 오류: $e');
+        }
       };
       
       authController.initialize();
       
       // FCM 초기화
       FCMService().initialize();
-    });
+      
+      _controllersInitialized = true;
+    } catch (e) {
+      debugPrint('컨트롤러 초기화 실패: $e');
+    }
+  }
+
+  @override
+  void dispose() {
+    // 필요시 추가 정리 작업
+    super.dispose();
   }
 
   // 메모메모..
@@ -148,8 +171,23 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
         // 로그아웃 감지 (정리는 AuthController 콜백에서 처리됨)
         if (_wasLoggedIn && !authController.isLoggedIn) {
-          print('로그아웃 감지됨 (정리는 콜백에서 완료)');
+          debugPrint('로그아웃 감지됨 - 세션 정리 및 화면 전환');
+          // 컨트롤러 재초기화 플래그 설정 (다시 로그인할 때 재초기화하도록)
+          _controllersInitialized = false;
+          // 추가적인 메모리 정리
+          _groupController = null;
+          _chatController = null;
+          debugPrint('로그아웃 완료 - LoginView로 자동 전환');
         }
+        
+        // 로그인 감지 (컨트롤러 재초기화)
+        if (!_wasLoggedIn && authController.isLoggedIn && !_controllersInitialized) {
+          debugPrint('로그인 감지됨, 컨트롤러 재초기화 필요');
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _initializeControllers();
+          });
+        }
+        
         _wasLoggedIn = authController.isLoggedIn;
 
         // 임시 회원가입 데이터가 있으면 프로필 생성 화면으로

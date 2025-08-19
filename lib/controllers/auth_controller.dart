@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:async';
 import '../services/firebase_service.dart';
 import '../services/user_service.dart';
 import '../services/group_service.dart';
@@ -29,6 +31,9 @@ class AuthController extends ChangeNotifier {
   
   // 임시 프로필 데이터 저장 (뒤로가기 시 복원용)
   Map<String, dynamic>? _tempProfileData;
+
+  // Auth 상태 변경 리스너 (중복 방지용)
+  StreamSubscription<User?>? _authStateSubscription;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -107,27 +112,41 @@ class AuthController extends ChangeNotifier {
       _setLoading(true);
       _setError(null);
       
-      // print('로그아웃 시작');
+      debugPrint('로그아웃 시작');
 
-      // 먼저 로컬 상태 정리
-      _currentUserModel = null;
-      
       // 로그아웃 콜백 호출 (다른 컨트롤러들 정리)
       if (onSignOutCallback != null) {
-        // print('로그아웃 콜백 호출');
+        debugPrint('다른 컨트롤러들 정리 콜백 호출');
         onSignOutCallback!();
+        debugPrint('컨트롤러들 정리 완료');
       }
 
       // Firebase 로그아웃
+      debugPrint('Firebase Auth 로그아웃 시작');
       await _firebaseService.signOut();
-      // print('Firebase 로그아웃 완료');
+      debugPrint('Firebase Auth 로그아웃 완료');
+
+      // 로컬 상태 정리 (Firebase 로그아웃 후 처리)
+      debugPrint('🧹 로컬 상태 정리 시작');
+      _currentUserModel = null;
+      _tempRegistrationData = null;
+      _tempProfileData = null;
+      debugPrint('로컬 상태 정리 완료');
 
       _setLoading(false);
+      debugPrint('로그아웃 프로세스 완료');
     } catch (e) {
-      // print('로그아웃 실패: $e');
+      debugPrint('로그아웃 실패: $e');
       _setError('로그아웃에 실패했습니다: $e');
       _setLoading(false);
     }
+  }
+
+  // 리소스 정리
+  @override
+  void dispose() {
+    _authStateSubscription?.cancel();
+    super.dispose();
   }
 
   // 비밀번호 변경
@@ -286,13 +305,15 @@ class AuthController extends ChangeNotifier {
       // print('Firebase Auth에서 계정 삭제 중...');
       await currentUser.delete();
 
-      // 7. 로컬 상태 정리
-      _currentUserModel = null;
-
-      // 로그아웃 콜백 호출 (다른 컨트롤러들 정리)
+      // 7. 로그아웃 콜백 호출 (다른 컨트롤러들 정리)
       if (onSignOutCallback != null) {
         onSignOutCallback!();
       }
+
+      // 8. 로컬 상태 정리
+      _currentUserModel = null;
+      _tempRegistrationData = null;
+      _tempProfileData = null;
 
       _setLoading(false);
       // print('계정 삭제 완료');
@@ -319,7 +340,38 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  // 아이디와 비밀번호로 로그인 (아이디를 통해 이메일을 찾은 후 로그인)
+  // 이메일과 비밀번호로 로그인 (주 로그인 방식)
+  Future<void> signInWithEmail(String email, String password) async {
+    try {
+      _setLoading(true);
+      _setError(null);
+
+      debugPrint('이메일 로그인 시도: email=$email');
+      final userCredential = await _firebaseService.auth
+          .signInWithEmailAndPassword(email: email.trim().toLowerCase(), password: password);
+
+      if (userCredential.user != null) {
+        debugPrint('Firebase Auth 로그인 성공: UID=${userCredential.user!.uid}');
+        
+        // 사용자 정보 로드
+        await _loadUserData(userCredential.user!.uid);
+        
+        if (_currentUserModel != null) {
+          debugPrint('로그인 완료: 사용자=${_currentUserModel!.nickname}');
+        } else {
+          debugPrint('경고: Firebase Auth는 성공했지만 사용자 프로필을 찾을 수 없습니다');
+        }
+      }
+
+      _setLoading(false);
+    } catch (e) {
+      debugPrint('이메일 로그인 에러: $e');
+      _setError(_getKoreanErrorMessage(e));
+      _setLoading(false);
+    }
+  }
+
+  // 아이디와 비밀번호로 로그인 (아이디를 통해 이메일을 찾은 후 로그인) - 백워드 호환성
   Future<void> signInWithUserIdAndPassword(String userId, String password) async {
     try {
       _setLoading(true);
@@ -327,7 +379,7 @@ class AuthController extends ChangeNotifier {
       
       // 1. 아이디로 사용자 검색
       final users = await _firebaseService.getCollection('users')
-          .where('userId', isEqualTo: userId)
+          .where('userId', isEqualTo: userId.trim())
           .limit(1)
           .get();
 
@@ -347,53 +399,17 @@ class AuthController extends ChangeNotifier {
         return;
       }
 
-      // 3. 이메일과 비밀번호로 Firebase Auth 로그인
-      final userCredential = await _firebaseService.auth
-          .signInWithEmailAndPassword(email: email, password: password);
-
-      if (userCredential.user != null) {
-        
-        // 사용자 정보 로드
-        await _loadUserData(userCredential.user!.uid);
-      }
-
-      _setLoading(false);
+      // 3. 이메일 기반 로그인 호출
+      await signInWithEmail(email, password);
     } catch (e) {
       _setError(_getKoreanErrorMessage(e));
       _setLoading(false);
     }
   }
 
-  // 이메일과 비밀번호로 로그인 (기존 메서드는 유지)
+  // 이메일과 비밀번호로 로그인 (기존 메서드는 새 메서드로 리다이렉트)
   Future<void> signInWithEmailAndPassword(String email, String password) async {
-    try {
-      _setLoading(true);
-      _setError(null);
-
-      // print('로그인 시도: email=$email');
-      final userCredential = await _firebaseService.auth
-          .signInWithEmailAndPassword(email: email, password: password);
-
-      if (userCredential.user != null) {
-        // print('Firebase Auth 로그인 성공: UID=${userCredential.user!.uid}');
-        // print('사용자 이메일: ${userCredential.user!.email}');
-        
-        // 사용자 정보 로드
-        await _loadUserData(userCredential.user!.uid);
-        
-        if (_currentUserModel != null) {
-          // print('로그인 완료: 사용자=${_currentUserModel!.nickname}');
-        } else {
-          // print('경고: Firebase Auth는 성공했지만 사용자 프로필을 찾을 수 없습니다');
-        }
-      }
-
-      _setLoading(false);
-    } catch (e) {
-      // print('로그인 에러: $e');
-      _setError(_getKoreanErrorMessage(e));
-      _setLoading(false);
-    }
+    await signInWithEmail(email, password);
   }
 
   // 이메일과 비밀번호로 회원가입
@@ -461,25 +477,94 @@ class AuthController extends ChangeNotifier {
 
       final email = _tempRegistrationData!['email'];
       final password = _tempRegistrationData!['password'];
+      final userId = _tempRegistrationData!['userId'];
       
-      // print('최종 회원가입 시작: $email');
+      debugPrint('최종 회원가입 시작: $email');
+
+      // 1단계: 중복 계정 확인 (이메일, userId, nickname 모두 확인)
+      final duplicates = await checkDuplicates(
+        email: email,
+        userId: userId,
+        nickname: nickname,
+      );
+
+      if (duplicates['email'] == true) {
+        _setError('이미 사용 중인 이메일입니다.');
+        _setLoading(false);
+        return;
+      }
+
+      if (duplicates['userId'] == true) {
+        _setError('이미 사용 중인 아이디입니다.');
+        _setLoading(false);
+        return;
+      }
+
+      if (duplicates['nickname'] == true) {
+        _setError('이미 사용 중인 닉네임입니다.');
+        _setLoading(false);
+        return;
+      }
       
-      // Firebase Auth 계정 생성
+      // 2단계: Firebase Auth 계정 생성 (임시 UID 얻기 위해)
       final userCredential = await _firebaseService.auth
           .createUserWithEmailAndPassword(email: email, password: password);
-
-      if (userCredential.user != null) {
-        // print('Firebase Auth 사용자 생성 완료: ${userCredential.user!.uid}');
+      
+      if (userCredential.user == null) {
+        _setError('계정 생성에 실패했습니다.');
+        _setLoading(false);
+        return;
+      }
+      
+      final uid = userCredential.user!.uid;
+      debugPrint('Firebase Auth 계정 생성 완료: $uid');
+      
+      // 3단계: 사용자ID와 닉네임 선점 시도
+      bool userIdReserved = false;
+      bool nicknameReserved = false;
+      
+      try {
+        // 사용자ID 선점
+        userIdReserved = await reserveUserId(userId, uid);
+        if (!userIdReserved) {
+          throw Exception('사용자 ID 선점 실패: 이미 사용 중입니다.');
+        }
         
+        // 닉네임 선점  
+        nicknameReserved = await reserveNickname(nickname, uid);
+        if (!nicknameReserved) {
+          throw Exception('닉네임 선점 실패: 이미 사용 중입니다.');
+        }
+        
+        debugPrint('선점 완료: userId=$userId, nickname=$nickname');
+      } catch (e) {
+        // 선점 실패 시 정리
+        await releaseAllReservations(uid, userId: userId, nickname: nickname);
+        
+        // Firebase Auth 계정도 삭제
+        try {
+          await userCredential.user!.delete();
+          debugPrint('실패한 Firebase Auth 계정 삭제 완료');
+        } catch (deleteError) {
+          debugPrint('Firebase Auth 계정 삭제 실패: $deleteError');
+        }
+        
+        _setError('회원가입 실패: $e');
+        _setLoading(false);
+        return;
+      }
+
+      // 4단계: 사용자 프로필 생성
+      try {
         // 인증 상태가 완전히 반영될 때까지 잠시 대기
         await Future.delayed(const Duration(milliseconds: 500));
         
         // ID 토큰 새로고침하여 권한 갱신
         try {
           await userCredential.user!.getIdToken(true);
-          // print('ID 토큰 새로고침 완료');
+          debugPrint('ID 토큰 새로고침 완료');
         } catch (e) {
-          // print('ID 토큰 새로고침 실패: $e');
+          debugPrint('ID 토큰 새로고침 실패: $e');
         }
         
         // 이미지 업로드 처리
@@ -518,11 +603,11 @@ class AuthController extends ChangeNotifier {
           }
         }
         
-        // 완전한 사용자 정보와 함께 사용자 문서 생성
+        // 완전한 사용자 정보와 함께 사용자 문서 생성 (닉네임/사용자ID는 이미 선점됨)
         await createCompleteUserProfile(
           userCredential.user!.uid,
           _tempRegistrationData!['userId'],
-          email,
+          email.toLowerCase(), // 이메일을 소문자로 저장
           _tempRegistrationData!['phoneNumber'],
           _tempRegistrationData!['birthDate'],
           _tempRegistrationData!['gender'],
@@ -541,12 +626,27 @@ class AuthController extends ChangeNotifier {
         // 임시 데이터 정리
         _tempRegistrationData = null;
         
-        // print('사용자 데이터 로드 완료');
+        debugPrint('프로필 포함 회원가입 완료: ${userCredential.user!.uid}');
+        _setLoading(false);
+        
+      } catch (profileError) {
+        // 프로필 생성 실패 시 선점 해제 및 계정 삭제
+        debugPrint('프로필 생성 실패: $profileError');
+        
+        await releaseAllReservations(uid, userId: userId, nickname: nickname);
+        
+        try {
+          await userCredential.user!.delete();
+          debugPrint('실패한 Firebase Auth 계정 삭제 완료');
+        } catch (deleteError) {
+          debugPrint('Firebase Auth 계정 삭제 실패: $deleteError');
+        }
+        
+        throw profileError; // 상위 catch로 전달
       }
 
-      _setLoading(false);
     } catch (e) {
-      // print('최종 회원가입 실패: $e');
+      debugPrint('최종 회원가입 실패: $e');
       _setError(_getKoreanRegisterErrorMessage(e));
       _setLoading(false);
     }
@@ -575,26 +675,77 @@ class AuthController extends ChangeNotifier {
       
       debugPrint('추출된 데이터: userId=$userId, email=$email, phone=$phoneNumber, birth=$birthDate, gender=$gender');
       
-      // print('프로필 스킵 회원가입 시작: $email');
+      // 1단계: 중복 계정 확인 (이메일, userId 확인)
+      final duplicates = await checkDuplicates(
+        email: email,
+        userId: userId,
+      );
+
+      if (duplicates['email'] == true) {
+        _setError('이미 사용 중인 이메일입니다.');
+        _setLoading(false);
+        return;
+      }
+
+      if (duplicates['userId'] == true) {
+        _setError('이미 사용 중인 아이디입니다.');
+        _setLoading(false);
+        return;
+      }
+      
+      // 2단계: Firebase Auth 계정 생성/확인
+      User? user;
+      String uid;
       
       // 현재 Firebase Auth 사용자 확인
       final currentUser = _firebaseService.currentUser;
-      
-      User? user;
       if (currentUser != null && currentUser.email == email) {
         // 이미 로그인된 사용자가 동일한 이메일이면 재사용
-        // print('기존 Firebase Auth 사용자 재사용: ${currentUser.uid}');
+        debugPrint('기존 Firebase Auth 사용자 재사용: ${currentUser.uid}');
         user = currentUser;
+        uid = currentUser.uid;
       } else {
         // Firebase Auth 계정 생성
-        // print('새로운 Firebase Auth 계정 생성 시도...');
+        debugPrint('새로운 Firebase Auth 계정 생성 시도...');
         final userCredential = await _firebaseService.auth
             .createUserWithEmailAndPassword(email: email, password: password);
         user = userCredential.user;
-        // print('Firebase Auth 사용자 생성 완료: ${user?.uid}');
+        if (user == null) {
+          _setError('계정 생성에 실패했습니다.');
+          _setLoading(false);
+          return;
+        }
+        uid = user.uid;
+        debugPrint('Firebase Auth 사용자 생성 완료: $uid');
       }
 
-      if (user != null) {
+      // 3단계: 사용자ID 선점 시도
+      bool userIdReserved = false;
+      
+      try {
+        userIdReserved = await reserveUserId(userId, uid);
+        if (!userIdReserved) {
+          throw Exception('사용자 ID 선점 실패: 이미 사용 중입니다.');
+        }
+        debugPrint('사용자ID 선점 완료: $userId');
+      } catch (e) {
+        // 선점 실패 시 Firebase Auth 계정 삭제 (새로 생성한 경우에만)
+        if (currentUser == null) {
+          try {
+            await user!.delete();
+            debugPrint('실패한 Firebase Auth 계정 삭제 완료');
+          } catch (deleteError) {
+            debugPrint('Firebase Auth 계정 삭제 실패: $deleteError');
+          }
+        }
+        
+        _setError('회원가입 실패: $e');
+        _setLoading(false);
+        return;
+      }
+
+      // 4단계: 사용자 프로필 생성
+      try {
         // 인증 상태가 완전히 반영될 때까지 잠시 대기
         await Future.delayed(const Duration(milliseconds: 500));
         
@@ -623,7 +774,7 @@ class AuthController extends ChangeNotifier {
           await _createUserProfileWithInfo(
             user.uid,
             _tempRegistrationData!['userId'],
-            email,
+            email.toLowerCase(), // 이메일을 소문자로 저장
             _tempRegistrationData!['phoneNumber'],
             _tempRegistrationData!['birthDate'],
             _tempRegistrationData!['gender'],
@@ -650,40 +801,81 @@ class AuthController extends ChangeNotifier {
         // 임시 데이터 정리
         _tempRegistrationData = null;
 
-        debugPrint('사용자 데이터 로드 완료: ${_currentUserModel != null ? "성공" : "실패(하지만 계속 진행)"}');
+        debugPrint('프로필 스킵 회원가입 완료: $uid');
+        _setLoading(false);
+        
+      } catch (profileError) {
+        // 프로필 생성 실패 시 선점 해제 및 계정 삭제 (필요시)
+        debugPrint('프로필 생성 실패: $profileError');
+        
+        await releaseUserId(userId, uid);
+        
+        // 새로 생성한 계정인 경우에만 삭제
+        if (currentUser == null) {
+          try {
+            await user!.delete();
+            debugPrint('실패한 Firebase Auth 계정 삭제 완료');
+          } catch (deleteError) {
+            debugPrint('Firebase Auth 계정 삭제 실패: $deleteError');
+          }
+        }
+        
+        throw profileError; // 상위 catch로 전달
       }
 
-      _setLoading(false);
     } catch (e) {
-      // print('프로필 스킵 회원가입 실패: $e');
+      debugPrint('프로필 스킵 회원가입 실패: $e');
       _setError(_getKoreanRegisterErrorMessage(e));
       _setLoading(false);
     }
   }
 
-  // 사용자 데이터 로드
-  Future<void> _loadUserData(String uid) async {
-    try {
-      debugPrint('사용자 데이터 로드 시작: UID=$uid');
-      final userService = UserService();
-      _currentUserModel = await userService.getUserById(uid);
-      
-      // 프로필이 완성되지 않은 사용자의 경우 null일 수 있음
-      if (_currentUserModel == null) {
-        debugPrint('사용자 프로필이 존재하지 않습니다. "나중에 입력하기"로 스킵한 사용자일 수 있습니다.');
-        // 이 경우에도 정상적으로 홈 화면에 진입할 수 있도록 함
-        // Firebase Auth는 로그인 상태이지만 Firestore에 프로필이 없는 상태
-      } else {
-        debugPrint('사용자 데이터 로드 성공: ${_currentUserModel!.nickname.isNotEmpty ? _currentUserModel!.nickname : "프로필 미완성"}');
+  // 사용자 데이터 로드 (재시도 로직 포함)
+  Future<void> _loadUserData(String uid, {int maxRetries = 3}) async {
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        debugPrint('사용자 데이터 로드 시작 (시도 $attempt/$maxRetries): UID=$uid');
+        
+        // Firebase Auth 상태 재확인
+        final currentUser = _firebaseService.currentUser;
+        if (currentUser == null || currentUser.uid != uid) {
+          debugPrint('Firebase Auth 상태 불일치, 로드 중단');
+          _currentUserModel = null;
+          notifyListeners();
+          return;
+        }
+
+        final userService = UserService();
+        _currentUserModel = await userService.getUserById(uid);
+        
+        // 프로필이 완성되지 않은 사용자의 경우 null일 수 있음
+        if (_currentUserModel == null) {
+          debugPrint('사용자 프로필이 존재하지 않습니다. "나중에 입력하기"로 스킵한 사용자일 수 있습니다.');
+          // 이 경우에도 정상적으로 홈 화면에 진입할 수 있도록 함
+          // Firebase Auth는 로그인 상태이지만 Firestore에 프로필이 없는 상태
+        } else {
+          debugPrint('사용자 데이터 로드 성공: ${_currentUserModel!.nickname.isNotEmpty ? _currentUserModel!.nickname : "프로필 미완성"}');
+        }
+        
+        // 성공하면 루프 종료
+        notifyListeners();
+        return;
+        
+      } catch (e) {
+        debugPrint('사용자 데이터 로드 실패 (시도 $attempt/$maxRetries): $e');
+        
+        if (attempt == maxRetries) {
+          // 최종 실패
+          debugPrint('최대 재시도 횟수 초과, 사용자 데이터 로드 포기');
+          // 에러가 발생해도 로그인 상태는 유지 (Firebase Auth는 정상)
+          _currentUserModel = null;
+          notifyListeners();
+          return;
+        }
+        
+        // 재시도 전 잠시 대기
+        await Future.delayed(Duration(milliseconds: 500 * attempt));
       }
-      
-      // 로딩 상태 해제는 호출하는 곳에서 처리
-      notifyListeners();
-    } catch (e) {
-      debugPrint('사용자 데이터 로드 실패: $e');
-      // 에러가 발생해도 로그인 상태는 유지 (Firebase Auth는 정상) Firestore에서 데이터를 가져오지 못한 경우 문제 확인이 필요 할 것으로 보임
-      _currentUserModel = null;
-      notifyListeners();
     }
   }
 
@@ -833,6 +1025,9 @@ class AuthController extends ChangeNotifier {
       _setLoading(true);
       debugPrint('AuthController 초기화 시작');
 
+      // 기존 리스너가 있다면 취소
+      await _authStateSubscription?.cancel();
+
       // 현재 Firebase Auth 상태 먼저 확인
       final currentUser = _firebaseService.currentUser;
       if (currentUser != null) {
@@ -850,16 +1045,20 @@ class AuthController extends ChangeNotifier {
         _currentUserModel = null;
       }
 
-      // Firebase Auth 상태 변경 리스너 설정
-      _firebaseService.auth.authStateChanges().listen((user) async {
+      // Firebase Auth 상태 변경 리스너 설정 (중복 방지)
+      _authStateSubscription = _firebaseService.auth.authStateChanges().listen((user) async {
         debugPrint('Auth 상태 변경 감지: ${user?.uid ?? "로그아웃"}');
         if (user != null) {
+          debugPrint('사용자 로그인 감지 - 데이터 로드 시작');
           // 로그인된 사용자가 있으면 정보 로드
           await _loadUserData(user.uid);
+          debugPrint('사용자 데이터 로드 완료');
         } else {
+          debugPrint('사용자 로그아웃 감지 - 세션 정리');
           // 로그아웃된 상태
           _currentUserModel = null;
           notifyListeners();
+          debugPrint('로컬 사용자 데이터 정리 완료');
         }
       });
 
@@ -896,6 +1095,242 @@ class AuthController extends ChangeNotifier {
   // 에러 클리어
   void clearError() {
     _setError(null);
+  }
+
+  // 이메일 중복 확인 (Firebase Auth + Firestore users 컬렉션)
+  Future<bool> isEmailDuplicate(String email) async {
+    try {
+      final normalizedEmail = email.trim().toLowerCase();
+      
+      // 1. Firebase Auth fetchSignInMethodsForEmail 사용 (가장 정확하게 처리해보기)
+      try {
+        final signInMethods = await _firebaseService.auth.fetchSignInMethodsForEmail(normalizedEmail);
+        if (signInMethods.isNotEmpty) {
+          debugPrint('Firebase Auth에 이미 등록된 이메일: $normalizedEmail');
+          return true;
+        }
+      } catch (authError) {
+        debugPrint('Firebase Auth 이메일 확인 오류: $authError');
+        // Firebase Auth 오류는 무시하고 Firestore에서 확인
+      }
+      
+      // 2. Firestore users 컬렉션에서 확인
+      final users = await _firebaseService.getCollection('users')
+          .where('email', isEqualTo: normalizedEmail)
+          .limit(1)
+          .get();
+      
+      if (users.docs.isNotEmpty) {
+        debugPrint('users 컬렉션에 이미 저장된 이메일: $normalizedEmail');
+        return true;
+      }
+      
+      debugPrint('이메일 중복 확인 완료: $normalizedEmail (사용 가능)');
+      return false;
+    } catch (e) {
+      debugPrint('이메일 중복 확인 오류: $e');
+      // 오류 시에는 안전하게 false 반환 (Firebase Auth에서 최종 확인됨)
+      return false;
+    }
+  }
+
+  // 사용자ID 중복 확인 (users 컬렉션 + 선점 시스템)
+  Future<bool> isUserIdDuplicate(String userId) async {
+    try {
+      final trimmedUserId = userId.trim();
+      
+      // 1. users 컬렉션에서 실제 데이터 확인 (우선순위)
+      final users = await _firebaseService.getCollection('users')
+          .where('userId', isEqualTo: trimmedUserId)
+          .limit(1)
+          .get();
+      
+      if (users.docs.isNotEmpty) {
+        debugPrint('users 컬렉션에 이미 저장된 사용자ID: $trimmedUserId');
+        return true;
+      }
+      
+      // 2. usernames 컬렉션에서 선점 상태 확인 (보조)
+      try {
+        final normalizedId = trimmedUserId.toLowerCase();
+        final usernameDoc = await _firebaseService.getDocument('usernames/$normalizedId').get();
+        if (usernameDoc.exists) {
+          debugPrint('이미 선점된 사용자ID: $normalizedId');
+          return true;
+        }
+      } catch (reservationError) {
+        debugPrint('선점 시스템 확인 오류 (무시함): $reservationError');
+        // 선점 시스템 오류는 무시하고 users 컬렉션 결과만 사용
+      }
+      
+      debugPrint('사용자ID 중복 확인 완료: $trimmedUserId (사용 가능)');
+      return false;
+    } catch (e) {
+      debugPrint('사용자ID 중복 확인 오류: $e');
+      // 오류 시에는 안전하게 false 반환
+      return false;
+    }
+  }
+
+  // 닉네임 중복 확인 (users 컬렉션 + 선점 시스템)
+  Future<bool> isNicknameDuplicate(String nickname) async {
+    try {
+      final trimmedNickname = nickname.trim();
+      
+      // 1. users 컬렉션에서 실제 데이터 확인 (우선순위)
+      final users = await _firebaseService.getCollection('users')
+          .where('nickname', isEqualTo: trimmedNickname)
+          .limit(1)
+          .get();
+      
+      if (users.docs.isNotEmpty) {
+        debugPrint('users 컬렉션에 이미 저장된 닉네임: $trimmedNickname');
+        return true;
+      }
+      
+      // 2. nicknames 컬렉션에서 선점 상태 확인 (보조)
+      try {
+        final normalizedNickname = trimmedNickname.toLowerCase();
+        final nicknameDoc = await _firebaseService.getDocument('nicknames/$normalizedNickname').get();
+        if (nicknameDoc.exists) {
+          debugPrint('이미 선점된 닉네임: $normalizedNickname');
+          return true;
+        }
+      } catch (reservationError) {
+        debugPrint('선점 시스템 확인 오류 (무시함): $reservationError');
+        // 선점 시스템 오류는 무시하고 users 컬렉션 결과만 사용
+      }
+      
+      debugPrint('닉네임 중복 확인 완료: $trimmedNickname (사용 가능)');
+      return false;
+    } catch (e) {
+      debugPrint('닉네임 중복 확인 오류: $e');
+      // 오류 시에는 안전하게 false 반환
+      return false;
+    }
+  }
+
+  // ===== 원자적 선점 시스템 =====
+  
+  // 사용자ID 선점 (원자적 생성)
+  Future<bool> reserveUserId(String userId, String uid) async {
+    try {
+      final normalizedId = userId.trim().toLowerCase();
+      final reservationData = {
+        'uid': uid,
+        'originalUserId': userId.trim(),
+        'reservedAt': FieldValue.serverTimestamp(),
+        'type': 'userId',
+      };
+      
+      // 원자적 생성 시도 (이미 존재하면 실패)
+      await _firebaseService.getDocument('usernames/$normalizedId').set(
+        reservationData,
+        SetOptions(merge: false), // merge: false로 덮어쓰기 방지
+      );
+      
+      debugPrint('사용자ID 선점 성공: $normalizedId (uid: $uid)');
+      return true;
+    } catch (e) {
+      debugPrint('사용자ID 선점 실패: $userId - $e');
+      return false;
+    }
+  }
+  
+  // 닉네임 선점 (원자적 생성)
+  Future<bool> reserveNickname(String nickname, String uid) async {
+    try {
+      final normalizedNickname = nickname.trim().toLowerCase();
+      final reservationData = {
+        'uid': uid,
+        'originalNickname': nickname.trim(),
+        'reservedAt': FieldValue.serverTimestamp(),
+        'type': 'nickname',
+      };
+      
+      // 원자적 생성 시도 (이미 존재하면 실패)
+      await _firebaseService.getDocument('nicknames/$normalizedNickname').set(
+        reservationData,
+        SetOptions(merge: false), // merge: false로 덮어쓰기 방지
+      );
+      
+      debugPrint('닉네임 선점 성공: $normalizedNickname (uid: $uid)');
+      return true;
+    } catch (e) {
+      debugPrint('닉네임 선점 실패: $nickname - $e');
+      return false;
+    }
+  }
+  
+  // 사용자ID 선점 해제
+  Future<void> releaseUserId(String userId, String uid) async {
+    try {
+      final normalizedId = userId.trim().toLowerCase();
+      final doc = await _firebaseService.getDocument('usernames/$normalizedId').get();
+      
+      if (doc.exists) {
+        final data = doc.data();
+        // 본인이 선점한 것만 해제 가능
+        if (data != null && data['uid'] == uid) {
+          await _firebaseService.getDocument('usernames/$normalizedId').delete();
+          debugPrint('사용자ID 선점 해제: $normalizedId (uid: $uid)');
+        } else {
+          debugPrint('사용자ID 선점 해제 실패: 소유자가 아님 (uid: $uid)');
+        }
+      }
+    } catch (e) {
+      debugPrint('사용자ID 선점 해제 오류: $userId - $e');
+    }
+  }
+  
+  // 닉네임 선점 해제
+  Future<void> releaseNickname(String nickname, String uid) async {
+    try {
+      final normalizedNickname = nickname.trim().toLowerCase();
+      final doc = await _firebaseService.getDocument('nicknames/$normalizedNickname').get();
+      
+      if (doc.exists) {
+        final data = doc.data();
+        // 본인이 선점한 것만 해제 가능
+        if (data != null && data['uid'] == uid) {
+          await _firebaseService.getDocument('nicknames/$normalizedNickname').delete();
+          debugPrint('닉네임 선점 해제: $normalizedNickname (uid: $uid)');
+        } else {
+          debugPrint('닉네임 선점 해제 실패: 소유자가 아님 (uid: $uid)');
+        }
+      }
+    } catch (e) {
+      debugPrint('닉네임 선점 해제 오류: $nickname - $e');
+    }
+  }
+  
+  // 모든 선점 해제 (회원가입 실패 시 정리용)
+  Future<void> releaseAllReservations(String uid, {String? userId, String? nickname}) async {
+    await Future.wait([
+      if (userId != null) releaseUserId(userId, uid),
+      if (nickname != null) releaseNickname(nickname, uid),
+    ]);
+  }
+
+  // 종합 중복 확인 (회원가입용)
+  Future<Map<String, bool>> checkDuplicates({
+    String? email,
+    String? userId,
+    String? nickname,
+  }) async {
+    final results = <String, bool>{};
+    
+    if (email != null) {
+      results['email'] = await isEmailDuplicate(email);
+    }
+    if (userId != null) {
+      results['userId'] = await isUserIdDuplicate(userId);
+    }
+    if (nickname != null) {
+      results['nickname'] = await isNicknameDuplicate(nickname);
+    }
+    
+    return results;
   }
 
   // 프로필 데이터 임시 저장 (이미지 포함)
@@ -970,9 +1405,6 @@ class AuthController extends ChangeNotifier {
       if (bytes.length <= 5 * 1024 * 1024) {
         return file;
       }
-
-      // 5MB 초과 시 압축 처리
-      // print('파일 크기가 5MB를 초과합니다 (${(bytes.length / 1024 / 1024).toStringAsFixed(2)}MB). 압축을 진행합니다.');
       
       final compressedBytes = await _compressImage(bytes);
       if (compressedBytes == null) {

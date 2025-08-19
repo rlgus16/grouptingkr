@@ -327,9 +327,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                   if (confirmed) {
                     try {
                       await authController.signOut();
-                      if (context.mounted) {
-                        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
-                      }
+                      // AuthWrapper가 자동으로 LoginView로 전환하므로 수동 네비게이션 제거
                     } catch (e) {
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(

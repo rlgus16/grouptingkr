@@ -12,13 +12,13 @@ class LoginView extends StatefulWidget {
 
 class _LoginViewState extends State<LoginView> {
   final _formKey = GlobalKey<FormState>();
-  final _idController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _idController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -31,11 +31,21 @@ class _LoginViewState extends State<LoginView> {
     // 이전 에러 메시지 클리어
     authController.clearError();
 
-    // 아이디와 비밀번호로 로그인
-    await authController.signInWithUserIdAndPassword(
-      _idController.text,
-      _passwordController.text,
-    );
+    try {
+      // 이메일과 비밀번호로 로그인
+      await authController.signInWithEmail(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+      );
+
+      // 로그인 성공 시 에러 메시지 클리어 (추가 안전장치)
+      if (mounted && authController.isLoggedIn) {
+        authController.clearError();
+      }
+    } catch (e) {
+      // 예외 처리는 AuthController에서 하지만, 추가 안전장치
+      debugPrint('로그인 중 예외 발생: $e');
+    }
   }
 
   @override
@@ -73,19 +83,21 @@ class _LoginViewState extends State<LoginView> {
                   ),
                   const SizedBox(height: 48),
 
-                  // 아이디 입력
+                  // 이메일 입력
                   TextFormField(
-                    controller: _idController,
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
                     decoration: const InputDecoration(
-                      labelText: '아이디',
-                      prefixIcon: Icon(Icons.person),
+                      labelText: '이메일',
+                      prefixIcon: Icon(Icons.email),
+                      hintText: 'example@email.com',
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return '아이디를 입력해주세요.';
+                        return '이메일을 입력해주세요.';
                       }
-                      if (value.length < 4) {
-                        return '아이디는 4자 이상이어야 합니다.';
+                      if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
+                        return '올바른 이메일 형식을 입력해주세요.';
                       }
                       return null;
                     },

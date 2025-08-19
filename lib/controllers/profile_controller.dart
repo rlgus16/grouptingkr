@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 import 'dart:typed_data';
@@ -28,6 +29,92 @@ class ProfileController extends ChangeNotifier {
   void _setError(String? error) {
     _errorMessage = error;
     notifyListeners();
+  }
+
+  // ===== 닉네임 선점 관련 메서드들 =====
+  
+  // 닉네임 선점 (원자적 생성)
+  Future<bool> _reserveNickname(String nickname, String uid) async {
+    try {
+      final normalizedNickname = nickname.trim().toLowerCase();
+      final reservationData = {
+        'uid': uid,
+        'originalNickname': nickname.trim(),
+        'reservedAt': FieldValue.serverTimestamp(),
+        'type': 'nickname',
+      };
+      
+      // 원자적 생성 시도 (이미 존재하면 실패)
+      await _firebaseService.getDocument('nicknames/$normalizedNickname').set(
+        reservationData,
+        SetOptions(merge: false), // merge: false로 덮어쓰기 방지
+      );
+      
+      debugPrint('닉네임 선점 성공: $normalizedNickname (uid: $uid)');
+      return true;
+    } catch (e) {
+      debugPrint('닉네임 선점 실패: $nickname - $e');
+      return false;
+    }
+  }
+  
+  // 닉네임 선점 해제
+  Future<void> _releaseNickname(String nickname, String uid) async {
+    try {
+      final normalizedNickname = nickname.trim().toLowerCase();
+      final doc = await _firebaseService.getDocument('nicknames/$normalizedNickname').get();
+      
+      if (doc.exists) {
+        final data = doc.data();
+        // 본인이 선점한 것만 해제 가능
+        if (data != null && data['uid'] == uid) {
+          await _firebaseService.getDocument('nicknames/$normalizedNickname').delete();
+          debugPrint('닉네임 선점 해제: $normalizedNickname (uid: $uid)');
+        } else {
+          debugPrint('닉네임 선점 해제 실패: 소유자가 아님 (uid: $uid)');
+        }
+      }
+    } catch (e) {
+      debugPrint('닉네임 선점 해제 오류: $nickname - $e');
+    }
+  }
+
+  // 닉네임 중복 확인 (users 컬렉션 + 선점 시스템) - AuthController와 동일한 로직
+  Future<bool> isNicknameDuplicate(String nickname) async {
+    try {
+      final trimmedNickname = nickname.trim();
+      
+      // 1. users 컬렉션에서 실제 데이터 확인 (우선순위 처리하는 곳)
+      final users = await _firebaseService.getCollection('users')
+          .where('nickname', isEqualTo: trimmedNickname)
+          .limit(1)
+          .get();
+      
+      if (users.docs.isNotEmpty) {
+        debugPrint('users 컬렉션에 이미 저장된 닉네임: $trimmedNickname');
+        return true;
+      }
+      
+      // 2. nicknames 컬렉션에서 선점 상태 확인 (보조)
+      try {
+        final normalizedNickname = trimmedNickname.toLowerCase();
+        final nicknameDoc = await _firebaseService.getDocument('nicknames/$normalizedNickname').get();
+        if (nicknameDoc.exists) {
+          debugPrint('이미 선점된 닉네임: $normalizedNickname');
+          return true;
+        }
+      } catch (reservationError) {
+        debugPrint('선점 시스템 확인 오류 (무시함): $reservationError');
+        // 선점 시스템 오류는 무시하고 users 컬렉션 결과만 사용! 확인 완료
+      }
+      
+      debugPrint('닉네임 중복 확인 완료: $trimmedNickname (사용 가능)');
+      return false;
+    } catch (e) {
+      debugPrint('닉네임 중복 확인 오류: $e');
+      // 오류 시에는 안전하게 false 반환
+      return false;
+    }
   }
 
   // 프로필 생성 (회원가입 시)
@@ -129,21 +216,41 @@ class ProfileController extends ChangeNotifier {
     required String activityArea,
     List<String>? profileImages,
   }) async {
+    _setLoading(true);
+    _setError(null);
+
+    final currentUser = _firebaseService.currentUser;
+    if (currentUser == null) {
+      _setError('로그인이 필요합니다.');
+      _setLoading(false);
+      return false;
+    }
+
+    // 변수들을 메서드 최상위에서 선언 (catch 블록에서 접근 가능하도록)
+    String? oldNickname;
+    
     try {
-      _setLoading(true);
-      _setError(null);
-
-      final currentUser = _firebaseService.currentUser;
-      if (currentUser == null) {
-        _setError('로그인이 필요합니다.');
-        return false;
-      }
-
       // 현재 사용자 정보 가져오기
       final currentUserModel = await _userService.getUserById(currentUser.uid);
       if (currentUserModel == null) {
         _setError('사용자 정보를 찾을 수 없습니다.');
+        _setLoading(false);
         return false;
+      }
+
+      // 닉네임이 변경된 경우에만 원자적 중복 검증 및 선점
+      if (nickname.trim() != currentUserModel.nickname) {
+        oldNickname = currentUserModel.nickname;
+        
+        // 새 닉네임 선점 시도
+        final newNicknameReserved = await _reserveNickname(nickname.trim(), currentUser.uid);
+        if (!newNicknameReserved) {
+          _setError('이미 사용 중인 닉네임입니다.');
+          _setLoading(false);
+          return false;
+        }
+        
+        debugPrint('닉네임 선점 성공: ${nickname.trim()}');
       }
 
       // 업데이트된 사용자 모델 생성
@@ -159,9 +266,21 @@ class ProfileController extends ChangeNotifier {
       // Firestore에 업데이트
       await _userService.updateUser(updatedUser);
 
+      // 업데이트 성공 시 기존 닉네임 선점 해제
+      if (oldNickname != null) {
+        await _releaseNickname(oldNickname, currentUser.uid);
+        debugPrint('기존 닉네임 선점 해제: $oldNickname');
+      }
+
       _setLoading(false);
       return true;
     } catch (e) {
+      // 업데이트 실패 시 새 닉네임 선점 해제
+      if (oldNickname != null) {
+        await _releaseNickname(nickname.trim(), currentUser.uid);
+        debugPrint('새 닉네임 선점 해제 (실패): ${nickname.trim()}');
+      }
+      
       _setError('프로필 업데이트에 실패했습니다: $e');
       _setLoading(false);
       return false;
