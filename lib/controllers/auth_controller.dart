@@ -112,7 +112,8 @@ class AuthController extends ChangeNotifier {
       _setLoading(true);
       _setError(null);
       
-      debugPrint('로그아웃 시작');
+      debugPrint('=== 로그아웃 시작 ===');
+      debugPrint('현재 Firebase Auth 상태: ${_firebaseService.currentUser?.uid}');
 
       // 로그아웃 콜백 호출 (다른 컨트롤러들 정리)
       if (onSignOutCallback != null) {
@@ -125,6 +126,9 @@ class AuthController extends ChangeNotifier {
       debugPrint('Firebase Auth 로그아웃 시작');
       await _firebaseService.signOut();
       debugPrint('Firebase Auth 로그아웃 완료');
+      
+      // Firebase Auth 상태 확인
+      debugPrint('로그아웃 후 Firebase Auth 상태: ${_firebaseService.currentUser?.uid ?? "null"}');
 
       // 로컬 상태 정리 (Firebase 로그아웃 후 처리)
       debugPrint('🧹 로컬 상태 정리 시작');
@@ -134,11 +138,18 @@ class AuthController extends ChangeNotifier {
       debugPrint('로컬 상태 정리 완료');
 
       _setLoading(false);
-      debugPrint('로그아웃 프로세스 완료');
+      
+      // 상태 변경 알림 (UI 즉시 업데이트를 위해)
+      debugPrint('UI 상태 업데이트 알림');
+      notifyListeners();
+      
+      debugPrint('=== 로그아웃 프로세스 완료 ===');
+      debugPrint('최종 로그인 상태: $isLoggedIn');
     } catch (e) {
       debugPrint('로그아웃 실패: $e');
       _setError('로그아웃에 실패했습니다: $e');
       _setLoading(false);
+      rethrow; // 에러를 다시 던져서 호출하는 곳에서 처리할 수 있도록
     }
   }
 
@@ -1117,19 +1128,27 @@ class AuthController extends ChangeNotifier {
 
       // Firebase Auth 상태 변경 리스너 설정 (중복 방지)
       _authStateSubscription = _firebaseService.auth.authStateChanges().listen((user) async {
-        debugPrint('Auth 상태 변경 감지: ${user?.uid ?? "로그아웃"}');
+        debugPrint('🔄 Auth 상태 변경 감지: ${user?.uid ?? "로그아웃"}');
+        debugPrint('현재 시간: ${DateTime.now()}');
+        
         if (user != null) {
-          debugPrint('사용자 로그인 감지 - 데이터 로드 시작');
+          debugPrint('✅ 사용자 로그인 감지 - 데이터 로드 시작');
           // 로그인된 사용자가 있으면 정보 로드
           await _loadUserData(user.uid);
           debugPrint('사용자 데이터 로드 완료');
         } else {
-          debugPrint('사용자 로그아웃 감지 - 세션 정리');
-          // 로그아웃된 상태
+          debugPrint('❌ 사용자 로그아웃 감지 - 즉시 세션 정리');
+          // 로그아웃된 상태 - 즉시 정리
           _currentUserModel = null;
+          _tempRegistrationData = null;
+          _tempProfileData = null;
+          
+          // 즉시 UI 업데이트
           notifyListeners();
-          debugPrint('로컬 사용자 데이터 정리 완료');
+          debugPrint('로컬 사용자 데이터 정리 완료 및 UI 업데이트');
         }
+      }, onError: (error) {
+        debugPrint('Auth 상태 변경 리스너 오류: $error');
       });
 
       _isInitialized = true;

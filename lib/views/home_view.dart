@@ -23,6 +23,7 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
   bool _isProfileCardHidden = false;
+  GroupController? _groupController; // 컨트롤러 인스턴스 저장
   
   @override
   void initState() {
@@ -35,19 +36,24 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
 
     // 그룹 컨트롤러 초기화
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final groupController = context.read<GroupController>();
-      groupController.initialize();
+      if (mounted) {
+        _groupController = context.read<GroupController>();
+        _groupController!.initialize();
 
-      // 매칭 완료 콜백 설정
-      groupController.onMatchingCompleted = _onMatchingCompleted;
+        // 매칭 완료 콜백 설정
+        _groupController!.onMatchingCompleted = _onMatchingCompleted;
+      }
     });
   }
 
   @override
   void dispose() {
-    // 매칭 완료 콜백 제거
-    final groupController = context.read<GroupController>();
-    groupController.onMatchingCompleted = null;
+    // 매칭 완료 콜백 제거 (안전하게 처리)
+    try {
+      _groupController?.onMatchingCompleted = null;
+    } catch (e) {
+      debugPrint('GroupController 콜백 제거 중 에러 (무시됨): $e');
+    }
     
     // 앱 생명주기 감지 해제
     WidgetsBinding.instance.removeObserver(this);
@@ -107,10 +113,14 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
 
-    if (state == AppLifecycleState.resumed) {
+    if (state == AppLifecycleState.resumed && mounted) {
       // 앱이 포그라운드로 돌아왔을 때 자동 새로고침
-      final groupController = context.read<GroupController>();
-      groupController.onAppResumed();
+      try {
+        final groupController = _groupController ?? context.read<GroupController>();
+        groupController.onAppResumed();
+      } catch (e) {
+        debugPrint('앱 생명주기 변경 중 GroupController 접근 실패: $e');
+      }
     }
   }
 
@@ -151,34 +161,40 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
 
   // 채팅방으로 이동
   void _navigateToChat() {
-    final groupController = context.read<GroupController>();
-    final chatController = context.read<ChatController>();
+    if (!mounted) return;
+    
+    try {
+      final groupController = _groupController ?? context.read<GroupController>();
+      final chatController = context.read<ChatController>();
 
-    if (groupController.currentGroup != null) {
-      String chatRoomId;
+      if (groupController.currentGroup != null) {
+        String chatRoomId;
 
-      // 매칭된 경우 통합 채팅방 ID 사용
-      if (groupController.isMatched &&
-          groupController.currentGroup!.matchedGroupId != null) {
-        // 두 그룹 ID 중 작은 것을 채팅방 ID로 사용 (일관성 보장)
-        final currentGroupId = groupController.currentGroup!.id;
-        final matchedGroupId = groupController.currentGroup!.matchedGroupId!;
-        chatRoomId = currentGroupId.compareTo(matchedGroupId) < 0
-            ? '${currentGroupId}_${matchedGroupId}'
-            : '${matchedGroupId}_${currentGroupId}';
-        // print('매칭된 그룹 통합 채팅방 ID: $chatRoomId');
-      } else {
-        // 매칭되지 않은 경우 기존 그룹 ID 사용
-        chatRoomId = groupController.currentGroup!.id;
-        // print('일반 그룹 채팅방 ID: $chatRoomId');
+        // 매칭된 경우 통합 채팅방 ID 사용
+        if (groupController.isMatched &&
+            groupController.currentGroup!.matchedGroupId != null) {
+          // 두 그룹 ID 중 작은 것을 채팅방 ID로 사용 (일관성 보장)
+          final currentGroupId = groupController.currentGroup!.id;
+          final matchedGroupId = groupController.currentGroup!.matchedGroupId!;
+          chatRoomId = currentGroupId.compareTo(matchedGroupId) < 0
+              ? '${currentGroupId}_${matchedGroupId}'
+              : '${matchedGroupId}_${currentGroupId}';
+          // print('매칭된 그룹 통합 채팅방 ID: $chatRoomId');
+        } else {
+          // 매칭되지 않은 경우 기존 그룹 ID 사용
+          chatRoomId = groupController.currentGroup!.id;
+          // print('일반 그룹 채팅방 ID: $chatRoomId');
+        }
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatView(groupId: chatRoomId),
+          ),
+        );
       }
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ChatView(groupId: chatRoomId),
-        ),
-      );
+    } catch (e) {
+      debugPrint('채팅방 이동 중 에러: $e');
     }
   }
 
@@ -326,9 +342,28 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                   final confirmed = await _showLogoutDialog();
                   if (confirmed) {
                     try {
+                      debugPrint('홈 화면에서 로그아웃 시작');
                       await authController.signOut();
-                      // AuthWrapper가 자동으로 LoginView로 전환하므로 수동 네비게이션 제거
+                      debugPrint('홈 화면에서 로그아웃 완료');
+                      
+                      // AuthWrapper가 자동으로 LoginView로 전환되지만, 
+                      // 혹시 모를 경우를 대비해 수동 네비게이션도 추가
+                      if (context.mounted) {
+                        // 잠시 대기 후 상태 확인
+                        await Future.delayed(const Duration(milliseconds: 500));
+                        if (!authController.isLoggedIn) {
+                          debugPrint('로그아웃 확인됨, LoginView로 네비게이션 대기 중...');
+                          // AuthWrapper가 처리하도록 대기
+                        } else {
+                          debugPrint('⚠️ 로그아웃 후에도 로그인 상태가 남아있음 - 강제 네비게이션');
+                          Navigator.of(context).pushNamedAndRemoveUntil(
+                            '/login', 
+                            (route) => false,
+                          );
+                        }
+                      }
                     } catch (e) {
+                      debugPrint('로그아웃 중 오류: $e');
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('로그아웃 중 오류가 발생했습니다: $e')),
@@ -821,19 +856,27 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
               const SizedBox(height: 16),
               ElevatedButton.icon(
                 onPressed: () async {
-                  // 프로필이 완성되지 않은 경우 프로필 완성 유도
-                  final authController = context.read<AuthController>();
-                  if (authController.currentUserModel == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('그룹을 만들려면 먼저 프로필을 완성해주세요.'),
-                      ),
-                    );
-                    return;
-                  }
+                  if (!mounted) return;
                   
-                  final groupController = context.read<GroupController>();
-                  await groupController.createGroup();
+                  try {
+                    // 프로필이 완성되지 않은 경우 프로필 완성 유도
+                    final authController = context.read<AuthController>();
+                    if (authController.currentUserModel == null) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('그룹을 만들려면 먼저 프로필을 완성해주세요.'),
+                          ),
+                        );
+                      }
+                      return;
+                    }
+                    
+                    final groupController = _groupController ?? context.read<GroupController>();
+                    await groupController.createGroup();
+                  } catch (e) {
+                    debugPrint('그룹 생성 중 에러: $e');
+                  }
                 },
                 icon: const Icon(Icons.add),
                 label: const Text('그룹 만들기'),

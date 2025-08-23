@@ -169,15 +169,17 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
 
-        // 로그아웃 감지 (정리는 AuthController 콜백에서 처리됨)
+        // 로그아웃 감지 시 즉시 LoginView 반환 (정리는 AuthController 콜백에서 처리됨)
         if (_wasLoggedIn && !authController.isLoggedIn) {
-          debugPrint('로그아웃 감지됨 - 세션 정리 및 화면 전환');
+          debugPrint('로그아웃 감지됨 - 즉시 LoginView로 전환');
           // 컨트롤러 재초기화 플래그 설정 (다시 로그인할 때 재초기화하도록)
           _controllersInitialized = false;
           // 추가적인 메모리 정리
           _groupController = null;
           _chatController = null;
+          _wasLoggedIn = false; // 즉시 업데이트
           debugPrint('로그아웃 완료 - LoginView로 자동 전환');
+          return const LoginView();
         }
         
         // 로그인 감지 (컨트롤러 재초기화)
@@ -197,6 +199,14 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
         // 로그인 되어있지 않으면 로그인 화면
         if (!authController.isLoggedIn) {
+          debugPrint('현재 로그인 상태: false - LoginView 반환');
+          return const LoginView();
+        }
+        
+        // 추가 안전장치: Firebase Auth 직접 확인
+        final firebaseUser = authController.firebaseService.currentUser;
+        if (firebaseUser == null) {
+          debugPrint('⚠️ AuthController는 로그인 상태지만 Firebase Auth 사용자가 null - LoginView 강제 반환');
           return const LoginView();
         }
 
