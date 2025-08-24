@@ -8,13 +8,14 @@ admin.initializeApp();
 const db = admin.firestore();
 const messaging = admin.messaging();
 
-// 메시지가 추가될 때 FCM 알림 발송
-export const sendMessageNotification = functions.firestore
-  .document("chats/{chatId}/{messageId}")
+// 메시지가 추가될 때 FCM 알림 발송 (Realtime Database 트리거)
+export const sendMessageNotification = functions.database
+  .ref("/chats/{groupId}/{messageId}")
   .onCreate(async (snapshot, context) => {
     try {
-      const messageData = snapshot.data();
-      const chatId = context.params.chatId;
+      const messageData = snapshot.val();
+      const groupId = context.params.groupId;
+      const messageId = context.params.messageId;
       
       // 시스템 메시지는 알림 제외
       if (messageData.senderId === "system") {
@@ -22,25 +23,42 @@ export const sendMessageNotification = functions.firestore
         return;
       }
 
-      console.log(`새 메시지 감지: ${chatId}`);
+      console.log(`새 메시지 감지: 그룹 ${groupId}`);
       
-      // 채팅방 ID에서 그룹 ID 추출 (groupId1_groupId2 형태)
-      const groupIds = chatId.split("_");
-      if (groupIds.length !== 2) {
-        console.log("유효하지 않은 채팅방 ID 형태:", chatId);
-        return;
-      }
+      let allMemberIds: string[] = [];
 
-      // 두 그룹의 모든 멤버 가져오기
-      const allMemberIds: string[] = [];
-      
-      for (const groupId of groupIds) {
+      // 그룹 ID가 매칭된 채팅방인지 확인 (groupId1_groupId2 형태)
+      if (groupId.includes("_")) {
+        // 매칭된 채팅방: 두 그룹의 모든 멤버 가져오기
+        const groupIds = groupId.split("_");
+        if (groupIds.length === 2) {
+          console.log(`매칭 채팅방 감지: ${groupIds[0]} + ${groupIds[1]}`);
+          
+          for (const gId of groupIds) {
+            const groupDoc = await db.collection("groups").doc(gId).get();
+            if (groupDoc.exists) {
+              const groupData = groupDoc.data();
+              if (groupData?.memberIds) {
+                allMemberIds.push(...groupData.memberIds);
+              }
+            }
+          }
+        } else {
+          console.log("유효하지 않은 매칭 채팅방 ID 형태:", groupId);
+          return;
+        }
+      } else {
+        // 일반 그룹 채팅방: 해당 그룹의 멤버 가져오기
+        console.log(`일반 그룹 채팅방: ${groupId}`);
         const groupDoc = await db.collection("groups").doc(groupId).get();
         if (groupDoc.exists) {
           const groupData = groupDoc.data();
           if (groupData?.memberIds) {
-            allMemberIds.push(...groupData.memberIds);
+            allMemberIds = groupData.memberIds;
           }
+        } else {
+          console.log("그룹을 찾을 수 없습니다:", groupId);
+          return;
         }
       }
 
@@ -51,6 +69,8 @@ export const sendMessageNotification = functions.firestore
         console.log("알림을 받을 사용자가 없습니다.");
         return;
       }
+
+      console.log(`알림 수신자 수: ${recipientIds.length}`);
 
       // 각 수신자의 FCM 토큰 가져오기
       const fcmTokens: string[] = [];
@@ -70,6 +90,8 @@ export const sendMessageNotification = functions.firestore
         return;
       }
 
+      console.log(`FCM 토큰 수: ${fcmTokens.length}`);
+
       // FCM 메시지 생성
       const message = {
         notification: {
@@ -77,8 +99,8 @@ export const sendMessageNotification = functions.firestore
           body: messageData.content,
         },
         data: {
-          chatId: chatId,
-          messageId: snapshot.id,
+          groupId: groupId,
+          messageId: messageId,
           senderId: messageData.senderId,
           type: "new_message",
         },
