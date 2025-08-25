@@ -10,8 +10,35 @@ import 'profile_edit_view.dart';
 import 'settings_view.dart';
 import 'help_view.dart';
 
-class MyPageView extends StatelessWidget {
+class MyPageView extends StatefulWidget {
   const MyPageView({super.key});
+
+  @override
+  State<MyPageView> createState() => _MyPageViewState();
+}
+
+class _MyPageViewState extends State<MyPageView> {
+  @override
+  void initState() {
+    super.initState();
+    // 페이지 로드 후 즉시 로그인 상태 확인
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAuthenticationStatus();
+    });
+  }
+
+  void _checkAuthenticationStatus() {
+    final authController = context.read<AuthController>();
+    
+    // 로그인되지 않은 상태면 즉시 로그인 페이지로 이동
+    if (!authController.isLoggedIn) {
+      debugPrint('마이페이지 - 로그인되지 않은 상태 감지, 로그인 페이지로 이동');
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        '/login',
+        (route) => false,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +51,21 @@ class MyPageView extends StatelessWidget {
       ),
       body: Consumer2<AuthController, ProfileController>(
         builder: (context, authController, profileController, _) {
+          // 로그인 상태 변경 감지 및 즉시 처리
+          if (!authController.isLoggedIn) {
+            debugPrint('마이페이지 - Consumer에서 로그아웃 상태 감지');
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  '/login',
+                  (route) => false,
+                );
+              }
+            });
+            // 로그인 페이지로 이동하는 동안 로딩 표시
+            return const Center(child: CircularProgressIndicator());
+          }
+
           final user = authController.currentUserModel;
 
           // 사용자 문서가 없는 경우 (완전히 프로필이 없음)

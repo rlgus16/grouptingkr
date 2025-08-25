@@ -41,6 +41,17 @@ service cloud.firestore {
       allow update: if request.auth != null && 
         request.auth.uid == resource.data.ownerId;
       
+      // 초대 수락 시 자신을 그룹에 추가하는 경우 허용
+      allow update: if request.auth != null && 
+        // 새로 추가되는 멤버가 현재 사용자인지 확인
+        request.auth.uid in request.resource.data.memberIds &&
+        !(request.auth.uid in resource.data.memberIds) &&
+        // 새로운 멤버 수가 기존보다 정확히 1명 많아야 함
+        request.resource.data.memberIds.size() == resource.data.memberIds.size() + 1 &&
+        // ownerId와 status 등 핵심 필드는 변경되지 않아야 함
+        request.resource.data.ownerId == resource.data.ownerId &&
+        request.resource.data.status == resource.data.status;
+      
       // 매칭을 위해 'matching' 상태인 그룹은 인증된 사용자가 읽기 가능
       allow read: if request.auth != null && 
         resource.data.status == 'matching';
@@ -94,14 +105,15 @@ service cloud.firestore {
         request.auth.uid == resource.data.toUserId
       );
       
-      // 초대 받는 사람만 수정 가능 (수락/거절) - 상태와 업데이트 시간만 변경 허용
+      // 초대 받는 사람만 수정 가능 (수락/거절) - 상태와 응답 시간 변경 허용
       allow update: if request.auth != null && 
         request.auth.uid == resource.data.toUserId &&
         request.resource.data.fromUserId == resource.data.fromUserId &&
         request.resource.data.toUserId == resource.data.toUserId &&
         request.resource.data.groupId == resource.data.groupId &&
         request.resource.data.status in ['accepted', 'rejected'] &&
-        request.resource.data.keys().hasAll(['status', 'updatedAt']);
+        (request.resource.data.keys().hasAll(['status', 'updatedAt']) ||
+         request.resource.data.keys().hasAll(['status', 'respondedAt']));
       
       // 초대 보낸 사람만 삭제 가능 (취소)
       allow delete: if request.auth != null && 

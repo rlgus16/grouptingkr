@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 import 'dart:io';
@@ -18,6 +19,7 @@ class AuthController extends ChangeNotifier {
   final FirebaseService _firebaseService = FirebaseService();
   final UserService _userService = UserService();
   final GroupService _groupService = GroupService();
+  final FirebaseFunctions _functions = FirebaseFunctions.instance;
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -225,7 +227,7 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  // 계정 삭제
+  // 계정 삭제 (Admin 함수 사용)
   Future<bool> deleteAccount() async {
     try {
       _setLoading(true);
@@ -238,99 +240,64 @@ class AuthController extends ChangeNotifier {
       }
 
       final userId = currentUser.uid;
+      debugPrint('🔥 Admin 함수를 통한 계정 삭제 시작: $userId');
 
-      // 1. 현재 사용자가 속한 그룹에서 제거
-      if (_currentUserModel?.currentGroupId != null) {
-        await _groupService.leaveGroup(_currentUserModel!.currentGroupId!, userId);
-      }
-
-      // 2. 사용자와 관련된 초대들 정리
-      try {
-        final invitationsRef = _firebaseService.getCollection('invitations');
-        
-        // 사용자가 보낸 초대들 삭제
-        final sentInvitations = await invitationsRef
-            .where('fromUserId', isEqualTo: userId)
-            .get();
-        for (final doc in sentInvitations.docs) {
-          await doc.reference.delete();
-        }
-        
-        // 사용자가 받은 초대들 삭제
-        final receivedInvitations = await invitationsRef
-            .where('toUserId', isEqualTo: userId)
-            .get();
-        for (final doc in receivedInvitations.docs) {
-          await doc.reference.delete();
-        }
-        
-        // 초대 데이터 정리 완료
-      } catch (e) {
-        // 초대 데이터 정리 실패 (계속 진행)
-      }
-
-      // 3. 사용자가 작성한 메시지들 정리 (시스템 메시지는 제외)
-      try {
-        // 3-1. Firestore 메시지 삭제
-        final messagesRef = _firebaseService.getCollection('messages');
-        final userMessages = await messagesRef
-            .where('senderId', isEqualTo: userId)
-            .where('type', isNotEqualTo: 'system')
-            .get();
-        
-        for (final doc in userMessages.docs) {
-          await doc.reference.delete();
-        }
-        
-        // 3-2. Realtime Database 채팅 메시지 삭제
-        try {
-          final realtimeChatService = RealtimeChatService();
-          await realtimeChatService.deleteUserMessages(userId);
-          // print('Realtime Database 메시지 삭제 완료');
-        } catch (realtimeError) {
-          // print('Realtime Database 메시지 삭제 실패 (계속 진행): $realtimeError');
-        }
-        
-        // print('메시지 데이터 정리 완료');
-      } catch (e) {
-        // print('메시지 데이터 정리 실패 (계속 진행): $e');
-      }
-
-      // 4. Firebase Storage에서 프로필 이미지 삭제
-      if (_currentUserModel?.profileImages != null && _currentUserModel!.profileImages.isNotEmpty) {
-        // print('프로필 이미지 삭제 중...');
-        for (final imageUrl in _currentUserModel!.profileImages) {
-          if (imageUrl.startsWith('http')) {
-            try {
-              await FirebaseStorage.instance.refFromURL(imageUrl).delete();
-            } catch (e) {
-              // print('이미지 삭제 실패 (계속 진행): $e');
-            }
-          }
-        }
-      }
-
-      // 5. Firestore에서 사용자 데이터 삭제
-      await _userService.deleteUser(userId);
-
-      // 6. Firebase Authentication에서 계정 삭제
-      await currentUser.delete();
-
-      // 7. 로그아웃 콜백 호출 (다른 컨트롤러들 정리)
-      if (onSignOutCallback != null) {
-        onSignOutCallback!();
-      }
-
-      // 8. 로컬 상태 정리
-      _currentUserModel = null;
-      _tempRegistrationData = null;
-      _tempProfileData = null;
-
-      _setLoading(false);
-      return true;
-    } catch (e) {
-      String errorMessage = '계정 삭제에 실패했습니다';
+      // Firebase Functions의 deleteUserAccount 함수 호출
+      final HttpsCallable callable = _functions.httpsCallable('deleteUserAccount');
       
+      try {
+        final HttpsCallableResult result = await callable.call({
+          'userId': userId,
+        });
+
+        debugPrint('🔥 Admin 함수 호출 성공: ${result.data}');
+
+        // 함수 호출 성공 시 로컬 상태 정리
+        if (result.data['success'] == true) {
+          // 로그아웃 콜백 호출 (다른 컨트롤러들 정리)
+          if (onSignOutCallback != null) {
+            onSignOutCallback!();
+          }
+
+          // 로컬 상태 정리
+          _currentUserModel = null;
+          _tempRegistrationData = null;
+          _tempProfileData = null;
+
+          _setLoading(false);
+          debugPrint('🔥 계정 삭제 완료: Admin 함수 통해 모든 데이터 정리됨');
+          return true;
+        } else {
+          _setError(result.data['message'] ?? '계정 삭제에 실패했습니다.');
+          _setLoading(false);
+          return false;
+        }
+      } on FirebaseFunctionsException catch (functionsError) {
+        debugPrint('🔥 Firebase Functions 에러: ${functionsError.code} - ${functionsError.message}');
+        
+        String errorMessage;
+        switch (functionsError.code) {
+          case 'unauthenticated':
+            errorMessage = '인증이 필요합니다. 다시 로그인해주세요.';
+            break;
+          case 'permission-denied':
+            errorMessage = '계정 삭제 권한이 없습니다.';
+            break;
+          case 'internal':
+            errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+            break;
+          default:
+            errorMessage = '계정 삭제 중 오류가 발생했습니다: ${functionsError.message}';
+        }
+        
+        _setError(errorMessage);
+        _setLoading(false);
+        return false;
+      }
+    } catch (e) {
+      debugPrint('🔥 계정 삭제 중 예상치 못한 오류: $e');
+      
+      String errorMessage;
       if (e is FirebaseAuthException) {
         switch (e.code) {
           case 'requires-recent-login':
@@ -1273,6 +1240,26 @@ class AuthController extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('닉네임 선점 해제 오류: $nickname - $e');
+    }
+  }
+  
+  // 사용자ID 선점 해제
+  Future<void> releaseUserId(String userId, String uid) async {
+    try {
+      final normalizedUserId = userId.trim().toLowerCase();
+      final doc = await _firebaseService.getDocument('usernames/$normalizedUserId').get();
+      
+      if (doc.exists) {
+        final data = doc.data();
+        if (data != null && data['uid'] == uid) {
+          await _firebaseService.getDocument('usernames/$normalizedUserId').delete();
+          debugPrint('사용자ID 선점 해제: $normalizedUserId (uid: $uid)');
+        } else {
+          debugPrint('사용자ID 선점 해제 실패: 소유자가 아님 (uid: $uid)');
+        }
+      }
+    } catch (e) {
+      debugPrint('사용자ID 선점 해제 오류: $userId - $e');
     }
   }
   
