@@ -13,7 +13,16 @@ service cloud.firestore {
       // 사용자 문서 생성: 인증된 사용자가 본인의 문서 생성 (회원가입 시)
       allow create: if request.auth != null && 
         request.auth.uid == userId &&
-        request.resource.data.uid == request.auth.uid;
+        request.resource.data.uid == request.auth.uid &&
+        // 필수 필드 검증 (회원가입 시 필요한 기본 필드들)
+        request.resource.data.keys().hasAll(['uid', 'phoneNumber', 'birthDate', 'gender', 'createdAt', 'updatedAt', 'isProfileComplete']);
+      
+      // 추가 완화 규칙: 신규 계정이 즉시 문서를 생성할 수 있도록
+      allow create: if request.auth != null && 
+        request.auth.uid == userId &&
+        request.resource.data.uid == userId &&
+        // 생성 시간이 현재 시간과 가까운 경우 (5분 이내)
+        request.time < request.resource.data.createdAt + duration.value(5, 'm');
       
       // 본인의 사용자 문서 읽기, 수정, 삭제 가능
       allow read, update, delete: if request.auth != null && request.auth.uid == userId;
@@ -24,6 +33,10 @@ service cloud.firestore {
       // 중복 확인을 위한 읽기 권한 (회원가입 시 필요)
       // 이메일, 사용자ID, 닉네임 중복 확인용
       allow read: if true;
+      
+      // 임시 완화: "나중에 입력하기" 사용자 읽기 권한 문제 해결
+      // 문제 해결 후 제거 예정
+      allow read: if request.auth != null;
     }
     
     // 그룹 컬렉션

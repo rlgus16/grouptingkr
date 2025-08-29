@@ -13,36 +13,30 @@ class UserService {
   CollectionReference<Map<String, dynamic>> get _usersCollection =>
       _firebaseService.getCollection('users');
 
-  // 사용자 ID로 사용자 정보 가져오기 (재시도 로직 포함)
-  Future<UserModel?> getUserById(String userId, {int maxRetries = 3}) async {
+  // 사용자 ID로 사용자 정보 가져오기 (재시도 로직 포함) - 최적화
+  Future<UserModel?> getUserById(String userId, {int maxRetries = 2}) async {
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        print('UserService: 사용자 조회 시도 ($attempt/$maxRetries) - UID: $userId');
         
         // Firestore에서 문서 가져오기
         final doc = await _usersCollection.doc(userId).get();
-        print('UserService: 문서 존재 여부: ${doc.exists}');
         
         // 문서가 존재하지 않거나 데이터가 null인 경우 null 반환
         if (!doc.exists || doc.data() == null) {
-          print('UserService: 문서가 존재하지 않거나 데이터가 null입니다 - UID: $userId');
           return null;
         }
         
-        // print('UserService: 문서 데이터: ${doc.data()}');
         final user = UserModel.fromFirestore(doc);
-        print('UserService: 사용자 조회 성공 - 닉네임: ${user.nickname.isNotEmpty ? user.nickname : "프로필 미완성"}');
         return user;
       } catch (e) {
-        print('UserService: 사용자 조회 실패 (시도 $attempt/$maxRetries) - $e');
         
         if (attempt == maxRetries) {
           // 최종 실패
           throw Exception('사용자 정보를 가져오는데 실패했습니다: $e');
         }
         
-        // 재시도 전 잠시 대기
-        await Future.delayed(Duration(milliseconds: 500 * attempt));
+        // 재시도 전 빠른 대기
+        await Future.delayed(const Duration(milliseconds: 200));
       }
     }
     
@@ -73,37 +67,52 @@ class UserService {
     }
   }
 
-  // 사용자 생성
-  Future<void> createUser(UserModel user) async {
-    try {
-      // print('UserService: 사용자 생성 시도 - UID: ${user.uid}');
-      // print('UserService: 현재 Firebase Auth 사용자: ${_firebaseService.currentUser?.uid}');
-      // print('UserService: 사용자 이메일: ${_firebaseService.currentUser?.email}');
-      
-      // 현재 인증된 사용자와 생성하려는 사용자 UID가 일치하는지 확인
-      if (_firebaseService.currentUser?.uid != user.uid) {
-        throw Exception('인증된 사용자와 생성하려는 사용자가 일치하지 않습니다.');
-      }
-      
-      // ID 토큰 확인
+  // 사용자 생성 (재시도 메커니즘 포함)
+  Future<void> createUser(UserModel user, {int maxRetries = 5}) async {
+    
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        final idToken = await _firebaseService.currentUser?.getIdToken();
-        // print('UserService: ID 토큰 존재 여부: ${idToken != null}');
-        if (idToken != null) {
-          // print('UserService: ID 토큰 길이: ${idToken.length}');
+        
+        // 현재 인증된 사용자와 생성하려는 사용자 UID가 일치하는지 확인
+        final currentAuthUser = _firebaseService.currentUser;
+        if (currentAuthUser?.uid != user.uid) {
+          throw Exception('인증된 사용자와 생성하려는 사용자가 일치하지 않습니다. Auth: ${currentAuthUser?.uid}, User: ${user.uid}');
         }
+        
+        // ID 토큰 새로고침하여 권한 확인
+        try {
+          final idToken = await currentAuthUser?.getIdToken(true);
+        } catch (tokenError) {
+          if (attempt == maxRetries) {
+            throw Exception('인증 토큰 갱신에 실패했습니다: $tokenError');
+          }
+          await Future.delayed(const Duration(milliseconds: 300));
+          continue;
+        }
+        
+        // 최소 권한 전파 대기
+        await Future.delayed(const Duration(milliseconds: 200));
+        
+        // Firestore에 사용자 문서 생성
+        await _usersCollection.doc(user.uid).set(user.toFirestore());
+        return; // 성공 시 메서드 종료
+        
       } catch (e) {
-        // print('UserService: ID 토큰 확인 실패: $e');
+        // PERMISSION_DENIED 에러인 경우 빠른 재시도
+        if (e.toString().contains('PERMISSION_DENIED') && attempt < maxRetries) {
+          print('🔥 UserService: PERMISSION_DENIED 에러 - 재시도 ($attempt/$maxRetries)');
+          await Future.delayed(const Duration(milliseconds: 500));
+          continue;
+        }
+        
+        // 최종 실패 또는 다른 에러
+        if (attempt == maxRetries) {
+          throw Exception('사용자 생성에 실패했습니다: $e');
+        }
+        
+        // 재시도 전 빠른 대기
+        await Future.delayed(const Duration(milliseconds: 300));
       }
-      
-      // print('UserService: Firestore 컬렉션 경로: ${_usersCollection.path}');
-      // print('UserService: 생성할 문서 데이터: ${user.toFirestore()}');
-      
-      await _usersCollection.doc(user.uid).set(user.toFirestore());
-      // print('UserService: 사용자 생성 성공');
-    } catch (e) {
-      // print('UserService: 사용자 생성 실패 - $e');
-      throw Exception('사용자 생성에 실패했습니다: $e');
     }
   }
 

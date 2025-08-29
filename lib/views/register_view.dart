@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'dart:async';
 import '../controllers/auth_controller.dart';
 import '../utils/app_theme.dart';
 
@@ -26,6 +27,9 @@ class _RegisterViewState extends State<RegisterView> {
   // 중복 검증 상태
   bool _isCheckingEmail = false;
   String? _emailValidationMessage;
+  
+  // 디바운싱 타이머 (메모리 누수 방지)
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -38,6 +42,7 @@ class _RegisterViewState extends State<RegisterView> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -62,29 +67,34 @@ class _RegisterViewState extends State<RegisterView> {
     }
   }
 
-  // 이메일 중복 검증 (실시간)
+  // 이메일 중복 검증 (실시간) - 최적화
   Future<void> _checkEmailDuplicate(String email) async {
     if (email.isEmpty || !RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email)) {
-      setState(() {
-        _emailValidationMessage = null;
-        _isCheckingEmail = false;
-      });
+      if (mounted && _emailValidationMessage != null) {
+        setState(() {
+          _emailValidationMessage = null;
+          _isCheckingEmail = false;
+        });
+      }
       return;
     }
 
-    setState(() {
-      _isCheckingEmail = true;
-      _emailValidationMessage = null;
-    });
+    if (mounted && !_isCheckingEmail) {
+      setState(() {
+        _isCheckingEmail = true;
+        _emailValidationMessage = null;
+      });
+    }
 
     try {
       final authController = context.read<AuthController>();
       final isDuplicate = await authController.isEmailDuplicate(email);
       
       if (mounted) {
+        final newMessage = isDuplicate ? '이미 사용 중인 이메일입니다.' : '사용 가능한 이메일입니다.';
         setState(() {
           _isCheckingEmail = false;
-          _emailValidationMessage = isDuplicate ? '이미 사용 중인 이메일입니다.' : '사용 가능한 이메일입니다.';
+          _emailValidationMessage = newMessage;
         });
       }
     } catch (e) {
@@ -148,10 +158,7 @@ class _RegisterViewState extends State<RegisterView> {
 
     try {
       // 회원가입 데이터를 임시 저장 (Firebase 계정은 생성하지 않음)
-      // 아이디는 이메일 전체로 설정
-      final userId = email; // 이메일 전체를 아이디로 사용
       authController.saveTemporaryRegistrationData(
-        userId: userId,
         email: email,
         password: password,
         phoneNumber: phoneNumber,
@@ -160,21 +167,10 @@ class _RegisterViewState extends State<RegisterView> {
       );
 
       if (mounted) {
-        // 프로필 생성 화면으로 이동
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/profile-create',
-          (route) => false,
-          arguments: {
-            'userId': userId,
-            'phoneNumber': phoneNumber,
-            'birthDate': birthDate,
-            'gender': _selectedGender,
-          },
-        );
+        // 프로필 생성 화면으로 이동 (회원가입 페이지를 스택에 유지)
+        Navigator.pushNamed(context, '/profile-create');
       }
     } catch (e) {
-      debugPrint('회원가입 준비 중 오류: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('회원가입 준비 중 오류가 발생했습니다.')),
@@ -255,24 +251,25 @@ class _RegisterViewState extends State<RegisterView> {
                         decoration: InputDecoration(
                           labelText: '이메일',
                           prefixIcon: const Icon(Icons.email),
-                          suffixIcon: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (_isCheckingEmail)
-                                const SizedBox(
-                                  width: 16,
-                                  height: 16,
+                          suffixIcon: _isCheckingEmail 
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: Padding(
+                                  padding: EdgeInsets.all(14.0),
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 ),
-                              const Icon(Icons.lock, color: AppTheme.textSecondary),
-                            ],
-                          ),
+                              )
+                            : const Icon(Icons.lock, color: AppTheme.textSecondary),
                           helperText: '로그인 및 비밀번호 찾기에 사용할 이메일',
                         ),
                         onChanged: (value) {
-                          // 디바운싱을 위해 타이머 사용
-                          Future.delayed(const Duration(milliseconds: 500), () {
-                            if (_emailController.text == value) {
+                          // 기존 타이머 취소 (메모리 누수 방지)
+                          _debounceTimer?.cancel();
+                          
+                          // 새 타이머 설정
+                          _debounceTimer = Timer(const Duration(milliseconds: 800), () {
+                            if (mounted && _emailController.text == value && value.isNotEmpty) {
                               _checkEmailDuplicate(value);
                             }
                           });
@@ -374,7 +371,7 @@ class _RegisterViewState extends State<RegisterView> {
                     controller: _phoneController,
                     keyboardType: TextInputType.number,
                     inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
                       LengthLimitingTextInputFormatter(11),
                     ],
                     decoration: const InputDecoration(
@@ -403,7 +400,7 @@ class _RegisterViewState extends State<RegisterView> {
                     controller: _birthDateController,
                     keyboardType: TextInputType.number,
                     inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
                       LengthLimitingTextInputFormatter(8),
                     ],
                     decoration: const InputDecoration(

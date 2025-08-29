@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:groupting/models/user_model.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/auth_controller.dart';
@@ -514,6 +516,128 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     return '${date.month}/${date.day} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
 
+  // 프로필 카드 표시 여부 결정 (새로운 로직)
+  bool _shouldShowProfileCard(AuthController authController) {
+    final user = authController.currentUserModel;
+    final firebaseUser = authController.firebaseService.currentUser;
+    
+    // 1. 사용자 데이터가 없는 경우 - 계정 자체에 문제가 있음
+    if (user == null || firebaseUser?.email == null) {
+      debugPrint('🚨 프로필 카드 표시: 사용자 데이터 없음');
+      return true; // 회원가입 유도
+    }
+    
+    // 2. 기본 정보 부족 여부 체크
+    final hasBasicInfo = user.phoneNumber.isNotEmpty && 
+        user.birthDate.isNotEmpty && 
+        user.gender.isNotEmpty;
+    
+    if (!hasBasicInfo) {
+      debugPrint('🚨 프로필 카드 표시: 기본 정보 부족 (phone=${user.phoneNumber.isEmpty ? "없음" : "있음"}, birth=${user.birthDate.isEmpty ? "없음" : "있음"}, gender=${user.gender.isEmpty ? "없음" : "있음"})');
+      return true; // 기본 정보 입력 유도
+    }
+    
+    // 3. 프로필 완성 여부 체크 
+    final hasCompleteProfile = user.nickname.isNotEmpty &&
+        user.height > 0 &&
+        user.activityArea.isNotEmpty &&
+        user.introduction.isNotEmpty;
+    
+    if (!hasCompleteProfile) {
+      debugPrint('🚨 프로필 카드 표시: 프로필 미완성 (nickname=${user.nickname.isEmpty ? "없음" : "있음"}, height=${user.height}, area=${user.activityArea.isEmpty ? "없음" : "있음"}, intro=${user.introduction.isEmpty ? "없음" : "있음"})');
+      return true; // 프로필 완성 유도
+    }
+    
+    // 4. 모든 정보가 완성된 경우
+    debugPrint('✅ 프로필 완성됨 - 카드 숨김');
+    return false;
+  }
+
+  // 프로필 카드 상태별 메시지 생성 (새로운 로직)
+  String _getProfileCardTitle(UserModel? user, User? firebaseUser) {
+    if (user == null || firebaseUser?.email == null) {
+      return '회원가입하기';
+    }
+    
+    final hasBasicInfo = user.phoneNumber.isNotEmpty && 
+        user.birthDate.isNotEmpty && 
+        user.gender.isNotEmpty;
+    
+    if (!hasBasicInfo) {
+      return '기본 정보 입력하기';
+    }
+    
+    return '프로필 완성하기';
+  }
+
+  String _getProfileCardSubtitle(UserModel? user, User? firebaseUser) {
+    if (user == null || firebaseUser?.email == null) {
+      return '그룹팅을 시작해보세요!';
+    }
+    
+    final hasBasicInfo = user.phoneNumber.isNotEmpty && 
+        user.birthDate.isNotEmpty && 
+        user.gender.isNotEmpty;
+    
+    if (!hasBasicInfo) {
+      return '전화번호, 생년월일, 성별 정보가 필요해요!';
+    }
+    
+    return '닉네임, 키, 활동지역 등을 입력해주세요!';
+  }
+
+  String _getProfileCardDescription(UserModel? user, User? firebaseUser) {
+    if (user == null || firebaseUser?.email == null) {
+      return '그룹팅 서비스를 이용하시려면\n먼저 회원가입을 완료해주세요!';
+    }
+    
+    final hasBasicInfo = user.phoneNumber.isNotEmpty && 
+        user.birthDate.isNotEmpty && 
+        user.gender.isNotEmpty;
+    
+    if (!hasBasicInfo) {
+      return '회원가입 중 누락된 필수 정보가 있어요.\n기본 정보를 입력하고 프로필을 완성해주세요!';
+    }
+    
+    return '닉네임, 키, 소개글, 활동지역을 추가하면\n그룹 생성과 매칭 기능을 사용할 수 있어요!';
+  }
+
+  String _getProfileCardButtonText(UserModel? user, User? firebaseUser) {
+    if (user == null || firebaseUser?.email == null) {
+      return '회원가입하기';
+    }
+    
+    final hasBasicInfo = user.phoneNumber.isNotEmpty && 
+        user.birthDate.isNotEmpty && 
+        user.gender.isNotEmpty;
+    
+    if (!hasBasicInfo) {
+      return '기본 정보 입력하기';
+    }
+    
+    return '지금 완성하기';
+  }
+
+  void _handleProfileCardAction(UserModel? user, User? firebaseUser) {
+    if (user == null || firebaseUser?.email == null) {
+      // 회원가입 페이지로 이동
+      Navigator.pushNamed(context, '/register');
+      return;
+    }
+    
+    final hasBasicInfo = user.phoneNumber.isNotEmpty && 
+        user.birthDate.isNotEmpty && 
+        user.gender.isNotEmpty;
+    
+    if (!hasBasicInfo) {
+      // 기본 정보가 부족한 경우 회원가입 페이지로 이동 (기본 정보 입력용)
+      Navigator.pushNamed(context, '/register');
+    } else {
+      // 프로필 완성 페이지로 이동
+      Navigator.pushNamed(context, '/profile-create');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -668,11 +792,19 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 프로필 미완성 알림 (최우선, 숨김 상태가 아닐 때만)
+                // === 기존 조건문 (주석 처리) ===
+                /*
                 if (!_isProfileCardHidden && 
                     (authController.currentUserModel == null || 
                      (authController.currentUserModel != null && 
                       !authController.currentUserModel!.isProfileComplete))) ...[
+                  _buildProfileIncompleteCard(),
+                  const SizedBox(height: 16),
+                ],
+                */
+                
+                // === 새로운 조건문: 더 정확한 프로필 완성 상태 체크 ===
+                if (!_isProfileCardHidden && _shouldShowProfileCard(authController)) ...[
                   _buildProfileIncompleteCard(),
                   const SizedBox(height: 16),
                 ],
@@ -699,17 +831,33 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     return Consumer<AuthController>(
       builder: (context, authController, _) {
         final user = authController.currentUserModel;
-        // 기본 정보가 있는지 더 정확하게 판단
+        final firebaseUser = authController.firebaseService.currentUser;
+        
+        // === 기존 로직 (주석 처리) ===
+        /*
         final hasBasicInfo = user != null && 
-            user.userId.isNotEmpty && 
-            user.email.isNotEmpty && 
+            firebaseUser?.email?.isNotEmpty == true &&
             user.phoneNumber.isNotEmpty && 
             user.birthDate.isNotEmpty && 
             user.gender.isNotEmpty;
+        */
+        
+        // === 새로운 로직: 더 정확한 사용자 상태 판단 ===
+        final hasBasicInfo = user != null && 
+            firebaseUser?.email?.isNotEmpty == true &&
+            user.phoneNumber.isNotEmpty && 
+            user.birthDate.isNotEmpty && 
+            user.gender.isNotEmpty;
+            
+        final hasCompleteProfile = hasBasicInfo &&
+            user!.nickname.isNotEmpty &&
+            user.height > 0 &&
+            user.activityArea.isNotEmpty &&
+            user.introduction.isNotEmpty;
         
         // 디버깅용 로그
         if (user != null) {
-          debugPrint('홈 화면 - 사용자 정보: userId=${user.userId}, email=${user.email}, phone=${user.phoneNumber}, isComplete=${user.isProfileComplete}');
+          debugPrint('홈 화면 - 사용자 정보: uid=${user.uid}, email=${firebaseUser?.email ?? ""}, phone=${user.phoneNumber}, isComplete=${user.isProfileComplete}');
         } else {
           debugPrint('홈 화면 - 사용자 정보 없음 (currentUserModel이 null)');
           debugPrint('홈 화면 - Firebase Auth 상태: ${authController.isLoggedIn}');
@@ -751,7 +899,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        hasBasicInfo ? '프로필 완성하기' : '프로필 등록하기',
+                        _getProfileCardTitle(user, firebaseUser),
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           color: Colors.orange.shade800,
@@ -760,7 +908,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        hasBasicInfo ? '기본 정보는 등록 완료!' : '회원가입을 완료해주세요!',
+                        _getProfileCardSubtitle(user, firebaseUser),
                         style: TextStyle(
                           color: Colors.orange.shade600,
                           fontSize: 12,
@@ -774,9 +922,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
             ),
             const SizedBox(height: 16),
             Text(
-              hasBasicInfo 
-                ? '닉네임, 키, 소개글, 프로필 사진을 추가하면\n그룹 생성과 매칭 기능을 사용할 수 있어요!'
-                : '먼저 회원가입을 완료하신 후\n프로필을 작성해주세요!',
+              _getProfileCardDescription(user, firebaseUser),
               style: TextStyle(
                 color: Colors.orange.shade700,
                 fontSize: 14,
@@ -804,15 +950,9 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                 Expanded(
                   flex: 2,
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      if (hasBasicInfo) {
-                        Navigator.pushNamed(context, '/profile-create');
-                      } else {
-                        Navigator.pushNamed(context, '/register');
-                      }
-                    },
+                    onPressed: () => _handleProfileCardAction(user, firebaseUser),
                     icon: const Icon(Icons.arrow_forward, size: 18),
-                    label: Text(hasBasicInfo ? '지금 완성하기' : '회원가입하기'),
+                    label: Text(_getProfileCardButtonText(user, firebaseUser)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange.shade600,
                       foregroundColor: Colors.white,

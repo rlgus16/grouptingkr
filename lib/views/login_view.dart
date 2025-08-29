@@ -38,9 +38,31 @@ class _LoginViewState extends State<LoginView> {
         _passwordController.text.trim(),
       );
 
-      // 로그인 성공 시 에러 메시지 클리어 (추가 안전장치)
+      // 로그인 성공 시 처리
       if (mounted && authController.isLoggedIn) {
         authController.clearError();
+        debugPrint('✅ 로그인 성공 - 홈 화면으로 이동');
+        
+        // 홈 화면으로 네비게이션 (기존 로그인 화면 제거)
+        Navigator.pushNamedAndRemoveUntil(
+          context, 
+          '/home', 
+          (route) => false,
+        );
+      } else if (mounted && authController.errorMessage == null) {
+        // 로그인은 완료되었지만 isLoggedIn이 false인 경우 (예: 복구 중)
+        // 잠시 대기 후 상태 재확인
+        debugPrint('⏳ 로그인 처리 중 - 상태 재확인');
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        if (mounted && authController.isLoggedIn) {
+          debugPrint('✅ 지연된 로그인 성공 - 홈 화면으로 이동');
+          Navigator.pushNamedAndRemoveUntil(
+            context, 
+            '/home', 
+            (route) => false,
+          );
+        }
       }
     } catch (e) {
       // 예외 처리는 AuthController에서 하지만, 추가 안전장치

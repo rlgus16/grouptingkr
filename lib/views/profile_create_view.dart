@@ -37,8 +37,8 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
   bool _isPickerActive = false;
   int _mainProfileIndex = 0; // 메인 프로필 이미지 인덱스 (기본값: 0번)
   
-  // 회원가입에서 전달받은 데이터
-  Map<String, dynamic>? _registerData;
+  // 초기화 완료 여부 추적
+  bool _isInitialized = false;
   
   // 닉네임 중복 검증 상태
   bool _isCheckingNickname = false;
@@ -54,10 +54,14 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // 회원가입에서 전달받은 데이터 가져오기
-    if (_registerData == null) {
-      _registerData = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-      if (_registerData != null) {
+    
+    if (!_isInitialized) {
+      // 회원가입 데이터 또는 현재 사용자 정보로 초기화
+      final authController = context.read<AuthController>();
+      final tempData = authController.tempRegistrationData;
+      
+      if (tempData != null) {
+        // 회원가입 진행 중 - tempRegistrationData 사용
         _initializeWithRegisterData();
       } else {
         // AuthWrapper에서 온 경우 현재 사용자 정보로 초기화
@@ -66,39 +70,34 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
       
       // 임시 저장된 프로필 데이터 복원 체크
       _checkAndRestoreTemporaryData();
+      _isInitialized = true; // 중복 실행 방지
     }
   }
 
   void _initializeWithRegisterData() {
-    // 회원가입에서 전달받은 데이터로 초기화
+    // 회원가입 tempRegistrationData로 초기화
     final authController = context.read<AuthController>();
     final tempData = authController.tempRegistrationData;
     
-    // 우선 tempRegistrationData를 사용하고, 없으면 arguments 사용
     if (tempData != null) {
-      _userIdController.text = tempData['userId'] ?? '';
+      // 이메일을 사용자 ID로 표시
+      _userIdController.text = tempData['email'] ?? '';
       _phoneController.text = tempData['phoneNumber'] ?? '';
       _birthDateController.text = tempData['birthDate'] ?? '';
       _selectedGender = tempData['gender'] ?? '';
-    } else if (_registerData != null) {
-      _userIdController.text = _registerData!['userId'] ?? '';
-      _phoneController.text = _registerData!['phoneNumber'] ?? '';
-      _birthDateController.text = _registerData!['birthDate'] ?? '';
-      _selectedGender = _registerData!['gender'] ?? '';
-    }
-    // 키는 프로필 생성 시 입력받으므로 초기화하지 않음
-    
-    // 생년월일을 DateTime으로 변환
-    final birthDate = tempData?['birthDate'] ?? _registerData?['birthDate'];
-    if (birthDate != null && birthDate.length == 8) {
-      try {
-        _selectedDate = DateTime(
-          int.parse(birthDate.substring(0, 4)),
-          int.parse(birthDate.substring(4, 6)),
-          int.parse(birthDate.substring(6, 8)),
-        );
-      } catch (e) {
-        // print('생년월일 파싱 오류: $e');
+      
+      // 생년월일을 DateTime으로 변환
+      final birthDate = tempData['birthDate'];
+      if (birthDate != null && birthDate.length == 8) {
+        try {
+          _selectedDate = DateTime(
+            int.parse(birthDate.substring(0, 4)),
+            int.parse(birthDate.substring(4, 6)),
+            int.parse(birthDate.substring(6, 8)),
+          );
+        } catch (e) {
+          // 생년월일 파싱 오류는 무시
+        }
       }
     }
     
@@ -112,8 +111,11 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
     final currentUser = authController.currentUserModel;
     
     if (currentUser != null) {
-      // print('현재 사용자 정보로 초기화: ${currentUser.userId}');
-      _userIdController.text = currentUser.userId;
+      // Firebase Auth에서 이메일 가져와서 사용자 ID로 사용
+      final firebaseUser = authController.firebaseService.currentUser;
+      if (firebaseUser != null && firebaseUser.email != null) {
+        _userIdController.text = firebaseUser.email!;
+      }
       _phoneController.text = currentUser.phoneNumber;
       _birthDateController.text = currentUser.birthDate;
       _selectedGender = currentUser.gender;
@@ -304,9 +306,10 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
 
   // 실제 뒤로가기 네비게이션
   void _navigateBack() {
-    if (_registerData != null) {
-      // 회원가입에서 온 경우 회원가입 페이지로 돌아가기
-      Navigator.pushReplacementNamed(context, '/register');
+    final authController = context.read<AuthController>();
+    if (authController.tempRegistrationData != null) {
+      // 회원가입에서 온 경우 이전 페이지(회원가입)로 돌아가기
+      Navigator.pop(context);
     } else {
       // AuthWrapper에서 온 경우 "나중에 설정하기" 옵션 제공
       showDialog(
@@ -714,7 +717,7 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
     }
 
     // 회원가입 데이터가 있는 경우와 없는 경우를 구분해서 처리
-    if (_registerData != null || authController.tempRegistrationData != null) {
+    if (authController.tempRegistrationData != null) {
       // 회원가입 과정에서 온 경우 - 기존 로직 사용
       await authController.completeRegistrationWithProfile(
         nickname: _nicknameController.text.trim(),
@@ -796,8 +799,6 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
 
       await authController.createCompleteUserProfile(
         currentUser.uid,
-        _userIdController.text.trim(), // 아이디 사용
-        currentUser.email ?? '',
         _phoneController.text.trim(),
         _birthDateController.text.trim(),
         _selectedGender,
@@ -821,7 +822,7 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
     final authController = context.read<AuthController>();
     
     // 회원가입 데이터가 있는 경우와 없는 경우를 구분
-    if (_registerData != null || authController.tempRegistrationData != null) {
+    if (authController.tempRegistrationData != null) {
       // 회원가입 과정에서 온 경우 - 확인 다이얼로그 표시 후 스킵 처리
       final shouldSkip = await showDialog<bool>(
         context: context,
@@ -1038,56 +1039,59 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
                 const SizedBox(height: 16),
 
                 // 성별
-                if (_registerData != null) ...[
-                  // 회원가입에서 온 경우 - 읽기 전용
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey[300]!),
-                      borderRadius: BorderRadius.circular(8),
-                      color: Colors.grey[100],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.person_outline, color: AppTheme.textSecondary),
-                              const SizedBox(width: 8),
-                              const Text('성별'),
-                              const Spacer(),
-                              const Icon(Icons.lock, color: AppTheme.textSecondary),
-                            ],
-                          ),
+                Builder(
+                  builder: (context) {
+                    final authController = context.read<AuthController>();
+                    if (authController.tempRegistrationData != null) {
+                      // 회원가입에서 온 경우 - 읽기 전용
+                      return Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey[300]!),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.grey[100],
                         ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              _selectedGender.isEmpty 
-                                  ? '성별을 선택해주세요'
-                                  : (_selectedGender == '남' ? '남성' : '여성'),
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: _selectedGender.isEmpty ? AppTheme.gray400 : AppTheme.textSecondary,
-                                fontWeight: FontWeight.w500,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.person_outline, color: AppTheme.textSecondary),
+                                  const SizedBox(width: 8),
+                                  const Text('성별'),
+                                  const Spacer(),
+                                  const Icon(Icons.lock, color: AppTheme.textSecondary),
+                                ],
                               ),
                             ),
-                          ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  _selectedGender.isEmpty 
+                                      ? '성별을 선택해주세요'
+                                      : (_selectedGender == '남' ? '남성' : '여성'),
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: _selectedGender.isEmpty ? AppTheme.gray400 : AppTheme.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                ] else ...[
-                  // 홈에서 온 경우 - 선택 가능
-                  Container(
+                      );
+                    } else {
+                      // 홈에서 온 경우 - 선택 가능
+                      return Container(
                     decoration: BoxDecoration(
                       border: Border.all(color: Colors.grey[400]!),
                       borderRadius: BorderRadius.circular(8),
@@ -1171,8 +1175,10 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
                         ),
                       ],
                     ),
-                  ),
-                ],
+                      );
+                    }
+                  },
+                ),
                 const SizedBox(height: 16),
 
                 const SizedBox(height: 24),
