@@ -69,13 +69,12 @@ class ProfileController extends ChangeNotifier {
         // 본인이 선점한 것만 해제 가능
         if (data != null && data['uid'] == uid) {
           await _firebaseService.getDocument('nicknames/$normalizedNickname').delete();
-          debugPrint('닉네임 선점 해제: $normalizedNickname (uid: $uid)');
         } else {
-          debugPrint('닉네임 선점 해제 실패: 소유자가 아님 (uid: $uid)');
+          // 소유자가 아닌 경우 - uid와 함께 묶음.
         }
       }
     } catch (e) {
-      debugPrint('닉네임 선점 해제 오류: $nickname - $e');
+      // 닉네임 선점 해제 오류
     }
   }
 
@@ -90,8 +89,8 @@ class ProfileController extends ChangeNotifier {
           .limit(1)
           .get();
       
+      // 이미 저장된 닉네임인 경우 해당 코드로 반환
       if (users.docs.isNotEmpty) {
-        debugPrint('users 컬렉션에 이미 저장된 닉네임: $trimmedNickname');
         return true;
       }
       
@@ -100,18 +99,14 @@ class ProfileController extends ChangeNotifier {
         final normalizedNickname = trimmedNickname.toLowerCase();
         final nicknameDoc = await _firebaseService.getDocument('nicknames/$normalizedNickname').get();
         if (nicknameDoc.exists) {
-          debugPrint('이미 선점된 닉네임: $normalizedNickname');
           return true;
         }
       } catch (reservationError) {
-        debugPrint('선점 시스템 확인 오류 (무시함): $reservationError');
         // 선점 시스템 오류는 무시하고 users 컬렉션 결과만 사용! 확인 완료
       }
       
-      debugPrint('닉네임 중복 확인 완료: $trimmedNickname (사용 가능)');
       return false;
     } catch (e) {
-      debugPrint('닉네임 중복 확인 오류: $e');
       // 오류 시에는 안전하게 false 반환
       return false;
     }
@@ -245,8 +240,6 @@ class ProfileController extends ChangeNotifier {
           _setLoading(false);
           return false;
         }
-        
-        debugPrint('닉네임 선점 성공: ${nickname.trim()}');
       }
 
       // 업데이트된 사용자 모델 생성
@@ -265,7 +258,6 @@ class ProfileController extends ChangeNotifier {
       // 업데이트 성공 시 기존 닉네임 선점 해제
       if (oldNickname != null) {
         await _releaseNickname(oldNickname, currentUser.uid);
-        debugPrint('기존 닉네임 선점 해제: $oldNickname');
       }
 
       _setLoading(false);
@@ -274,7 +266,6 @@ class ProfileController extends ChangeNotifier {
       // 업데이트 실패 시 새 닉네임 선점 해제
       if (oldNickname != null) {
         await _releaseNickname(nickname.trim(), currentUser.uid);
-        debugPrint('새 닉네임 선점 해제 (실패): ${nickname.trim()}');
       }
       
       _setError('프로필 업데이트에 실패했습니다: $e');

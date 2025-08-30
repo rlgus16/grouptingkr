@@ -153,15 +153,12 @@ class InvitationService {
 
       // Firestore에 저장
       final docRef = _invitationsCollection.doc();
-      // print('초대 문서 생성: ${docRef.id}');
 
       await docRef.set(
         invitation
             .copyWith(id: docRef.id, invitationId: docRef.id)
             .toFirestore(),
       );
-
-      // print('초대 저장 완료: ${toUser.uid}님에게 초대 전송됨');
 
       // 초대 메시지 전송
       final invitationMessage = message != null
@@ -174,9 +171,9 @@ class InvitationService {
         content: invitationMessage,
       );
 
-      // print('초대 전송 완료');
+      // 초대 전송 완료
     } catch (e) {
-      // print('초대 전송 실패: $e');
+      // 초대 전송 실패
       throw Exception('초대 전송에 실패했습니다: $e');
     }
   }
@@ -197,75 +194,59 @@ class InvitationService {
   // 초대 수락
   Future<void> acceptInvitation(String invitationId) async {
     try {
-      // print('초대 수락 시작: invitationId=$invitationId');
+      // 초대 수락 시작
 
       final currentUser = _firebaseService.currentUser;
       if (currentUser == null) {
-        // print('초대 수락 실패: 로그인 필요');
+        // 초대 수락 실패: 로그인 필요
         throw Exception('로그인이 필요합니다.');
       }
 
-      // print('현재 사용자: ${currentUser.uid}');
+      // 현재 사용자: ${currentUser.uid}
 
       // 초대 정보 가져오기
       final invitationDoc = await _invitationsCollection
           .doc(invitationId)
           .get();
       if (!invitationDoc.exists) {
-        // print('초대 수락 실패: 초대 문서 없음');
+        // 초대 수락 실패: 초대 문서 없음
         throw Exception('초대를 찾을 수 없습니다.');
       }
 
       final invitation = InvitationModel.fromFirestore(invitationDoc);
-      // print(
-      //   '초대 정보: fromUserId=${invitation.fromUserId}, toUserId=${invitation.toUserId}, groupId=${invitation.groupId}',
-      // );
 
       // 초대 대상 확인
       if (invitation.toUserId != currentUser.uid) {
-        // print(
-        //   '초대 수락 실패: 권한 없음 - 초대받는자=${invitation.toUserId}, 현재사용자=${currentUser.uid}',
-        // );
+        // 초대 수락 실패: 권한 없음
         throw Exception('해당 초대를 수락할 권한이 없습니다.');
       }
 
       // 초대 유효성 확인
       if (!invitation.canRespond) {
-        // print(
-        //   '초대 수락 실패: 유효하지 않음 - status=${invitation.status}, expired=${invitation.isExpired}',
-        // );
+        // 초대 수락 실패: 유효하지 않음
         throw Exception('만료되었거나 이미 처리된 초대입니다.');
       }
 
-      // print('초대 유효성 확인 완료');
-
       // 현재 사용자 정보 확인
-      // print('사용자 정보 확인 중...');
       final currentUserInfo = await _userService.getUserById(currentUser.uid);
       if (currentUserInfo == null) {
         print('초대 수락 실패: 사용자 정보 없음');
         throw Exception('사용자 정보를 찾을 수 없습니다.');
       }
 
-      // print('사용자 정보: currentGroupId=${currentUserInfo.currentGroupId}');
-
       // 이미 다른 그룹에 속해있는지 확인
       if (currentUserInfo.currentGroupId != null) {
-        // print(
-        //   '초대 수락 실패: 이미 그룹에 속함 - currentGroupId=${currentUserInfo.currentGroupId}',
-        // );
+        // 초대 수락 실패: 이미 그룹에 속함
         throw Exception('이미 다른 그룹에 속해있습니다.');
       }
 
       // 순차적으로 초대 수락 처리 (웹 호환성을 위해 트랜잭션 대신)
-      // print('초대 상태 업데이트 시작...');
 
       // 1. 초대 상태 업데이트
       await _invitationsCollection.doc(invitationId).update({
         'status': InvitationStatus.accepted.toString().split('.').last,
         'respondedAt': Timestamp.fromDate(DateTime.now()),
       });
-      // print('초대 상태 업데이트 완료');
 
       // 2. 그룹에 멤버 추가
       // print('그룹 멤버 추가 시작...');

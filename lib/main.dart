@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'controllers/auth_controller.dart';
@@ -12,11 +11,13 @@ import 'views/login_view.dart';
 import 'views/home_view.dart';
 import 'views/register_view.dart';
 import 'views/profile_create_view.dart';
-import 'views/chat_view.dart';
 import 'utils/app_theme.dart';
 import 'services/fcm_service.dart';
 
 import 'firebase_options.dart';
+
+// 전역 네비게이터 키
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,16 +28,12 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    // Firebase Realtime Database URL 설정
-    FirebaseDatabase.instance.databaseURL =
-        'https://groupting-aebab-default-rtdb.firebaseio.com';
-
     // FCM 백그라운드 메시지 핸들러 설정
     FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
-    print('Firebase 초기화 성공');
+    debugPrint('Firebase 초기화 성공');
   } catch (e) {
-    print('Firebase 초기화 오류: $e');
+    debugPrint('Firebase 초기화 오류: $e');
   }
 
   runApp(const MyApp());
@@ -45,10 +42,12 @@ void main() async {
 // FCM 백그라운드 메시지 핸들러
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // print('백그라운드에서 메시지 수신: ${message.messageId}');
-  // print('제목: ${message.notification?.title}');
-  // print('내용: ${message.notification?.body}');
-  // print('데이터: ${message.data}');
+  // 백그라운드 FCM 메시지 수신: ${message.notification?.title}
+  // 메시지 내용: ${message.notification?.body}
+  // 데이터: ${message.data}
+  
+  // 백그라운드에서는 시스템이 자동으로 알림을 표시합니다.
+  // 추가적인 데이터 처리가 필요한 경우에만 여기서 처리
 }
 
 // 추후 앱 명칭 및 라우팅 위치, 상태관리 전환 분리 권장.
@@ -66,6 +65,7 @@ class MyApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: '그룹팅',
+        navigatorKey: navigatorKey, // 전역 네비게이터 키 설정
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         localizationsDelegates: const [
@@ -128,7 +128,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
       
       // 로그아웃 콜백 설정 (null 안전성 추가)
       authController.onSignOutCallback = () {
-        debugPrint('AuthController 로그아웃 콜백 실행');
         try {
           _groupController?.onSignOut();
           _chatController?.onSignOut();
@@ -139,12 +138,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
           // AuthWrapper 상태 즉시 업데이트
           if (mounted) {
             setState(() {
-              debugPrint('로그아웃 콜백에서 AuthWrapper 상태 업데이트');
               // 상태 업데이트를 통해 위젯 재빌드 강제
             });
           }
         } catch (e) {
-          debugPrint('로그아웃 콜백 실행 중 오류: $e');
+          // 로그아웃 콜백 실행 중 오류
         }
       };
       
@@ -152,7 +150,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
       
       // 초기 로그인 상태 설정
       _wasLoggedIn = authController.isLoggedIn;
-      debugPrint('초기 로그인 상태 설정: _wasLoggedIn=$_wasLoggedIn');
       
       // FCM 초기화
       FCMService().initialize();
@@ -181,25 +178,19 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
 
-        // 현재 로그인 상태를 로깅
-        debugPrint('AuthWrapper 빌드: _wasLoggedIn=$_wasLoggedIn, isLoggedIn=${authController.isLoggedIn}');
-
         // 로그아웃 감지 시 즉시 LoginView 반환 (정리는 AuthController 콜백에서 처리됨)
         if (_wasLoggedIn && !authController.isLoggedIn) {
-          debugPrint('로그아웃 감지됨 - 즉시 LoginView로 전환');
           // 컨트롤러 재초기화 플래그 설정 (다시 로그인할 때 재초기화하도록)
           _controllersInitialized = false;
           // 추가적인 메모리 정리
           _groupController = null;
           _chatController = null;
           _wasLoggedIn = false; // 즉시 업데이트
-          debugPrint('로그아웃 완료 - LoginView로 자동 전환');
           return const LoginView();
         }
         
         // 로그인 감지 (컨트롤러 재초기화)
         if (!_wasLoggedIn && authController.isLoggedIn && !_controllersInitialized) {
-          debugPrint('로그인 감지됨, 컨트롤러 재초기화 필요');
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _initializeControllers();
           });
@@ -211,7 +202,6 @@ class _AuthWrapperState extends State<AuthWrapper> {
         
         // 로그아웃이 감지된 경우 즉시 LoginView 반환 (추가 안전장치)
         if (previousWasLoggedIn && !authController.isLoggedIn) {
-          debugPrint('추가 로그아웃 감지 - 즉시 LoginView로 전환');
           _controllersInitialized = false;
           _groupController = null;
           _chatController = null;
@@ -225,23 +215,19 @@ class _AuthWrapperState extends State<AuthWrapper> {
 
         // 로그인 되어있지 않으면 로그인 화면
         if (!authController.isLoggedIn) {
-          debugPrint('현재 로그인 상태: false - LoginView 반환');
           return const LoginView();
         }
         
         // 추가 안전장치: Firebase Auth 직접 확인
         final firebaseUser = authController.firebaseService.currentUser;
         if (firebaseUser == null) {
-          debugPrint('⚠️ AuthController는 로그인 상태지만 Firebase Auth 사용자가 null - LoginView 강제 반환');
           return const LoginView();
         }
 
-        // 로그인은 되어있지만 사용자 정보가 없으면 회원가입 화면
-        // 단, "나중에 입력하기"로 스킵한 경우는 홈 화면으로 이동 가능
+        // 로그인은 되어있지만 사용자 정보가 없으면 로그인 화면으로 이동
+        // (Firestore 데이터 로드 실패 시 재로그인 유도)
         if (authController.currentUserModel == null) {
-          // Firebase Auth에는 로그인되어 있지만 Firestore에 프로필이 없는 경우
-          // "나중에 입력하기"로 스킵한 사용자일 가능성이 높으므로 홈 화면으로 이동
-          return const HomeView();
+          return const LoginView(); // ❗️ 수정: HomeView → LoginView
         }
 
         // 프로필이 완성되지 않았지만 기본 정보가 있으면 홈 화면으로 이동 가능

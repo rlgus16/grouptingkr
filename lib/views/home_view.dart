@@ -16,6 +16,17 @@ import 'group_members_view.dart';
 import 'my_page_view.dart';
 import 'chat_view.dart';
 
+// 프로필 검증 결과 클래스
+class ProfileValidationResult {
+  final bool isValid;
+  final List<String> missingFields;
+  
+  ProfileValidationResult({
+    required this.isValid,
+    required this.missingFields,
+  });
+}
+
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
 
@@ -32,6 +43,11 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     super.initState();
     // 앱 생명주기 감지 시작
     WidgetsBinding.instance.addObserver(this);
+    
+    // 로그인 상태 체크
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkLoginStatus();
+    });
     
     // 프로필 카드 숨김 상태 로드
     _loadProfileCardVisibility();
@@ -60,6 +76,22 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     // 앱 생명주기 감지 해제
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  // 로그인 상태 체크
+  void _checkLoginStatus() {
+    final authController = context.read<AuthController>();
+    if (!authController.isLoggedIn) {
+      // 로그인되지 않았으면 로그인 화면으로 이동
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/login',
+            (route) => false,
+          );
+        }
+      });
+    }
   }
 
   // 프로필 카드 숨김 상태 로드
@@ -98,12 +130,16 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
             _isProfileCardHidden = true;
           });
           
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('프로필 완성하기 알림을 숨겼습니다. 마이페이지에서 언제든 프로필을 완성할 수 있습니다.'),
-              duration: Duration(seconds: 3),
-            ),
-          );
+          try {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('프로필 완성하기 알림을 숨겼습니다. 마이페이지에서 언제든 프로필을 완성할 수 있습니다.'),
+                duration: Duration(seconds: 3),
+              ),
+            );
+          } catch (e) {
+            // 위젯이 이미 dispose된 경우 무시
+          }
         }
       }
     } catch (e) {
@@ -315,21 +351,29 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                 onTap: () async {
                   Navigator.pop(context);
                   final confirmed = await _showLeaveGroupDialog();
-                  if (confirmed) {
-                    final success = await groupController.leaveGroup();
-                    if (success && mounted) {
+                                  if (confirmed) {
+                  final success = await groupController.leaveGroup();
+                  if (success && mounted) {
+                    try {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('그룹에서 나왔습니다.')),
                       );
                       // UI 새로고침을 위해 setState 호출
                       setState(() {});
-                    } else if (mounted &&
-                        groupController.errorMessage != null) {
+                    } catch (e) {
+                      // 위젯이 이미 dispose된 경우 무시
+                    }
+                  } else if (mounted &&
+                      groupController.errorMessage != null) {
+                    try {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text(groupController.errorMessage!)),
                       );
+                    } catch (e) {
+                      // 위젯이 이미 dispose된 경우 무시
                     }
                   }
+                }
                 },
               ),
 
@@ -367,9 +411,13 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                     } catch (e) {
                       debugPrint('로그아웃 중 오류: $e');
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('로그아웃 중 오류가 발생했습니다: $e')),
-                        );
+                        try {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('로그아웃 중 오류가 발생했습니다: $e')),
+                          );
+                        } catch (scaffoldError) {
+                          // 위젯이 이미 dispose된 경우 무시
+                        }
                       }
                     }
                   }
@@ -523,7 +571,6 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     
     // 1. 사용자 데이터가 없는 경우 - 계정 자체에 문제가 있음
     if (user == null || firebaseUser?.email == null) {
-      debugPrint('🚨 프로필 카드 표시: 사용자 데이터 없음');
       return true; // 회원가입 유도
     }
     
@@ -533,7 +580,6 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
         user.gender.isNotEmpty;
     
     if (!hasBasicInfo) {
-      debugPrint('🚨 프로필 카드 표시: 기본 정보 부족 (phone=${user.phoneNumber.isEmpty ? "없음" : "있음"}, birth=${user.birthDate.isEmpty ? "없음" : "있음"}, gender=${user.gender.isEmpty ? "없음" : "있음"})');
       return true; // 기본 정보 입력 유도
     }
     
@@ -544,12 +590,10 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
         user.introduction.isNotEmpty;
     
     if (!hasCompleteProfile) {
-      debugPrint('🚨 프로필 카드 표시: 프로필 미완성 (nickname=${user.nickname.isEmpty ? "없음" : "있음"}, height=${user.height}, area=${user.activityArea.isEmpty ? "없음" : "있음"}, intro=${user.introduction.isEmpty ? "없음" : "있음"})');
       return true; // 프로필 완성 유도
     }
     
     // 4. 모든 정보가 완성된 경우
-    debugPrint('✅ 프로필 완성됨 - 카드 숨김');
     return false;
   }
 
@@ -696,12 +740,16 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                     : () async {
                         await groupController.refreshData();
                         if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('데이터를 새로고침했습니다'),
-                              duration: Duration(seconds: 1),
-                            ),
-                          );
+                          try {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('데이터를 새로고침했습니다'),
+                                duration: Duration(seconds: 1),
+                              ),
+                            );
+                          } catch (e) {
+                            // 위젯이 이미 dispose된 경우 무시
+                          }
                         }
                       },
                 tooltip: '새로고침',
@@ -999,23 +1047,74 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                   if (!mounted) return;
                   
                   try {
-                    // 프로필이 완성되지 않은 경우 프로필 완성 유도
+                    // === 프로필 완성도 종합 검증 ===
                     final authController = context.read<AuthController>();
-                    if (authController.currentUserModel == null) {
+                    final profileValidation = _validateProfileForGroupCreation(authController);
+                    
+                    if (!profileValidation.isValid) {
                       if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('그룹을 만들려면 먼저 프로필을 완성해주세요.'),
-                          ),
+                        // 프로필 미완성 알림 및 프로필 생성 화면으로 이동 제안
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Text('프로필 완성 필요'),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('그룹을 생성하려면 프로필을 완성해야 합니다.'),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    '미완성 항목:',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.orange.shade700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ...profileValidation.missingFields.map((field) => 
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 8, bottom: 4),
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.circle, size: 4, color: Colors.orange.shade600),
+                                          const SizedBox(width: 8),
+                                          Text(field, style: const TextStyle(fontSize: 14)),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  child: const Text('취소'),
+                                ),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                    Navigator.pushNamed(context, '/profile-create');
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.primaryColor,
+                                  ),
+                                  child: const Text('프로필 완성하기', style: TextStyle(color: Colors.white)),
+                                ),
+                              ],
+                            );
+                          },
                         );
                       }
                       return;
                     }
                     
+                    // 프로필이 완성된 경우에만 그룹 생성 진행 가능하도록 구현하기
                     final groupController = _groupController ?? context.read<GroupController>();
                     await groupController.createGroup();
                   } catch (e) {
-                    debugPrint('그룹 생성 중 에러: $e');
+                    // 그룹 생성 단계에서 에러
                   }
                 },
                 icon: const Icon(Icons.add),
@@ -1307,6 +1406,61 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
             ),
           ),
       ],
+    );
+  }
+
+  // 그룹 생성을 위한 프로필 완성도 검증
+  ProfileValidationResult _validateProfileForGroupCreation(AuthController authController) {
+    final user = authController.currentUserModel;
+    final firebaseUser = authController.firebaseService.currentUser;
+    
+    List<String> missingFields = [];
+    
+    // 1. 기본 계정 정보 확인
+    if (user == null || firebaseUser?.email == null) {
+      missingFields.add('계정 정보');
+      return ProfileValidationResult(isValid: false, missingFields: missingFields);
+    }
+    
+    // 2. 기본 회원 정보 확인 (회원가입 시 입력하는 필수 정보)
+    if (user.phoneNumber.isEmpty) {
+      missingFields.add('전화번호');
+    }
+    if (user.birthDate.isEmpty) {
+      missingFields.add('생년월일');
+    }
+    if (user.gender.isEmpty) {
+      missingFields.add('성별');
+    }
+    
+    // 3. 프로필 정보 확인 (그룹 생성을 위한 필수 정보)
+    if (user.nickname.isEmpty) {
+      missingFields.add('닉네임');
+    }
+    if (user.introduction.isEmpty) {
+      missingFields.add('소개글');
+    }
+    if (user.height <= 0) {
+      missingFields.add('키');
+    }
+    if (user.activityArea.isEmpty) {
+      missingFields.add('활동지역');
+    }
+    if (user.profileImages.isEmpty) {
+      missingFields.add('프로필 사진');
+    }
+    
+    // 4. 프로필 완성 플래그 확인
+    if (!user.isProfileComplete) {
+      if (missingFields.isEmpty) {
+        // 모든 필드가 채워져 있는데 플래그가 false면 플래그 문제
+        missingFields.add('프로필 완성 처리');
+      }
+    }
+    
+    return ProfileValidationResult(
+      isValid: missingFields.isEmpty,
+      missingFields: missingFields,
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/group_controller.dart';
 import '../controllers/chat_controller.dart';
+import '../services/fcm_service.dart';
 import '../utils/app_theme.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/member_avatar.dart';
@@ -23,6 +24,9 @@ class _ChatViewState extends State<ChatView> {
   @override
   void initState() {
     super.initState();
+    // FCM 서비스에 현재 채팅방 설정
+    FCMService().setCurrentChatRoom(widget.groupId);
+    
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         try {
@@ -51,6 +55,9 @@ class _ChatViewState extends State<ChatView> {
 
   @override
   void dispose() {
+    // FCM 서비스에서 현재 채팅방 해제
+    FCMService().clearCurrentChatRoom();
+    
     // 안전하게 ChatController 정리
     try {
       _chatController?.clearData();

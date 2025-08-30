@@ -6,6 +6,7 @@ import '../models/invitation_model.dart';
 import '../services/firebase_service.dart';
 import '../services/group_service.dart';
 import '../services/invitation_service.dart';
+import '../services/user_service.dart';
 
 class GroupController extends ChangeNotifier {
   final FirebaseService _firebaseService = FirebaseService();
@@ -74,6 +75,21 @@ class GroupController extends ChangeNotifier {
       final currentUserId = _firebaseService.currentUserId;
       if (currentUserId == null) {
         _setError('로그인이 필요합니다.');
+        return false;
+      }
+
+      // === 프로필 완성도 서버 사이드 검증 ===
+      final userService = UserService();
+      final currentUser = await userService.getUserById(currentUserId);
+      
+      if (currentUser == null) {
+        _setError('사용자 정보를 찾을 수 없습니다. 다시 로그인해주세요.');
+        return false;
+      }
+      
+      // 프로필 완성도 체크
+      if (!_isProfileCompleteForGroupCreation(currentUser)) {
+        _setError('그룹을 생성하려면 프로필을 완성해야 합니다.');
         return false;
       }
 
@@ -531,6 +547,32 @@ class GroupController extends ChangeNotifier {
     
     _clearData();
     super.dispose();
+  }
+
+  // 그룹 생성을 위한 프로필 완성도 체크 (서버 사이드 검증)
+  bool _isProfileCompleteForGroupCreation(UserModel user) {
+    // 1. 기본 회원 정보 확인
+    if (user.phoneNumber.isEmpty ||
+        user.birthDate.isEmpty ||
+        user.gender.isEmpty) {
+      return false;
+    }
+    
+    // 2. 프로필 정보 확인 (그룹 생성을 위한 필수 정보)
+    if (user.nickname.isEmpty ||
+        user.introduction.isEmpty ||
+        user.height <= 0 ||
+        user.activityArea.isEmpty ||
+        user.profileImages.isEmpty) {
+      return false;
+    }
+    
+    // 3. 프로필 완성 플래그 확인
+    if (!user.isProfileComplete) {
+      return false;
+    }
+    
+    return true;
   }
 
   // 에러 클리어

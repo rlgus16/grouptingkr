@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../models/message_model.dart';
+import '../models/chatroom_model.dart';
 import '../models/user_model.dart';
 import '../utils/app_theme.dart';
 import '../widgets/member_avatar.dart';
 import '../views/profile_detail_view.dart';
 
 class MessageBubble extends StatelessWidget {
-  final MessageModel message;
+  final ChatMessage message;
   final bool isMe;
   final UserModel? senderProfile;
   final VoidCallback? onTap;

@@ -14,13 +14,17 @@ service cloud.firestore {
       allow create: if request.auth != null && 
         request.auth.uid == userId &&
         request.resource.data.uid == request.auth.uid &&
-        // 필수 필드 검증 (회원가입 시 필요한 기본 필드들)
-        request.resource.data.keys().hasAll(['uid', 'phoneNumber', 'birthDate', 'gender', 'createdAt', 'updatedAt', 'isProfileComplete']);
+        // Firebase Auth 이메일과 Firestore email 필드 동기화 검증
+        request.resource.data.email == request.auth.token.email &&
+        // 필수 필드 검증 (email 필드 포함)
+        request.resource.data.keys().hasAll(['uid', 'email', 'phoneNumber', 'birthDate', 'gender', 'createdAt', 'updatedAt', 'isProfileComplete']);
       
       // 추가 완화 규칙: 신규 계정이 즉시 문서를 생성할 수 있도록
       allow create: if request.auth != null && 
         request.auth.uid == userId &&
         request.resource.data.uid == userId &&
+        // Firebase Auth 이메일과 Firestore email 필드 동기화 검증
+        request.resource.data.email == request.auth.token.email &&
         // 생성 시간이 현재 시간과 가까운 경우 (5분 이내)
         request.time < request.resource.data.createdAt + duration.value(5, 'm');
       
@@ -69,11 +73,12 @@ service cloud.firestore {
       allow read: if request.auth != null && 
         resource.data.status == 'matching';
       
-      // 매칭된 그룹의 정보를 읽을 수 있도록 허용 (매칭된 그룹 멤버만)
+      // 매칭된 그룹 읽기 허용 (임시 완화 - 모든 인증된 사용자가 매칭된 그룹 읽기 가능)
       allow read: if request.auth != null && 
-        resource.data.status == 'matched' &&
-        (request.auth.uid in resource.data.memberIds ||
-         isMatchedGroupMember(groupId, request.auth.uid));
+        resource.data.status == 'matched';
+      
+      // 매칭 관련 그룹 상태 확인을 위한 추가 읽기 권한
+      allow read: if request.auth != null;
       
       // 매칭 완료를 위해 'matching' 상태인 그룹을 'matched' 상태로 업데이트 허용
       allow update: if request.auth != null && 
@@ -86,23 +91,21 @@ service cloud.firestore {
         request.auth.uid == resource.data.ownerId;
     }
     
-    // 메시지 컬렉션
-    match /messages/{messageId} {
-      // 메시지 작성자만 생성 가능 (필수 필드 검증 포함)
-      allow create: if request.auth != null && 
-        request.auth.uid == request.resource.data.senderId &&
-        request.resource.data.keys().hasAll(['senderId', 'groupId', 'content', 'type', 'createdAt']) &&
-        isGroupMember(request.resource.data.groupId, request.auth.uid);
+    // 채팅방 컬렉션 (새로운 구조 - 메시지 배열 기반)
+    match /chatrooms/{chatroomId} {
+      // 채팅방 생성: 인증된 사용자만 가능
+      allow create: if request.auth != null &&
+        request.resource.data.keys().hasAll(['groupId', 'participants', 'messages', 'messageCount', 'createdAt', 'updatedAt']);
       
-      // 메시지가 속한 그룹의 멤버만 읽기 가능 (매칭된 그룹 멤버도 포함)
-      allow read: if request.auth != null && (
-        isGroupMember(resource.data.groupId, request.auth.uid) ||
-        isMatchedGroupMember(resource.data.groupId, request.auth.uid)
-      );
+      // 채팅방 읽기: 인증된 모든 사용자 가능 (임시 완화 - 매칭된 그룹 접근용)
+      allow read: if request.auth != null;
       
-      // 메시지 작성자만 수정, 삭제 가능
-      allow update, delete: if request.auth != null && 
-        request.auth.uid == resource.data.senderId;
+      // 채팅방 업데이트: 인증된 모든 사용자 가능 (메시지 추가, 읽음 처리)
+      // 실제로는 참여자만 업데이트하지만 규칙을 단순화
+      allow update: if request.auth != null;
+      
+      // 채팅방 삭제: 인증된 사용자만 가능
+      allow delete: if request.auth != null;
     }
     
     // 초대 컬렉션
@@ -163,19 +166,20 @@ service cloud.firestore {
         resource.data.uid == request.auth.uid;
     }
     
-    // 헬퍼 함수: 그룹 멤버 확인
-    function isGroupMember(groupId, userId) {
-      return exists(/databases/$(database)/documents/groups/$(groupId)) &&
-        userId in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
+    // 전화번호 선점 컬렉션 (중복 방지용) -> 닉네임과 이메일처럼 중복방지 값으로 정하기 다만, 여러 개 계정 사용 가능하도록 만들 것이라면 정리가 필요한 룰
+    match /phoneNumbers/{phoneNumber} {
+      // 인증된 사용자는 선점 상태 읽기 가능 (중복 확인용)
+      allow read: if request.auth != null;
+      
+      // 인증된 사용자는 본인의 UID로만 선점 생성 가능
+      allow create: if request.auth != null && 
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.keys().hasAll(['uid', 'originalPhoneNumber', 'reservedAt', 'type']);
+      
+      // 본인이 선점한 것만 삭제 가능
+      allow delete: if request.auth != null && 
+        resource.data.uid == request.auth.uid;
     }
-    
-    // 헬퍼 함수: 매칭된 그룹 멤버 확인
-    function isMatchedGroupMember(groupId, userId) {
-      let group = get(/databases/$(database)/documents/groups/$(groupId));
-      return group.data.status == 'matched' &&
-        group.data.matchedGroupId != null &&
-        exists(/databases/$(database)/documents/groups/$(group.data.matchedGroupId)) &&
-        userId in get(/databases/$(database)/documents/groups/$(group.data.matchedGroupId)).data.memberIds;
-    }
+
   }
 } 

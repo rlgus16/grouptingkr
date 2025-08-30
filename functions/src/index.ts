@@ -8,27 +8,43 @@ admin.initializeApp();
 const db = admin.firestore();
 const messaging = admin.messaging();
 
-// 메시지가 추가될 때 FCM 알림 발송 (Realtime Database 트리거) - 개선된 버전
-export const sendMessageNotification = functions.database
-  .ref("/chats/{groupId}/{messageId}")
-  .onCreate(async (snapshot, context) => {
+// 채팅방에 메시지가 추가될 때 FCM 알림 발송 (chatrooms 컬렉션 기반)
+export const sendMessageNotification = functions.firestore
+  .document("chatrooms/{chatroomId}")
+  .onUpdate(async (change, context) => {
     try {
-      const messageData = snapshot.val();
-      const groupId = context.params.groupId;
-      const messageId = context.params.messageId;
+      const beforeData = change.before.data();
+      const afterData = change.after.data();
+      const chatroomId = context.params.chatroomId;
       
-      console.log(`🔔 새 메시지 감지: 그룹 ${groupId}, 메시지 ID: ${messageId}`);
-      console.log(`📝 메시지 데이터:`, messageData);
+      // 메시지 개수가 증가했는지 확인 (새 메시지 추가 감지)
+      if (beforeData.messageCount >= afterData.messageCount) {
+        // 메시지가 추가되지 않았으므로 알림 발송하지 않음
+        return;
+      }
+      
+      // 마지막 메시지 가져오기
+      const lastMessage = afterData.messages && afterData.messages.length > 0 
+        ? afterData.messages[afterData.messages.length - 1] 
+        : null;
+      
+      if (!lastMessage) {
+        console.log("마지막 메시지를 찾을 수 없습니다.");
+        return;
+      }
+      
+      console.log(`🔔 새 채팅방 메시지 감지: 채팅방 ${chatroomId}`);
+      console.log(`📝 메시지 데이터:`, lastMessage);
       
       // 메시지 데이터 유효성 검사
-      if (!messageData || !messageData.senderId || !messageData.content) {
-        console.log("❌ 유효하지 않은 메시지 데이터, 알림 중단");
+      if (!lastMessage || !lastMessage.senderId || !lastMessage.content) {
+        console.log("유효하지 않은 메시지 데이터, 알림 중단");
         return;
       }
       
       // 시스템 메시지는 알림 제외
-      if (messageData.senderId === "system") {
-        console.log("🤖 시스템 메시지는 알림에서 제외됩니다.");
+      if (lastMessage.senderId === "system") {
+        console.log("시스템 메시지는 알림에서 제외됩니다.");
         return;
       }
 
@@ -36,11 +52,17 @@ export const sendMessageNotification = functions.database
       let chatType = "일반";
       let groupNames: string[] = [];
 
-      // 그룹 ID가 매칭된 채팅방인지 확인 (groupId1_groupId2 형태)
-      if (groupId.includes("_")) {
+      // 채팅방 참여자들 가져오기
+      if (afterData.participants && Array.isArray(afterData.participants)) {
+        allMemberIds = afterData.participants;
+        console.log(`채팅방 참여자: ${allMemberIds.length}명`);
+      }
+
+      // 채팅방 ID가 매칭된 채팅방인지 확인 (groupId1_groupId2 형태)
+      if (chatroomId.includes("_")) {
         chatType = "매칭";
-        // 매칭된 채팅방: 두 그룹의 모든 멤버 가져오기
-        const groupIds = groupId.split("_");
+        // 매칭된 채팅방: 두 그룹의 이름 가져오기 (알림 표시용)
+        const groupIds = chatroomId.split("_");
         if (groupIds.length === 2) {
           console.log(`매칭 채팅방 감지: ${groupIds[0]} + ${groupIds[1]}`);
           
@@ -49,59 +71,55 @@ export const sendMessageNotification = functions.database
               const groupDoc = await db.collection("groups").doc(gId).get();
               if (groupDoc.exists) {
                 const groupData = groupDoc.data();
-                if (groupData?.memberIds && Array.isArray(groupData.memberIds)) {
-                  allMemberIds.push(...groupData.memberIds);
-                  // 그룹 이름도 수집 (알림 표시용)
-                  if (groupData.name) {
-                    groupNames.push(groupData.name);
-                  }
+                // 그룹 이름만 수집 (참여자는 이미 chatroom.participants에 있음)
+                if (groupData?.name) {
+                  groupNames.push(groupData.name);
                 }
               } else {
-                console.log(`⚠️ 그룹 문서를 찾을 수 없음: ${gId}`);
+                console.log(`그룹 문서를 찾을 수 없음: ${gId}`);
               }
             } catch (groupError) {
-              console.error(`❌ 그룹 데이터 로드 실패 (${gId}):`, groupError);
+              console.error(`그룹 데이터 로드 실패 (${gId}):`, groupError);
             }
           }
         } else {
-          console.log("❌ 유효하지 않은 매칭 채팅방 ID 형태:", groupId);
+          console.log("유효하지 않은 매칭 채팅방 ID 형태:", chatroomId);
           return;
         }
       } else {
-        // 일반 그룹 채팅방: 해당 그룹의 멤버 가져오기
-        console.log(`일반 그룹 채팅방: ${groupId}`);
+        // 일반 그룹 채팅방: 해당 그룹의 이름 가져오기
+        console.log(`일반 그룹 채팅방: ${chatroomId}`);
         try {
-          const groupDoc = await db.collection("groups").doc(groupId).get();
+          const groupDoc = await db.collection("groups").doc(chatroomId).get();
           if (groupDoc.exists) {
             const groupData = groupDoc.data();
-            if (groupData?.memberIds && Array.isArray(groupData.memberIds)) {
-              allMemberIds = groupData.memberIds;
-              if (groupData.name) {
-                groupNames.push(groupData.name);
-              }
+            if (groupData?.name) {
+              groupNames.push(groupData.name);
             }
           } else {
-            console.log("❌ 그룹을 찾을 수 없습니다:", groupId);
-            return;
+            console.log("그룹을 찾을 수 없습니다:", chatroomId);
           }
         } catch (groupError) {
-          console.error("❌ 그룹 데이터 로드 실패:", groupError);
-          return;
+          console.error("그룹 데이터 로드 실패:", groupError);
         }
       }
 
       // 중복 멤버 제거
+      const originalCount = allMemberIds.length;
       allMemberIds = [...new Set(allMemberIds)];
+      if (originalCount !== allMemberIds.length) {
+        console.log(`중복 제거: ${originalCount}명 -> ${allMemberIds.length}명`);
+      }
       
       // 발송자를 제외한 모든 멤버에게 알림 발송
-      const recipientIds = allMemberIds.filter(id => id !== messageData.senderId);
+      const recipientIds = allMemberIds.filter(id => id !== lastMessage.senderId);
       
       if (recipientIds.length === 0) {
-        console.log("🚫 알림을 받을 사용자가 없습니다.");
+        console.log("알림을 받을 사용자가 없습니다.");
         return;
       }
 
-      console.log(`👥 알림 수신자 수: ${recipientIds.length}`);
+      console.log(`알림 수신자 수: ${recipientIds.length}`);
 
       // 각 수신자의 FCM 토큰과 정보 가져오기
       const notifications: Array<{token: string, userId: string, nickname: string}> = [];
@@ -118,112 +136,116 @@ export const sendMessageNotification = functions.database
                 nickname: userData.nickname || "사용자"
               });
             } else {
-              console.log(`⚠️ FCM 토큰이 없는 사용자: ${userId}`);
+              console.log(`FCM 토큰이 없는 사용자: ${userId}`);
             }
           } else {
-            console.log(`⚠️ 사용자 문서를 찾을 수 없음: ${userId}`);
+            console.log(`사용자 문서를 찾을 수 없음: ${userId}`);
           }
         } catch (userError) {
-          console.error(`❌ 사용자 데이터 로드 실패 (${userId}):`, userError);
+          console.error(`사용자 데이터 로드 실패 (${userId}):`, userError);
         }
       }
 
       if (notifications.length === 0) {
-        console.log("🚫 유효한 FCM 토큰이 없습니다.");
+        console.log("유효한 FCM 토큰이 없습니다.");
         return;
       }
 
-      console.log(`📱 FCM 토큰 수: ${notifications.length}`);
+      console.log(`FCM 토큰 수: ${notifications.length}`);
 
       // 알림 제목 생성 (매칭/일반 구분)
       let notificationTitle: string;
       if (chatType === "매칭") {
-        notificationTitle = `💕 ${messageData.senderNickname} (매칭 채팅)`;
+        notificationTitle = `${lastMessage.senderNickname} (매칭 채팅)`;
       } else {
         const groupName = groupNames.length > 0 ? groupNames[0] : "그룹";
-        notificationTitle = `👥 ${messageData.senderNickname} (${groupName})`;
+        notificationTitle = `${lastMessage.senderNickname} (${groupName})`;
       }
 
       // 메시지 내용 처리 (길이 제한)
-      let notificationBody = messageData.content;
+      let notificationBody = lastMessage.content;
       if (notificationBody.length > 100) {
         notificationBody = notificationBody.substring(0, 97) + "...";
       }
 
-      // FCM 메시지 생성
-      const message = {
-        notification: {
-          title: notificationTitle,
-          body: notificationBody,
-          icon: "/icon-192.png", // 앱 아이콘
-        },
-        data: {
-          groupId: groupId,
-          messageId: messageId,
-          senderId: messageData.senderId,
-          senderNickname: messageData.senderNickname || "알 수 없음",
-          chatType: chatType,
-          timestamp: messageData.timestamp?.toString() || Date.now().toString(),
-          type: "new_message",
-        },
-        android: {
-          notification: {
-            channelId: "groupting_messages",
-            sound: "default",
-            priority: "high" as const,
-            defaultSound: true,
-            defaultVibrateTimings: true,
-            clickAction: "FLUTTER_NOTIFICATION_CLICK",
-          },
-          data: {
-            click_action: "FLUTTER_NOTIFICATION_CLICK",
-          }
-        },
-        apns: {
-          payload: {
-            aps: {
-              sound: "default",
-              badge: 1,
-              category: "MESSAGE_CATEGORY",
-              "mutable-content": 1,
-            },
-          },
-        },
-        tokens: notifications.map(n => n.token),
-      };
-
-      // FCM 알림 발송
-      console.log(`📤 FCM 알림 발송 시작...`);
-      const response = await messaging.sendMulticast(message);
+      // FCM 알림 개별 발송 (sendMulticast 대신 개별 send 사용)
+      console.log(`FCM 알림 발송 시작... (${notifications.length}명)`);
       
-      console.log(`✅ FCM 알림 발송 완료: 성공 ${response.successCount}, 실패 ${response.failureCount}`);
+      let successCount = 0;
+      let failureCount = 0;
+      const failedTokens: string[] = [];
+      const failedUserIds: string[] = [];
+
+      // 각 사용자에게 개별적으로 알림 발송
+      for (const notification of notifications) {
+        try {
+          const message = {
+            notification: {
+              title: notificationTitle,
+              body: notificationBody,
+            },
+            data: {
+              chatroomId: chatroomId,
+              messageId: lastMessage.id || "",
+              senderId: lastMessage.senderId,
+              senderNickname: lastMessage.senderNickname || "알 수 없음",
+              chatType: chatType,
+              timestamp: lastMessage.createdAt?.toDate?.()?.getTime?.()?.toString() || Date.now().toString(),
+              type: "new_message",
+            },
+            android: {
+              notification: {
+                channelId: "groupting_default",
+                sound: "default",
+                priority: "high" as const,
+                defaultSound: true,
+                defaultVibrateTimings: true,
+                clickAction: "FLUTTER_NOTIFICATION_CLICK",
+              },
+              data: {
+                click_action: "FLUTTER_NOTIFICATION_CLICK",
+              }
+            },
+            apns: {
+              payload: {
+                aps: {
+                  sound: "default",
+                  badge: 1,
+                  category: "MESSAGE_CATEGORY",
+                  "mutable-content": 1,
+                },
+              },
+            },
+            token: notification.token,
+          };
+
+          const result = await messaging.send(message);
+          console.log(`알림 발송 성공: ${notification.nickname} (${result})`);
+          successCount++;
+          
+        } catch (error) {
+          console.error(`알림 발송 실패: ${notification.nickname} -`, error);
+          failedTokens.push(notification.token);
+          failedUserIds.push(notification.userId);
+          failureCount++;
+        }
+      }
+      
+      console.log(`FCM 알림 발송 완료: 성공 ${successCount}, 실패 ${failureCount}`);
       
       // 실패한 토큰들 처리
-      if (response.failureCount > 0) {
-        const failedTokens: string[] = [];
-        const failedUserIds: string[] = [];
-        
-        response.responses.forEach((resp, idx) => {
-          if (!resp.success) {
-            const notification = notifications[idx];
-            failedTokens.push(notification.token);
-            failedUserIds.push(notification.userId);
-            console.error(`❌ FCM 발송 실패 (${notification.nickname}):`, resp.error);
-          }
-        });
-        
-        // 유효하지 않은 토큰들을 DB에서 제거
+      if (failedTokens.length > 0) {
         await removeInvalidTokens(failedTokens, failedUserIds);
       }
 
       // 성공한 알림들 로그
-      if (response.successCount > 0) {
-        console.log(`🎉 ${response.successCount}명에게 알림 발송 성공`);
-        console.log(`📊 알림 상세: ${chatType} 채팅, 발송자: ${messageData.senderNickname}`);
+      if (successCount > 0) {
+        console.log(`${successCount}명에게 알림 발송 성공`);
+        console.log(`알림 상세: ${chatType} 채팅, 발송자: ${lastMessage.senderNickname}`);
       }
       
     } catch (error) {
-      console.error("💥 메시지 알림 발송 중 치명적 오류:", error);
+      console.error("메시지 알림 발송 중 치명적 오류:", error);
       // 에러 세부 정보 로깅
       if (error instanceof Error) {
         console.error("에러 메시지:", error.message);
@@ -243,8 +265,8 @@ export const sendMatchingNotification = functions.firestore
 
       // 매칭 상태 변경 감지
       if (beforeData.status !== "matched" && afterData.status === "matched") {
-        console.log(`🎉 매칭 완료 감지: ${groupId}`);
-        console.log(`💕 매칭된 그룹: ${groupId} ↔ ${afterData.matchedGroupId}`);
+        console.log(`매칭 완료 감지: ${groupId}`);
+        console.log(`매칭된 그룹: ${groupId} ↔ ${afterData.matchedGroupId}`);
         
         // 현재 그룹과 매칭된 그룹의 모든 멤버 정보 가져오기
         const allMemberData: Array<{userId: string, nickname: string, fcmToken?: string}> = [];
@@ -275,7 +297,7 @@ export const sendMatchingNotification = functions.firestore
               }
             }
           } catch (groupError) {
-            console.error(`❌ 그룹 데이터 로드 실패 (${gId}):`, groupError);
+            console.error(`그룹 데이터 로드 실패 (${gId}):`, groupError);
           }
         }
 
@@ -283,11 +305,11 @@ export const sendMatchingNotification = functions.firestore
         const validNotifications = allMemberData.filter(member => member.fcmToken);
         
         if (validNotifications.length === 0) {
-          console.log("🚫 유효한 FCM 토큰이 없습니다.");
+          console.log("유효한 FCM 토큰이 없습니다.");
           return;
         }
 
-        console.log(`📱 매칭 완료 알림 대상: ${validNotifications.length}명`);
+        console.log(`매칭 완료 알림 대상: ${validNotifications.length}명`);
 
         // 매칭된 그룹 정보 가져오기 (알림에 포함할 정보)
         let matchedGroupName = "새로운 그룹";
@@ -299,81 +321,87 @@ export const sendMatchingNotification = functions.firestore
               matchedGroupName = matchedGroupData?.name || "새로운 그룹";
             }
           } catch (e) {
-            console.log(`⚠️ 매칭된 그룹 정보 로드 실패: ${e}`);
+            console.log(`매칭된 그룹 정보 로드 실패: ${e}`);
           }
         }
 
-        // FCM 메시지 생성
-        const message = {
-          notification: {
-            title: "🎉 매칭 완료!",
-            body: `${matchedGroupName}과 매칭되었습니다! 지금 바로 채팅을 시작해보세요! 💬`,
-            icon: "/icon-192.png",
-          },
-          data: {
-            groupId: groupId,
-            matchedGroupId: afterData.matchedGroupId || "",
-            matchedGroupName: matchedGroupName,
-            chatRoomId: `${groupId}_${afterData.matchedGroupId}`,
-            type: "matching_completed",
-            timestamp: Date.now().toString(),
-          },
-          android: {
-            notification: {
-              channelId: "groupting_matching",
-              sound: "default",
-              priority: "high" as const,
-              defaultSound: true,
-              defaultVibrateTimings: true,
-              clickAction: "FLUTTER_NOTIFICATION_CLICK",
-              color: "#FF6B6B", // 매칭 완료 색상
-            },
-            data: {
-              click_action: "FLUTTER_NOTIFICATION_CLICK",
-            }
-          },
-          apns: {
-            payload: {
-              aps: {
-                sound: "default",
-                badge: 1,
-                category: "MATCHING_CATEGORY",
-                "mutable-content": 1,
-              },
-            },
-          },
-          tokens: validNotifications.map(n => n.fcmToken!),
-        };
+        // FCM 매칭 완료 알림 개별 발송
+        console.log(`매칭 완료 알림 발송 시작... (${validNotifications.length}명)`);
+        
+        let successCount = 0;
+        let failureCount = 0;
+        const failedTokens: string[] = [];
+        const failedUserIds: string[] = [];
 
-        // FCM 알림 발송
-        console.log(`📤 매칭 완료 알림 발송 시작...`);
-        const response = await messaging.sendMulticast(message);
-        console.log(`✅ 매칭 완료 알림 발송: 성공 ${response.successCount}, 실패 ${response.failureCount}`);
+        // 각 사용자에게 개별적으로 매칭 완료 알림 발송
+        for (const notification of validNotifications) {
+          try {
+            const message = {
+              notification: {
+                title: "매칭 완료!",
+                body: `${matchedGroupName}과 매칭되었습니다! 지금 바로 채팅을 시작해보세요!`,
+              },
+              data: {
+                groupId: groupId,
+                matchedGroupId: afterData.matchedGroupId || "",
+                matchedGroupName: matchedGroupName,
+                chatRoomId: `${groupId}_${afterData.matchedGroupId}`,
+                type: "matching_completed",
+                timestamp: Date.now().toString(),
+              },
+              android: {
+                notification: {
+                  channelId: "groupting_default",
+                  sound: "default",
+                  priority: "high" as const,
+                  defaultSound: true,
+                  defaultVibrateTimings: true,
+                  clickAction: "FLUTTER_NOTIFICATION_CLICK",
+                  color: "#FF6B6B", // 매칭 완료 색상
+                },
+                data: {
+                  click_action: "FLUTTER_NOTIFICATION_CLICK",
+                }
+              },
+              apns: {
+                payload: {
+                  aps: {
+                    sound: "default",
+                    badge: 1,
+                    category: "MATCHING_CATEGORY",
+                    "mutable-content": 1,
+                  },
+                },
+              },
+              token: notification.fcmToken!,
+            };
+
+            const result = await messaging.send(message);
+            console.log(`매칭 알림 발송 성공: ${notification.nickname} (${result})`);
+            successCount++;
+            
+          } catch (error) {
+            console.error(`매칭 알림 발송 실패: ${notification.nickname} -`, error);
+            failedTokens.push(notification.fcmToken!);
+            failedUserIds.push(notification.userId);
+            failureCount++;
+          }
+        }
+        
+        console.log(`매칭 완료 알림 발송 완료: 성공 ${successCount}, 실패 ${failureCount}`);
 
         // 실패한 토큰들 처리
-        if (response.failureCount > 0) {
-          const failedTokens: string[] = [];
-          const failedUserIds: string[] = [];
-          
-          response.responses.forEach((resp, idx) => {
-            if (!resp.success) {
-              const notification = validNotifications[idx];
-              failedTokens.push(notification.fcmToken!);
-              failedUserIds.push(notification.userId);
-              console.error(`❌ 매칭 알림 발송 실패 (${notification.nickname}):`, resp.error);
-            }
-          });
-          
+        if (failedTokens.length > 0) {
           await removeInvalidTokens(failedTokens, failedUserIds);
         }
 
-        if (response.successCount > 0) {
-          console.log(`🎊 ${response.successCount}명에게 매칭 완료 알림 발송 성공!`);
+        if (successCount > 0) {
+          console.log(`${successCount}명에게 매칭 완료 알림 발송 성공!`);
         }
       }
       
     } catch (error) {
-      console.error("💥 매칭 알림 발송 중 치명적 오류:", error);
+      console.error("매칭 알림 발송 중 치명적 오류:", error);
       if (error instanceof Error) {
         console.error("에러 메시지:", error.message);
         console.error("에러 스택:", error.stack);
@@ -389,25 +417,25 @@ export const sendInvitationNotification = functions.firestore
       const invitationData = snapshot.data();
       const invitationId = context.params.invitationId;
       
-      console.log(`💌 새 초대 감지: ${invitationId}`);
-      console.log(`📋 초대 데이터:`, invitationData);
+      console.log(`새 초대 감지: ${invitationId}`);
+      console.log(`초대 데이터:`, invitationData);
       
       // 초대 데이터 유효성 검사
       if (!invitationData || !invitationData.toUserId || !invitationData.fromUserId) {
-        console.log("❌ 유효하지 않은 초대 데이터, 알림 중단");
+        console.log("유효하지 않은 초대 데이터, 알림 중단");
         return;
       }
 
       // 초대받은 사용자의 정보 가져오기
       const userDoc = await db.collection("users").doc(invitationData.toUserId).get();
       if (!userDoc.exists) {
-        console.log(`❌ 초대받은 사용자를 찾을 수 없습니다: ${invitationData.toUserId}`);
+        console.log(`초대받은 사용자를 찾을 수 없습니다: ${invitationData.toUserId}`);
         return;
       }
 
       const userData = userDoc.data();
       if (!userData?.fcmToken) {
-        console.log(`⚠️ FCM 토큰이 없습니다 (${userData?.nickname || "사용자"})`);
+        console.log(`FCM 토큰이 없습니다 (${userData?.nickname || "사용자"})`);
         return;
       }
 
@@ -420,7 +448,7 @@ export const sendInvitationNotification = functions.firestore
           fromUserNickname = fromUserData?.nickname || fromUserNickname;
         }
       } catch (e) {
-        console.log(`⚠️ 초대한 사용자 정보 로드 실패: ${e}`);
+        console.log(`초대한 사용자 정보 로드 실패: ${e}`);
       }
 
       // 그룹 정보 가져오기 (그룹 이름 등)
@@ -436,28 +464,28 @@ export const sendInvitationNotification = functions.firestore
           }
         }
       } catch (e) {
-        console.log(`⚠️ 그룹 정보 로드 실패: ${e}`);
+        console.log(`그룹 정보 로드 실패: ${e}`);
       }
 
       // 개인화된 알림 메시지 생성
       let notificationBody: string;
       if (groupMemberCount > 0) {
-        notificationBody = `${fromUserNickname}님이 "${groupName}"(${groupMemberCount}명)에 초대했습니다! 🎊`;
+        notificationBody = `${fromUserNickname}님이 "${groupName}"(${groupMemberCount}명)에 초대했습니다!`;
       } else {
         notificationBody = `${fromUserNickname}님이 그룹에 초대했습니다! 🎊`;
       }
 
       // 초대 메시지가 있다면 추가
       if (invitationData.message && invitationData.message.trim()) {
-        notificationBody += `\n💬 "${invitationData.message}"`;
+        notificationBody += `\n"${invitationData.message}"`;
       }
 
       // FCM 메시지 생성
       const message = {
         notification: {
-          title: "🎉 새로운 그룹 초대!",
+          title: "새로운 그룹 초대!",
           body: notificationBody,
-          icon: "/icon-192.png",
+          icon: "/icon-192.png", // 나중에 올바르게 아이콘 이미지를 여기에 추가해서 알림 보내도록 구현하면 됩니다.
         },
         data: {
           invitationId: invitationId,
@@ -473,7 +501,7 @@ export const sendInvitationNotification = functions.firestore
         },
         android: {
           notification: {
-            channelId: "groupting_invitations",
+            channelId: "groupting_default",
             sound: "default",
             priority: "high" as const,
             defaultSound: true,
@@ -499,14 +527,14 @@ export const sendInvitationNotification = functions.firestore
       };
 
       // FCM 알림 발송
-      console.log(`📤 초대 알림 발송 시작: ${fromUserNickname} → ${userData.nickname}`);
+      console.log(`초대 알림 발송 시작: ${fromUserNickname} → ${userData.nickname}`);
       const response = await messaging.send(message);
-      console.log(`✅ 초대 알림 발송 완료: ${response}`);
+      console.log(`초대 알림 발송 완료: ${response}`);
 
-      console.log(`🎯 초대 알림 발송 성공: ${userData.nickname}님에게 ${fromUserNickname}님의 초대 알림 전달`);
+      console.log(`초대 알림 발송 성공: ${userData.nickname}님에게 ${fromUserNickname}님의 초대 알림 전달`);
       
     } catch (error) {
-      console.error("💥 초대 알림 발송 중 치명적 오류:", error);
+      console.error("초대 알림 발송 중 치명적 오류:", error);
       if (error instanceof Error) {
         console.error("에러 메시지:", error.message);
         console.error("에러 스택:", error.stack);
@@ -528,7 +556,7 @@ export const trackNotificationStats = functions.https.onCall(async (data, contex
     const { notificationType, action, messageId, groupId } = data;
     const userId = context.auth.uid;
 
-    console.log(`📊 알림 통계 추적: ${userId} - ${notificationType} - ${action}`);
+    console.log(`알림 통계 추적: ${userId} - ${notificationType} - ${action}`);
 
     // 알림 상호작용 로그 저장
     const logData = {
@@ -756,30 +784,30 @@ async function removeInvalidTokens(invalidTokens: string[], userIds: string[]) {
             });
             batchCount++;
             
-            console.log(`🗑️ 토큰 제거 예약: ${userData.nickname || userId} (${token.substring(0, 20)}...)`);
+            console.log(`토큰 제거 예약: ${userData.nickname || userId} (${token.substring(0, 20)}...)`);
             
             // Batch 크기 제한 (500개씩 처리)
             if (batchCount >= 500) {
               await batch.commit();
-              console.log(`✅ Batch 커밋 완료: ${batchCount}개 토큰 제거`);
+              console.log(`Batch 커밋 완료: ${batchCount}개 토큰 제거`);
               batchCount = 0;
             }
           }
         }
       } catch (userError) {
-        console.error(`❌ 사용자 토큰 제거 실패 (${userId}):`, userError);
+        console.error(`사용자 토큰 제거 실패 (${userId}):`, userError);
       }
     }
     
     // 남은 작업 커밋
     if (batchCount > 0) {
       await batch.commit();
-      console.log(`✅ 최종 Batch 커밋 완료: ${batchCount}개 토큰 제거`);
+      console.log(`최종 Batch 커밋 완료: ${batchCount}개 토큰 제거`);
     }
     
-    console.log(`🎯 유효하지 않은 FCM 토큰 제거 완료: 총 ${invalidTokens.length}개 처리`);
+    console.log(`유효하지 않은 FCM 토큰 제거 완료: 총 ${invalidTokens.length}개 처리`);
     
   } catch (error) {
-    console.error("💥 유효하지 않은 토큰 제거 중 치명적 오류:", error);
+    console.error("유효하지 않은 토큰 제거 중 치명적 오류:", error);
   }
 }

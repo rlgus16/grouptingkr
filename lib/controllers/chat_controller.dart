@@ -4,38 +4,35 @@ import '../models/message_model.dart';
 import '../models/user_model.dart';
 import '../models/group_model.dart';
 import '../services/firebase_service.dart';
-import '../services/message_service.dart';
 import '../services/user_service.dart';
 import '../services/group_service.dart';
-import '../services/realtime_chat_service.dart';
+import '../services/chatroom_service.dart';
+import '../models/chatroom_model.dart';
 
 class ChatController extends ChangeNotifier {
   final FirebaseService _firebaseService = FirebaseService();
-  final MessageService _messageService = MessageService();
   final UserService _userService = UserService();
   final GroupService _groupService = GroupService();
-  final RealtimeChatService _realtimeChatService = RealtimeChatService();
+  final ChatroomService _chatroomService = ChatroomService();
 
   // State
   bool _isLoading = false;
   String? _errorMessage;
-  List<MessageModel> _messages = [];
+  List<ChatMessage> _messages = [];
   List<UserModel> _matchedGroupMembers = [];
-  Map<String, bool> _onlineUsers = {};
   final TextEditingController _messageController = TextEditingController();
+  bool _disposed = false;
 
   // Subscriptions
-  StreamSubscription<List<MessageModel>>? _messagesSubscription;
-  StreamSubscription<Map<String, bool>>? _onlineUsersSubscription;
+  StreamSubscription<ChatroomModel?>? _chatroomSubscription;
   StreamSubscription<GroupModel?>? _groupSubscription;
   String? _currentGroupId;
 
   // Getters
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  List<MessageModel> get messages => _messages;
+  List<ChatMessage> get messages => _messages;
   List<UserModel> get matchedGroupMembers => _matchedGroupMembers;
-  Map<String, bool> get onlineUsers => _onlineUsers;
   TextEditingController get messageController => _messageController;
 
   void _setLoading(bool loading) {
@@ -50,7 +47,6 @@ class ChatController extends ChangeNotifier {
 
   // 실시간 메시지 스트림 시작
   void startMessageStream(String groupId) {
-    // print('ChatController: 메시지 스트림 시작 - groupId: $groupId');
     _setLoading(true);
     _currentGroupId = groupId;
 
@@ -61,14 +57,8 @@ class ChatController extends ChangeNotifier {
   Future<void> _startMessageStreamAsync(String groupId) async {
     try {
       // 기존 구독 해제
-      _messagesSubscription?.cancel();
-      _onlineUsersSubscription?.cancel();
+      _chatroomSubscription?.cancel();
       _groupSubscription?.cancel();
-
-      // 채팅방 초기화
-      // print('ChatController: 채팅방 초기화');
-      await _realtimeChatService.initializeChatRoom(groupId);
-      // print('ChatController: 채팅방 초기화 완료');
 
       // 그룹 상태 실시간 감지 시작
       _startGroupStatusListener(groupId);
@@ -76,47 +66,35 @@ class ChatController extends ChangeNotifier {
       // 그룹 멤버 로드 (매칭 전/후 구분)
       await _loadGroupMembers();
 
-      // 메시지 스트림 구독
-      // print('ChatController: 메시지 스트림 구독 시작');
-      _messagesSubscription = _realtimeChatService
-          .getMessagesStream(groupId)
+      // 실제 채팅방 ID 결정 (매칭된 경우 복합 ID 사용)
+      final chatRoomId = await _getChatRoomId(groupId);
+      
+      // 현재 그룹 ID를 채팅방 ID로 업데이트
+      _currentGroupId = chatRoomId;
+
+      // 채팅방 스트림 구독 (새로운 구조)
+      _chatroomSubscription = _chatroomService
+          .getChatroomStream(chatRoomId)
           .listen(
-            (messages) {
-              // print('ChatController: 메시지 수신됨 - ${messages.length}개');
-              for (final msg in messages) {
-                // print('- ${msg.senderNickname}: ${msg.content}');
+            (chatroom) {
+              if (!_disposed) {
+                if (chatroom != null) {
+                  _messages = chatroom.messages;
+                } else {
+                  _messages = [];
+                }
+                _setLoading(false);
               }
-              _messages = messages;
-              _setLoading(false);
-              notifyListeners();
             },
             onError: (error) {
-              // print('ChatController: 메시지 스트림 오류 - $error');
-              _setError('메시지 로드에 실패했습니다: $error');
-              _setLoading(false);
+              if (!_disposed) {
+                _setError('채팅방 로드에 실패했습니다: $error');
+                _setLoading(false);
+              }
             },
-          );
-
-      // 온라인 사용자 기능 임시 비활성화
-      // _onlineUsersSubscription = _realtimeChatService
-      //     .getOnlineUsersStream(groupId)
-      //     .listen(
-      //       (onlineUsers) {
-      //         _onlineUsers = onlineUsers;
-      //         notifyListeners();
-      //       },
-      //       onError: (error) {
-      //         print('온라인 사용자 로드 실패: $error');
-      //       },
-      //     );
-
-      // // 현재 사용자를 온라인 상태로 설정
-      // final currentUserId = _firebaseService.currentUserId;
-      // if (currentUserId != null) {
-      //   _realtimeChatService.setUserOnline(groupId, currentUserId);
-      // }
+            );
     } catch (e) {
-      _setError('메시지 스트림 시작에 실패했습니다: $e');
+      _setError('채팅방 스트림 시작에 실패했습니다: $e');
       _setLoading(false);
     }
   }
@@ -124,47 +102,35 @@ class ChatController extends ChangeNotifier {
   // 실시간 메시지 전송
   Future<bool> sendMessage() async {
     final content = _messageController.text.trim();
-    // print('sendMessage 호출됨');
-    // print('메시지 내용: "$content"');
-    // print('현재 그룹 ID: $_currentGroupId');
 
     if (content.isEmpty) {
-      // print('메시지 내용이 비어있음');
       return false;
     }
 
     if (_currentGroupId == null) {
-      // print('현재 그룹 ID가 null');
       return false;
     }
 
     try {
       _setError(null);
 
-      // print('메시지 전송 시도: $content');
-
-      await _realtimeChatService.sendMessage(
-        groupId: _currentGroupId!,
+      // 채팅방 서비스를 사용한 메시지 전송
+      await _chatroomService.sendMessage(
+        chatRoomId: _currentGroupId!,
         content: content,
       );
 
       _messageController.clear();
 
-      // 마지막 활동 시간 업데이트
-      await _realtimeChatService.updateLastActivity(_currentGroupId!);
-
-      // print('메시지 전송 성공');
-
       return true;
     } catch (e) {
-      // print('메시지 전송 실패: $e');
       _setError('메시지 전송에 실패했습니다: $e');
       return false;
     }
   }
 
   // 내 메시지인지 확인
-  bool isMyMessage(MessageModel message) {
+  bool isMyMessage(ChatMessage message) {
     final currentUserId = _firebaseService.currentUserId;
     return currentUserId != null && message.senderId == currentUserId;
   }
@@ -176,29 +142,23 @@ class ChatController extends ChangeNotifier {
     try {
       _messages.clear();
       _matchedGroupMembers.clear();
-      _onlineUsers.clear();
+      // _onlineUsers.clear(); // Deprecated: 온라인 상태 관리 비활성화
       _messageController.clear();
 
       // 구독 해제
-      _messagesSubscription?.cancel();
-      _messagesSubscription = null;
-      _onlineUsersSubscription?.cancel();
-      _onlineUsersSubscription = null;
+      _chatroomSubscription?.cancel();
+      _chatroomSubscription = null;
       _groupSubscription?.cancel();
       _groupSubscription = null;
 
-      // 오프라인 상태로 변경 (임시 비활성화)
-      // if (_currentGroupId != null) {
-      //   final currentUserId = _firebaseService.currentUserId;
-      //   if (currentUserId != null) {
-      //     _realtimeChatService.setUserOffline(_currentGroupId!, currentUserId);
-      //   }
-      // }
-
       _currentGroupId = null;
-      notifyListeners();
+      
+      // 즉시 UI 업데이트
+      if (!_disposed) {
+        notifyListeners();
+      }
     } catch (e) {
-      // print('ChatController clearData 중 에러: $e');
+      // ChatController clearData 중 에러
     }
   }
 
@@ -210,21 +170,21 @@ class ChatController extends ChangeNotifier {
   // 그룹 나가기/앱 종료 시 호출
   void stopMessageStream() {
     try {
-      _messagesSubscription?.cancel();
-      _messagesSubscription = null;
-      _onlineUsersSubscription?.cancel();
-      _onlineUsersSubscription = null;
+      _chatroomSubscription?.cancel();
+      _chatroomSubscription = null;
       _groupSubscription?.cancel();
       _groupSubscription = null;
 
+      // Firestore에서는 온라인 상태 관리를 별도로 처리하지 않음
+      // (필요 시 별도 구현)
       if (_currentGroupId != null) {
         final currentUserId = _firebaseService.currentUserId;
         if (currentUserId != null) {
-          _realtimeChatService.setUserOffline(_currentGroupId!, currentUserId);
+          // _realtimeChatService.setUserOffline(_currentGroupId!, currentUserId); // Deprecated: Firestore로 전환됨
         }
       }
     } catch (e) {
-      // print('ChatController stopMessageStream 중 에러: $e');
+      // ChatController stopMessageStream 중 에러
     }
   }
 
@@ -233,21 +193,57 @@ class ChatController extends ChangeNotifier {
     try {
       _groupSubscription = _groupService.getGroupStream(groupId).listen(
         (group) {
-          if (group != null) {
-            
-            // 그룹 멤버 변경 감지 시 멤버 목록 다시 로드
-            _loadGroupMembers();
-          } else {
-            // 그룹이 삭제된 경우 채팅 종료
-            clearData();
+          if (!_disposed) {
+            if (group != null) {
+              // 그룹 멤버 변경 감지 시 멤버 목록 다시 로드
+              _loadGroupMembers();
+            } else {
+              // 그룹이 삭제된 경우 채팅 종료
+              clearData();
+            }
           }
         },
         onError: (error) {
-          // ChatController: 그룹 상태 감지 오류 - $error
+          debugPrint('ChatController: 그룹 상태 감지 오류 - $error');
         },
       );
     } catch (e) {
-      // ChatController: 그룹 상태 리스너 시작 실패 - $e
+      debugPrint('ChatController: 그룹 상태 리스너 시작 실패 - $e');
+    }
+  }
+
+  // 채팅방 ID 결정 (매칭된 경우 복합 ID 사용)
+  Future<String> _getChatRoomId(String groupId) async {
+    try {
+      
+      final currentUserId = _firebaseService.currentUserId;
+      if (currentUserId == null) {
+        return groupId;
+      }
+
+      // 현재 사용자의 그룹 찾기
+      final currentGroup = await _groupService.getUserCurrentGroup(currentUserId);
+      if (currentGroup == null) {
+        return groupId;
+      }
+
+      // 매칭된 경우: 두 그룹 ID를 결합한 채팅방 ID 사용
+      if (currentGroup.status == GroupStatus.matched && currentGroup.matchedGroupId != null) {
+        final groupId1 = currentGroup.id;
+        final groupId2 = currentGroup.matchedGroupId!;
+        
+        // 알파벳순으로 정렬하여 일관된 채팅방 ID 생성
+        final chatRoomId = groupId1.compareTo(groupId2) < 0 
+            ? '${groupId1}_${groupId2}'
+            : '${groupId2}_${groupId1}';
+        return chatRoomId;
+      }
+      
+      // 매칭되지 않은 경우: 원래 그룹 ID 사용
+      return groupId;
+    } catch (e) {
+      // 에러 발생 시 원래 그룹 ID 사용
+      return groupId;
     }
   }
 
@@ -275,25 +271,28 @@ class ChatController extends ChangeNotifier {
         );
         _matchedGroupMembers = groupMembers.whereType<UserModel>().toList();
       }
-      notifyListeners();
+      // 즉시 UI 업데이트
+      if (!_disposed) {
+        notifyListeners();
+      }
     } catch (e) {
-      debugPrint('ChatController: 그룹 멤버 로드 실패 - $e');
+      // ChatController: 그룹 멤버 로드 실패
     }
   }
 
   // 로그아웃 시 모든 스트림 정리
   void onSignOut() {
-    debugPrint('로그아웃: ChatController 모든 스트림과 데이터 정리');
     stopMessageStream();
     _messages.clear();
     _matchedGroupMembers.clear();
-    _onlineUsers.clear();
+    // _onlineUsers.clear(); // Deprecated: 온라인 상태 관리 비활성화
     _currentGroupId = null;
     notifyListeners();
   }
 
   @override
   void dispose() {
+    _disposed = true;
     stopMessageStream();
     _messageController.dispose();
     super.dispose();

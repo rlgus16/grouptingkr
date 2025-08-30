@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class UserModel {
-  final String uid; // Firebase Auth UID - 사용자의 고유 식별자
+  final String uid; //  UID - 사용자의 고유 식별자
+  final String email; // 이메일 주소 
   final String phoneNumber;
   final String birthDate; // YYYYMMDD format
   final String gender; // '남' or '여'
@@ -15,12 +16,10 @@ class UserModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isProfileComplete;
-  
-  // 이메일은 Firebase Auth에서 가져옴 (currentUser.email)
-  // userId도 uid로 대체됨
 
   UserModel({
     required this.uid,
+    required this.email,
     required this.phoneNumber,
     required this.birthDate,
     required this.gender,
@@ -68,7 +67,8 @@ class UserModel {
     
     final dataMap = data as Map<String, dynamic>;
     return UserModel(
-      uid: doc.id, // Firestore 문서 ID가 uid
+      uid: doc.id, // Firestore 문서 ID uid로 사용
+      email: dataMap['email'] ?? '', // 이메일 필드
       phoneNumber: dataMap['phoneNumber'] ?? '',
       birthDate: dataMap['birthDate'] ?? '',
       gender: dataMap['gender'] ?? '',
@@ -89,6 +89,7 @@ class UserModel {
   Map<String, dynamic> toFirestore() {
     return {
       'uid': uid, // Firestore 보안 규칙 호환성을 위해 uid 필드 추가
+      'email': email, // 이메일 필드 추가 (Firebase Auth와 동기화)
       'phoneNumber': phoneNumber,
       'birthDate': birthDate,
       'gender': gender,
@@ -108,6 +109,7 @@ class UserModel {
   // 사용자 정보 업데이트용 copyWith 메서드
   UserModel copyWith({
     String? uid,
+    String? email,
     String? phoneNumber,
     String? birthDate,
     String? gender,
@@ -124,6 +126,7 @@ class UserModel {
   }) {
     return UserModel(
       uid: uid ?? this.uid,
+      email: email ?? this.email,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       birthDate: birthDate ?? this.birthDate,
       gender: gender ?? this.gender,

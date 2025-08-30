@@ -44,18 +44,27 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
   bool _isCheckingNickname = false;
   String? _nicknameValidationMessage;
 
+  // 다이얼로그 표시 상태 추적 (중복 방지용)
+  bool _isRestoringData = false;
+  bool _isRestoreDialogShown = false;
+
   @override
   void initState() {
     super.initState();
     // WidgetsBindingObserver 등록 (앱 상태 변화 감지용)
     WidgetsBinding.instance.addObserver(this);
+    
+    // 로그인 상태 체크
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkLoginStatus();
+    });
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     
-    if (!_isInitialized) {
+    if (!_isInitialized && !_isRestoringData) {
       // 회원가입 데이터 또는 현재 사용자 정보로 초기화
       final authController = context.read<AuthController>();
       final tempData = authController.tempRegistrationData;
@@ -68,8 +77,13 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
         _initializeWithCurrentUser();
       }
       
-      // 임시 저장된 프로필 데이터 복원 체크
-      _checkAndRestoreTemporaryData();
+      // 임시 저장된 프로필 데이터 복원 체크 (초기화 후에 수행)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_isRestoringData && !_isRestoreDialogShown) {
+          _checkAndRestoreTemporaryData();
+        }
+      });
+      
       _isInitialized = true; // 중복 실행 방지
     }
   }
@@ -141,7 +155,6 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
       });
     } else {
       // 현재 사용자 정보가 없는 경우 (프로필이 없는 상태)
-      // print('현재 사용자 정보가 없음 - 빈 폼으로 초기화');
       _initializeEmptyForm();
     }
   }
@@ -166,33 +179,45 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
 
 
 
-  // 데이터 복원 확인 다이얼로그 표시
+  // 데이터 복원 확인 다이얼로그 표시 (플래그 관리 추가)
   void _showRestoreConfirmDialog(Map<String, dynamic> tempProfileData, AuthController authController) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('이전 입력 정보 발견'),
-        content: const Text(
-          '이전에 입력하던 프로필 정보가 있습니다.\n복원하시겠습니까?',
+      barrierDismissible: false, // 뒤로가기로 닫지 못하도록 설정
+      builder: (context) => PopScope(
+        canPop: true,
+        onPopInvoked: (didPop) {
+          if (didPop) {
+            // 다이얼로그가 닫힐 때 플래그 리셋
+            _isRestoreDialogShown = false;
+          }
+        },
+        child: AlertDialog(
+          title: const Text('이전 입력 정보 발견'),
+          content: const Text(
+            '이전에 입력하던 프로필 정보가 있습니다.\n복원하시겠습니까?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _isRestoreDialogShown = false; // 플래그 리셋
+                // 복원하지 않고 임시 데이터 정리
+                authController.clearTemporaryProfileData();
+              },
+              child: const Text('새로 작성'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _isRestoreDialogShown = false; // 플래그 리셋
+                // 데이터 복원 (이미지 포함)
+                _performDataRestoreWithImages(tempProfileData, authController);
+              },
+              child: const Text('복원하기'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // 복원하지 않고 임시 데이터 정리
-              authController.clearTemporaryProfileData();
-            },
-            child: const Text('새로 작성'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // 데이터 복원 (이미지 포함)
-              _performDataRestoreWithImages(tempProfileData, authController);
-            },
-            child: const Text('복원하기'),
-          ),
-        ],
       ),
     );
   }
@@ -423,6 +448,12 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
   void dispose() {
     // WidgetsBindingObserver 해제
     WidgetsBinding.instance.removeObserver(this);
+    
+    // 플래그 초기화 (메모리 정리)
+    _isRestoringData = false;
+    _isRestoreDialogShown = false;
+    
+    // 컨트롤러 해제
     _phoneController.dispose();
     _nicknameController.dispose();
     _birthDateController.dispose();
@@ -433,7 +464,23 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
     super.dispose();
   }
 
-  // 앱 상태 변화 감지 (백그라운드/포그라운드)
+  // 로그인 상태 체크
+  void _checkLoginStatus() {
+    final authController = context.read<AuthController>();
+    // 로그인되지 않았고 임시 회원가입 데이터도 없으면 로그인 화면으로
+    if (!authController.isLoggedIn && authController.tempRegistrationData == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/login',
+            (route) => false,
+          );
+        }
+      });
+    }
+  }
+
+  // 앱 상태 변화 감지 (백그라운드/포그라운드, 중복 방지 추가)
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
@@ -441,12 +488,21 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
     switch (state) {
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
-        // 백그라운드로 갈 때 임시 저장
-        _saveTemporaryData();
+        // 백그라운드로 갈 때 임시 저장 (복원 중이 아닐 때만)
+        if (!_isRestoringData && !_isRestoreDialogShown) {
+          _saveTemporaryData();
+        }
         break;
       case AppLifecycleState.resumed:
         // 포그라운드로 돌아올 때 임시 데이터 복원 체크
-        _checkAndRestoreTemporaryData();
+        // (이미 복원 중이거나 다이얼로그가 표시된 상태가 아닐 때만)
+        if (!_isRestoringData && !_isRestoreDialogShown) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted && !_isRestoringData && !_isRestoreDialogShown) {
+              _checkAndRestoreTemporaryData();
+            }
+          });
+        }
         break;
       default:
         break;
@@ -496,8 +552,13 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
     }
   }
 
-  // 임시 데이터 복원 체크
+  // 임시 데이터 복원 체크 (중복 방지 로직 추가)
   void _checkAndRestoreTemporaryData() {
+    // 이미 복원 중이거나 다이얼로그가 표시되어 있으면 중단
+    if (_isRestoringData || _isRestoreDialogShown) {
+      return;
+    }
+
     final authController = context.read<AuthController>();
     final tempProfileData = authController.tempProfileData;
     
@@ -509,8 +570,11 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
         if (savedAt != null && 
             DateTime.now().difference(savedAt).inHours < 24) {
           // 24시간 이내 데이터면 복원 다이얼로그 표시
+          _isRestoreDialogShown = true; // 다이얼로그 표시 플래그 설정
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            _showRestoreConfirmDialog(tempProfileData, authController);
+            if (mounted && !_isRestoringData) {
+              _showRestoreConfirmDialog(tempProfileData, authController);
+            }
           });
         } else {
           // 24시간 지났으면 데이터 정리
@@ -520,10 +584,13 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
     }
   }
 
-  // 실제 데이터 복원 수행 (이미지 포함)
+  // 실제 데이터 복원 수행 (이미지 포함, 플래그 관리 추가)
   Future<void> _performDataRestoreWithImages(
       Map<String, dynamic> tempProfileData, 
       AuthController authController) async {
+    // 복원 시작 플래그 설정
+    _isRestoringData = true;
+    
     try {
       setState(() {
         _nicknameController.text = tempProfileData['nickname'] ?? '';
@@ -578,6 +645,9 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
           ),
         );
       }
+    } finally {
+      // 복원 완료 플래그 리셋
+      _isRestoringData = false;
     }
   }
 
