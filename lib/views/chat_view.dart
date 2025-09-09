@@ -118,163 +118,152 @@ class _ChatViewState extends State<ChatView> {
             );
           }
 
-          return SafeArea(
-            child: Column(
-              children: [
-                // 채팅 상태 헤더 (매칭 전/후에 따라 다른 UI)
-                if (groupController.currentGroup != null)
-                  _buildChatHeader(context, groupController, chatController),
+          return Column(
+            children: [
+              // 채팅 상태 헤더 (매칭 전/후에 따라 다른 UI)
+              if (groupController.currentGroup != null)
+                _buildChatHeader(context, groupController, chatController),
 
-                // 채팅 메시지 영역
-                Expanded(
-                  child: chatController.messages.isEmpty
-                      ? _buildEmptyMessageView(groupController)
-                      : ListView.builder(
-                          reverse: true,
-                          padding: EdgeInsets.only(
-                            left: 16,
-                            right: 16,
-                            top: 16,
-                            // 키보드가 보일 때는 하단 패딩을 줄여서 오버플로우 방지
-                            bottom: isKeyboardVisible ? 8 : 16,
-                          ),
-                          itemCount: chatController.messages.length,
-                          itemBuilder: (context, index) {
-                            final message =
-                                chatController.messages[chatController
-                                        .messages
-                                        .length -
-                                    1 -
-                                    index];
-                            final senderProfile = message.senderId != 'system'
-                                ? chatController.matchedGroupMembers
-                                      .where(
-                                        (member) =>
-                                            member.uid == message.senderId,
-                                      )
-                                      .firstOrNull
-                                : null;
+              // 채팅 메시지 영역
+              Expanded(
+                child: chatController.messages.isEmpty
+                    ? _buildEmptyMessageView(groupController)
+                    : ListView.builder(
+                        reverse: true,
+                        padding: EdgeInsets.only(
+                          left: 16,
+                          right: 16,
+                          top: 16,
+                          // 키보드가 보일 때는 하단 패딩을 줄여서 오버플로우 방지
+                          bottom: isKeyboardVisible ? 4 : 16,
+                        ),
+                        itemCount: chatController.messages.length,
+                        itemBuilder: (context, index) {
+                          final message =
+                              chatController.messages[chatController
+                                      .messages
+                                      .length -
+                                  1 -
+                                  index];
+                          final senderProfile = message.senderId != 'system'
+                              ? chatController.matchedGroupMembers
+                                    .where(
+                                      (member) =>
+                                          member.uid == message.senderId,
+                                    )
+                                    .firstOrNull
+                              : null;
 
-                            return MessageBubble(
-                              message: message,
-                              isMe: chatController.isMyMessage(message),
-                              senderProfile: senderProfile,
-                              onTap: message.senderId != 'system'
-                                  ? () {
-                                      final member = groupController
-                                          .getMemberById(message.senderId);
-                                      if (member != null &&
-                                          member.uid.isNotEmpty) {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                ProfileDetailView(user: member),
-                                          ),
-                                        );
-                                      }
+                          return MessageBubble(
+                            message: message,
+                            isMe: chatController.isMyMessage(message),
+                            senderProfile: senderProfile,
+                            onTap: message.senderId != 'system'
+                                ? () {
+                                    final member = groupController
+                                        .getMemberById(message.senderId);
+                                    if (member != null &&
+                                        member.uid.isNotEmpty) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              ProfileDetailView(user: member),
+                                        ),
+                                      );
                                     }
-                                  : null,
-                            );
-                          },
-                        ),
-                ),
+                                  }
+                                : null,
+                          );
+                        },
+                      ),
+              ),
 
-                // 메시지 입력 영역 - 키보드 대응 최적화
-                SafeArea(
-                  minimum: EdgeInsets.only(
-                    bottom: isKeyboardVisible ? 2 : 4, // 키보드 상태에 따라 최소 여백 조정
+              // 메시지 입력 영역 - SafeArea 적용으로 안전한 영역 확보
+              SafeArea(
+                child: Container(
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 8,
+                    bottom: isKeyboardVisible ? 4 : 8,
                   ),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200), // 키보드 전환 애니메이션
-                    curve: Curves.easeInOut,
-                    padding: EdgeInsets.only(
-                      left: 16,
-                      right: 16,
-                      top: 8,
-                      bottom: isKeyboardVisible ? 2 : 8, // 키보드 상태에 따라 하단 패딩 조정
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border(top: BorderSide(color: AppTheme.gray200)),
-                      // 키보드가 올라올 때 약간의 그림자 추가로 분리감 제공
-                      boxShadow: isKeyboardVisible 
-                          ? [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.1),
-                                blurRadius: 4,
-                                offset: const Offset(0, -2),
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              // 키보드가 올라올 때 TextField 높이 제한으로 오버플로우 방지
-                              maxHeight: isKeyboardVisible ? 80 : 120,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(top: BorderSide(color: AppTheme.gray200)),
+                    // 키보드가 올라올 때 약간의 그림자 추가로 분리감 제공
+                    boxShadow: isKeyboardVisible 
+                        ? [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, -2),
                             ),
-                            child: TextField(
-                              controller: chatController.messageController,
-                              decoration: InputDecoration(
-                                hintText: '메시지를 입력하세요',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(24),
-                                  borderSide: BorderSide.none,
-                                ),
-                                filled: true,
-                                fillColor: AppTheme.gray100,
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: isKeyboardVisible ? 8 : 12, // 키보드 상태에 따라 패딩 조정
-                                ),
-                                // 키보드가 올라올 때 힌트 텍스트 크기 조정
-                                hintStyle: TextStyle(
-                                  fontSize: isKeyboardVisible ? 14 : 16,
-                                ),
-                              ),
-                              maxLines: isKeyboardVisible ? 3 : 5, // 키보드 상태에 따라 최대 줄 수 제한
-                              minLines: 1,
-                              textInputAction: TextInputAction.send,
-                              style: TextStyle(
-                                fontSize: isKeyboardVisible ? 14 : 16, // 키보드 상태에 따라 폰트 크기 조정
-                              ),
-                              onSubmitted: (_) async {
-                                await chatController.sendMessage();
-                              },
-                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            // 키보드가 올라올 때 TextField 높이 제한으로 오버플로우 방지
+                            maxHeight: isKeyboardVisible ? 100 : 120,
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          curve: Curves.easeInOut,
-                          child: IconButton.filled(
-                            onPressed: () async {
+                          child: TextField(
+                            controller: chatController.messageController,
+                            decoration: InputDecoration(
+                              hintText: '메시지를 입력하세요',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(24),
+                                borderSide: BorderSide.none,
+                              ),
+                              filled: true,
+                              fillColor: AppTheme.gray100,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: isKeyboardVisible ? 8 : 12, // 키보드 상태에 따라 패딩 조정
+                              ),
+                              // 키보드가 올라올 때 힌트 텍스트 크기 조정
+                              hintStyle: TextStyle(
+                                fontSize: isKeyboardVisible ? 14 : 16,
+                              ),
+                            ),
+                            maxLines: isKeyboardVisible ? 3 : 5, // 키보드 상태에 따라 최대 줄 수 제한
+                            minLines: 1,
+                            textInputAction: TextInputAction.send,
+                            style: TextStyle(
+                              fontSize: isKeyboardVisible ? 14 : 16, // 키보드 상태에 따라 폰트 크기 조정
+                            ),
+                            onSubmitted: (_) async {
                               await chatController.sendMessage();
                             },
-                            icon: Icon(
-                              Icons.send,
-                              size: isKeyboardVisible ? 20 : 24, // 키보드 상태에 따라 아이콘 크기 조정
-                            ),
-                            style: IconButton.styleFrom(
-                              backgroundColor: AppTheme.primaryColor,
-                              padding: EdgeInsets.all(isKeyboardVisible ? 8 : 12), // 키보드 상태에 따라 패딩 조정
-                              minimumSize: Size(
-                                isKeyboardVisible ? 40 : 48,
-                                isKeyboardVisible ? 40 : 48,
-                              ),
-                            ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton.filled(
+                        onPressed: () async {
+                          await chatController.sendMessage();
+                        },
+                        icon: Icon(
+                          Icons.send,
+                          size: isKeyboardVisible ? 20 : 24, // 키보드 상태에 따라 아이콘 크기 조정
+                        ),
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          padding: EdgeInsets.all(isKeyboardVisible ? 8 : 12), // 키보드 상태에 따라 패딩 조정
+                          minimumSize: Size(
+                            isKeyboardVisible ? 40 : 48,
+                            isKeyboardVisible ? 40 : 48,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           );
         },
         ),
