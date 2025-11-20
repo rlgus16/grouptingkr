@@ -123,6 +123,15 @@ class GroupController extends ChangeNotifier {
         if (group != null) {
           final oldStatus = _currentGroup?.status;
           final oldMatchedGroupId = _currentGroup?.matchedGroupId;
+
+          // [빠른손] 그룹 내 멤버 수 변경 감지(수락 및 나가기) 시 멤버 다시 로드
+          if (_currentGroup?.memberCount != group.memberCount) {
+            _loadGroupMembers();
+          }
+
+          // [빠른손] 매칭 중 상태 업데이트
+          _isMatching = group.status == GroupStatus.matching;
+
           _currentGroup = group;
 
           // 매칭 완료 감지
@@ -546,6 +555,7 @@ class GroupController extends ChangeNotifier {
   }
 
   // 정리
+  @override
   void dispose() {
     _groupSubscription?.cancel();
     _receivedInvitationsSubscription?.cancel();

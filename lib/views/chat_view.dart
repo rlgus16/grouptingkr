@@ -317,7 +317,6 @@ class _ChatViewState extends State<ChatView> {
           
           // 매칭 전: 현재 그룹 멤버들 + 초대 상태
           if (!isMatched) ...[
-            _buildPreMatchMembers(context, groupController),
             if (currentGroup.memberIds.length < 5)
               _buildInvitationStatus(context, groupController),
           ],
@@ -327,70 +326,6 @@ class _ChatViewState extends State<ChatView> {
             _buildMatchedMembers(context, chatController),
         ],
       ),
-    );
-  }
-
-  // 매칭 전 그룹 멤버들 표시
-  Widget _buildPreMatchMembers(
-    BuildContext context,
-    GroupController groupController,
-  ) {
-    final groupMembers = groupController.groupMembers;
-    
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.people, size: 16, color: AppTheme.textSecondary),
-            const SizedBox(width: 4),
-            Text(
-              '현재 그룹 멤버',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppTheme.textSecondary,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 50,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: groupMembers.length,
-            itemBuilder: (context, index) {
-              final member = groupMembers[index];
-              final isOwner = groupController.currentGroup!.isOwner(member.uid);
-              
-              return Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ProfileDetailView(user: member),
-                      ),
-                    );
-                  },
-                  child: Column(
-                    children: [
-                      MemberAvatar(
-                        imageUrl: member.mainProfileImage,
-                        name: member.nickname,
-                        isOwner: isOwner,
-                        size: 40,
-                      ),
-                      const SizedBox(height: 2),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
     );
   }
 
@@ -442,7 +377,10 @@ class _ChatViewState extends State<ChatView> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                '$pendingCount명의 친구가 초대 응답을 기다리고 있습니다',
+                // [빠른손] 매칭 중 상태일 때 문구 변경
+                groupController.isMatching
+                    ? '매칭 중...'
+                    : '$pendingCount명의 친구가 초대 응답을 기다리고 있습니다',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Colors.orange,
                   fontWeight: FontWeight.w500,
