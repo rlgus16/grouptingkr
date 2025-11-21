@@ -347,13 +347,27 @@ class _ChatViewState extends State<ChatView> {
         ),
         child: Row(
           children: [
-            const Icon(Icons.person_add, color: AppTheme.primaryColor, size: 20),
+            // [빠른손] 매칭 중 상태일 때 아이콘 변경
+            Icon(
+              groupController.isMatching
+                  ? Icons.hourglass_empty
+                  : Icons.person_add,
+              color: groupController.isMatching
+                  ? Colors.orange
+                  : AppTheme.primaryColor,
+              size: 20,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                '친구를 더 초대해보세요! (${groupController.currentGroup!.memberIds.length}/5명)',
+                // [빠른손] 매칭 중 상태일 때 문구 변경
+                groupController.isMatching
+                    ? '매칭 중...'
+                    : '친구를 더 초대해보세요! (${groupController.currentGroup!.memberIds.length}/5명)',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppTheme.primaryColor,
+                  color: groupController.isMatching
+                      ? Colors.orange
+                      : AppTheme.primaryColor,
                   fontWeight: FontWeight.w500,
                 ),
               ),
