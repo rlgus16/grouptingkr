@@ -18,13 +18,20 @@ class ChatroomService {
     required String groupId,
     required List<String> participants,
   }) async {
+    DocumentSnapshot<Map<String, dynamic>>? doc;
+
+    // [빠른손] 기존 채팅방 확인
     try {
-      // 기존 채팅방 확인
-      final doc = await _chatroomsCollection.doc(chatRoomId).get();
-      
-      if (doc.exists) {
-        final existingChatroom = ChatroomModel.fromFirestore(doc);
-        
+      debugPrint('채팅방 조회/생성 시도: $chatRoomId (참여자 ${participants.length}명)');
+      doc = await _chatroomsCollection.doc(chatRoomId).get();
+    } catch (e) {
+      debugPrint('채팅방 조회/생성 실패: $e');
+    }
+
+    try {
+      if (doc?.exists ?? false) {
+        final existingChatroom = ChatroomModel.fromFirestore(doc!);
+
         // 참여자 목록이 다르면 업데이트
         final existingParticipants = Set.from(existingChatroom.participants);
         final newParticipants = Set.from(participants);
