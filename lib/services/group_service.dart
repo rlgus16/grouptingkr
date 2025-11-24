@@ -809,7 +809,12 @@ class GroupService {
       
       // 채팅방에 참여했던 모든 사용자들에게 실시간 상태 변경 알림
       // (실제로는 ChatController나 다른 리스너에서 자동으로 감지될 것)
-      
+
+      // [빠른손] 매칭했던 그룹으로 실시간 상태 변경 알림
+      await _groupsCollection.doc(matchedGroupId).update({
+        'updatedAt': DateTime.now(),
+      });
+
       // 필요에 따라 매칭 상태 해제나 다른 로직 추가 가능
       // 예: 한 그룹의 모든 멤버가 나가면 매칭 해제 등
       

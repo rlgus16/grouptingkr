@@ -178,10 +178,7 @@ class GroupController extends ChangeNotifier {
             _handleMatchingCompleted();
           }
 
-          // 매칭된 그룹이 변경된 경우 멤버 다시 로드
-          if (oldMatchedGroupId != group.matchedGroupId) {
-            _loadGroupMembers();
-          }
+          _loadGroupMembers();
 
           notifyListeners();
         }
