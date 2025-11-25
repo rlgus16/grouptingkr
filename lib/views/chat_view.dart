@@ -316,11 +316,8 @@ class _ChatViewState extends State<ChatView> {
           const SizedBox(height: 12),
           
           // 매칭 전: 현재 그룹 멤버들 + 초대 상태
-          if (!isMatched) ...[
-            if (currentGroup.memberIds.length < 5)
-              _buildInvitationStatus(context, groupController),
-          ],
-          
+          if (!isMatched) ...[_buildInvitationStatus(context, groupController)],
+
           // 매칭 후: 모든 참여자들
           if (isMatched)
             _buildMatchedMembers(context, chatController),
@@ -335,9 +332,14 @@ class _ChatViewState extends State<ChatView> {
     GroupController groupController,
   ) {
     final sentInvitations = groupController.sentInvitations;
-    final pendingCount = sentInvitations.where((inv) => inv.status.toString().split('.').last == 'pending').length;
-    
-    if (pendingCount == 0 && groupController.currentGroup!.memberIds.length < 5) {
+    final pendingCount = sentInvitations
+        .where((inv) => inv.status.toString().split('.').last == 'pending')
+        .length;
+
+    // [빠른손] 매칭 중인 경우 "매칭 중..." 상태 표시
+    if (groupController.isMatching ||
+        (pendingCount == 0 &&
+            groupController.currentGroup!.memberIds.length < 5)) {
       return Container(
         margin: const EdgeInsets.only(top: 12),
         padding: const EdgeInsets.all(12),
