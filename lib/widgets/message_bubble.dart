@@ -65,7 +65,10 @@ class MessageBubble extends StatelessWidget {
               ),
             ),
           ],
-          Flexible(
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.8,
+            ),
             child: GestureDetector(
               onTap: onTap,
               child: Container(
@@ -96,7 +99,7 @@ class MessageBubble extends StatelessWidget {
                       : null,
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                   children: [
                     // 발신자 이름 (시스템 메시지가 아니고 내 메시지가 아닐 때)
                     if (!isMe && message.type != MessageType.system) ...[
@@ -114,6 +117,7 @@ class MessageBubble extends StatelessWidget {
                     // 메시지 내용
                     Text(
                       message.content,
+                      textAlign: isMe ? TextAlign.right : TextAlign.left,
                       style: TextStyle(
                         color: isMe
                             ? Colors.white
@@ -140,10 +144,6 @@ class MessageBubble extends StatelessWidget {
               ),
             ),
           ),
-          if (isMe) ...[
-            // 내 메시지일 때 여백
-            const SizedBox(width: 40),
-          ],
         ],
       ),
     );

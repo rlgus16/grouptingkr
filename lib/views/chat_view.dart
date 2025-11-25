@@ -340,41 +340,53 @@ class _ChatViewState extends State<ChatView> {
     if (groupController.isMatching ||
         (pendingCount == 0 &&
             groupController.currentGroup!.memberIds.length < 5)) {
-      return Container(
-        margin: const EdgeInsets.only(top: 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppTheme.primaryColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            // [빠른손] 매칭 중 상태일 때 아이콘 변경
-            Icon(
-              groupController.isMatching
-                  ? Icons.hourglass_empty
-                  : Icons.person_add,
-              color: groupController.isMatching
-                  ? Colors.orange
-                  : AppTheme.primaryColor,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                // [빠른손] 매칭 중 상태일 때 문구 변경
+      return GestureDetector(
+        onTap: () {
+          if (!groupController.isMatching) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const InviteFriendView(),
+              ),
+            );
+          }
+        },
+        child: Container(
+          margin: const EdgeInsets.only(top: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppTheme.primaryColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              // [빠른손] 매칭 중 상태일 때 아이콘 변경
+              Icon(
                 groupController.isMatching
-                    ? '매칭 중...'
-                    : '친구를 더 초대해보세요! (${groupController.currentGroup!.memberIds.length}/5명)',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: groupController.isMatching
-                      ? Colors.orange
-                      : AppTheme.primaryColor,
-                  fontWeight: FontWeight.w500,
+                    ? Icons.hourglass_empty
+                    : Icons.person_add,
+                color: groupController.isMatching
+                    ? Colors.orange
+                    : AppTheme.primaryColor,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  // [빠른손] 매칭 중 상태일 때 문구 변경
+                  groupController.isMatching
+                      ? '매칭 중...'
+                      : '친구를 더 초대해보세요! (${groupController.currentGroup!.memberIds.length}/5명)',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: groupController.isMatching
+                        ? Colors.orange
+                        : AppTheme.primaryColor,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     }
