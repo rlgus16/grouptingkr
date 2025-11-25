@@ -672,11 +672,13 @@ class _ProfileEditViewState extends State<ProfileEditView> {
           future: imageData.readAsBytes(),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
-              return Image.memory(
-                snapshot.data!,
-                width: isMainProfile ? double.infinity : 80,
-                height: double.infinity,
-                fit: BoxFit.cover,
+              return Center(
+                child: Image.memory(
+                  snapshot.data!,
+                  width: isMainProfile ? double.infinity : 80,
+                  height: isMainProfile ? double.infinity : 80,
+                  fit: BoxFit.cover,
+                ),
               );
             } else {
               return Container(
@@ -693,11 +695,13 @@ class _ProfileEditViewState extends State<ProfileEditView> {
           future: imageData.readAsBytes(),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
-              return Image.memory(
-                snapshot.data!,
-                width: isMainProfile ? double.infinity : 80,
-                height: double.infinity,
-                fit: BoxFit.cover,
+              return Center(
+                child: Image.memory(
+                  snapshot.data!,
+                  width: isMainProfile ? double.infinity : 80,
+                  height: isMainProfile ? double.infinity : 80,
+                  fit: BoxFit.cover,
+                ),
               );
             } else {
               return Container(
@@ -712,7 +716,7 @@ class _ProfileEditViewState extends State<ProfileEditView> {
       }
     } else if (imageData is String) {
       // 기존 저장된 이미지 (URL)
-      return _buildProfileImage(imageData, isMainProfile ? 200 : 80);
+      return Center(child: _buildProfileImage(imageData, isMainProfile ? 200 : 80));
     } else {
       // 빈 슬롯
       return Container(

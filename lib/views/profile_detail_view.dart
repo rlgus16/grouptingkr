@@ -50,6 +50,42 @@ class ProfileDetailView extends StatelessWidget {
                     ),
             ),
 
+            // 프로필 이미지 개수 표시
+            if (user.profileImages.length > 1) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.gray50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.photo_library_outlined,
+                      color: AppTheme.textSecondary,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '사진 ${user.profileImages.length}장',
+                      style: const TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 14,
+                      ),
+                    ),
+                    const Spacer(),
+                    const Text(
+                      '← 스와이프하여 사진 보기',
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+
             // 프로필 정보
             Padding(
               padding: const EdgeInsets.all(24.0),
@@ -105,43 +141,7 @@ class ProfileDetailView extends StatelessWidget {
                     _buildInfoSection(context, '소개', [
                       _InfoItem('', user.introduction, isDescription: true),
                     ]),
-                    const SizedBox(height: 24),
-                  ],
-
-                  // 프로필 이미지 개수 표시
-                  if (user.profileImages.length > 1) ...[
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppTheme.gray50,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.photo_library_outlined,
-                            color: AppTheme.textSecondary,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            '사진 ${user.profileImages.length}장',
-                            style: const TextStyle(
-                              color: AppTheme.textSecondary,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const Spacer(),
-                          const Text(
-                            '← 스와이프하여 사진 보기',
-                            style: TextStyle(
-                              color: AppTheme.textSecondary,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    const SizedBox(height: 24,),
                   ],
                 ],
               ),
@@ -169,6 +169,7 @@ class ProfileDetailView extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Container(
+          width: double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.white,
@@ -182,6 +183,7 @@ class ProfileDetailView extends StatelessWidget {
             ],
           ),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: items.map((item) => _buildInfoRow(item)).toList(),
           ),
         ),
