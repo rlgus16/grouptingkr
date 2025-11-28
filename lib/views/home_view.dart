@@ -355,6 +355,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
 
               const Divider(height: 1),
 
+              if (groupController.currentGroup != null)
               ListTile(
                 leading: const Icon(
                   Icons.exit_to_app,
