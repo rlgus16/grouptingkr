@@ -62,6 +62,15 @@ class GroupController extends ChangeNotifier {
   }
 
   void _clearData() {
+    _groupSubscription?.cancel();
+    _groupSubscription = null;
+    _receivedInvitationsSubscription?.cancel();
+    _receivedInvitationsSubscription = null;
+    _sentInvitationsSubscription?.cancel();
+    _sentInvitationsSubscription = null;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+    
     _currentGroup = null;
     _groupMembers.clear();
     _receivedInvitations.clear();
@@ -140,8 +149,13 @@ class GroupController extends ChangeNotifier {
     _groupSubscription = _groupStream!.listen(
       (group) {
         if (group != null) {
+          final currentUserId = _firebaseService.currentUserId;
+          if (currentUserId == null || !group.memberIds.contains(currentUserId)) {
+            _clearData();
+            return;
+          }
+
           final oldStatus = _currentGroup?.status;
-          final oldMatchedGroupId = _currentGroup?.matchedGroupId;
 
           // [빠른손] 그룹 내 멤버 수 변경 감지(수락 및 나가기) 시 멤버 다시 로드
           if (_currentGroup?.memberCount != group.memberCount) {
@@ -181,13 +195,18 @@ class GroupController extends ChangeNotifier {
           _loadGroupMembers();
 
           notifyListeners();
+        } else {
+          // 그룹이 삭제된 경우 (예: 마지막 멤버가 나감)
+          _clearData();
         }
       },
       onError: (error) {
         _scheduleReconnect();
       },
       onDone: () {
-        _scheduleReconnect();
+        if (_currentGroup != null) {
+          _scheduleReconnect();
+        }
       },
     );
   }
@@ -196,7 +215,9 @@ class GroupController extends ChangeNotifier {
   void _scheduleReconnect() {
     _reconnectTimer?.cancel();
     _reconnectTimer = Timer(const Duration(seconds: 5), () {
-      _startGroupStatusStream();
+      if (_currentGroup != null) {
+        _startGroupStatusStream();
+      }
     });
   }
 
@@ -457,14 +478,19 @@ class GroupController extends ChangeNotifier {
   // 현재 그룹 로드
   Future<void> loadCurrentGroup() async {
     final currentUserId = _firebaseService.currentUserId;
-    if (currentUserId == null) return;
+    if (currentUserId == null) {
+      _clearData();
+      return;
+    }
 
     try {
       _currentGroup = await _groupService.getUserCurrentGroup(currentUserId);
+      
       if (_currentGroup != null) {
         await _loadGroupMembers();
-        // 기존 그룹이 있을 때도 실시간 상태 감지 시작
         _startGroupStatusStream();
+      } else {
+        _clearData();
       }
       notifyListeners();
     } catch (e) {
@@ -540,7 +566,14 @@ class GroupController extends ChangeNotifier {
       );
 
       if (success) {
-        _clearData();
+        // 즉시 이전 그룹의 리스너를 중지하고 상태를 클리어
+        _groupSubscription?.cancel();
+        _groupSubscription = null;
+        _currentGroup = null;
+        _groupMembers.clear();
+        
+        // 새로운 그룹 정보를 로드
+        await refreshData();
       }
 
       _setLoading(false);
@@ -592,15 +625,7 @@ class GroupController extends ChangeNotifier {
   // 정리
   @override
   void dispose() {
-    _groupSubscription?.cancel();
-    _receivedInvitationsSubscription?.cancel();
-    _sentInvitationsSubscription?.cancel();
-    _reconnectTimer?.cancel();
-    
-    // 매칭 리스너도 모두 정리
-    GroupService.stopAllMatchingListeners();
-    
-    _clearData();
+    onSignOut(); // onSignOut 로직을 그대로 사용
     super.dispose();
   }
 
@@ -648,6 +673,7 @@ class GroupController extends ChangeNotifier {
       if (currentUserId == null) {
         _setError('로그인 정보가 없습니다. 다시 로그인해주세요.');
         _setLoading(false);
+        _clearData(); // 로그아웃 상태이므로 데이터 클리어
         return;
       }
 
@@ -671,11 +697,6 @@ class GroupController extends ChangeNotifier {
   // 앱이 포그라운드로 전환될 때 호출
   void onAppResumed() {
     debugPrint('GroupController: 앱 포그라운드 전환 감지');
-    
-    // 스트림 재시작 (네트워크 연결 복구 대응)
-    if (_currentGroup != null) {
-      _startGroupStatusStream();
-    }
     
     // 데이터 새로고침
     refreshData();

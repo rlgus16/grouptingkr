@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/group_model.dart';
 import '../models/invitation_model.dart';
 import 'firebase_service.dart';
 import 'user_service.dart';
@@ -94,11 +95,6 @@ class InvitationService {
         throw Exception('자기 자신에게는 초대를 보낼 수 없습니다.');
       }
 
-      // 이미 그룹에 속해있는지 확인
-      if (toUser.currentGroupId != null) {
-        throw Exception('해당 사용자는 이미 다른 그룹에 속해있습니다.');
-      }
-
       // 그룹 정보 확인
       final group = await _groupService.getGroupById(groupId);
       if (group == null) {
@@ -188,95 +184,104 @@ class InvitationService {
 
   // 초대 수락
   Future<void> acceptInvitation(String invitationId) async {
-    try {
-      // 초대 수락 시작
+    final currentUser = _firebaseService.currentUser;
+    if (currentUser == null) {
+      throw Exception('로그인이 필요합니다.');
+    }
 
-      final currentUser = _firebaseService.currentUser;
-      if (currentUser == null) {
-        // 초대 수락 실패: 로그인 필요
-        throw Exception('로그인이 필요합니다.');
-      }
+    final invitationDoc = await _invitationsCollection.doc(invitationId).get();
+    if (!invitationDoc.exists) {
+      throw Exception('초대를 찾을 수 없습니다.');
+    }
 
-      // 현재 사용자: ${currentUser.uid}
+    final invitation = InvitationModel.fromFirestore(invitationDoc);
 
-      // 초대 정보 가져오기
-      final invitationDoc = await _invitationsCollection
-          .doc(invitationId)
-          .get();
-      if (!invitationDoc.exists) {
-        // 초대 수락 실패: 초대 문서 없음
-        throw Exception('초대를 찾을 수 없습니다.');
-      }
+    if (invitation.toUserId != currentUser.uid) {
+      throw Exception('해당 초대를 수락할 권한이 없습니다.');
+    }
 
-      final invitation = InvitationModel.fromFirestore(invitationDoc);
+    if (!invitation.canRespond) {
+      throw Exception('만료되었거나 이미 처리된 초대입니다.');
+    }
 
-      // 초대 대상 확인
-      if (invitation.toUserId != currentUser.uid) {
-        // 초대 수락 실패: 권한 없음
-        throw Exception('해당 초대를 수락할 권한이 없습니다.');
-      }
+    final currentUserInfo = await _userService.getUserById(currentUser.uid);
+    if (currentUserInfo == null) {
+      throw Exception('사용자 정보를 찾을 수 없습니다.');
+    }
 
-      // 초대 유효성 확인
-      if (!invitation.canRespond) {
-        // 초대 수락 실패: 유효하지 않음
-        throw Exception('만료되었거나 이미 처리된 초대입니다.');
-      }
-
-      // 현재 사용자 정보 확인
-      final currentUserInfo = await _userService.getUserById(currentUser.uid);
-      if (currentUserInfo == null) {
-        throw Exception('사용자 정보를 찾을 수 없습니다.');
-      }
-
-      // 이미 다른 그룹에 속해있는지 확인
+    await _firebaseService.runTransaction((transaction) async {
+      DocumentReference? oldGroupRef;
+      DocumentSnapshot? oldGroupDoc;
       if (currentUserInfo.currentGroupId != null) {
-        // 초대 수락 실패: 이미 그룹에 속함
-        throw Exception('이미 다른 그룹에 속해있습니다.');
+        oldGroupRef = _firebaseService.getCollection('groups').doc(currentUserInfo.currentGroupId!);
+        oldGroupDoc = await transaction.get(oldGroupRef);
       }
 
-      // 순차적으로 초대 수락 처리 (웹 호환성을 위해 트랜잭션 대신)
+      final newGroupRef = _firebaseService.getCollection('groups').doc(invitation.groupId);
+      final newGroupDoc = await transaction.get(newGroupRef);
 
-      // 1. 초대 상태 업데이트
-      await _invitationsCollection.doc(invitationId).update({
-        'status': InvitationStatus.accepted.toString().split('.').last,
-        'respondedAt': Timestamp.fromDate(DateTime.now()),
+      if (!newGroupDoc.exists) {
+        throw Exception('참여하려는 그룹을 찾을 수 없습니다.');
+      }
+
+      if (oldGroupDoc != null && oldGroupDoc.exists) {
+        final oldGroupData = oldGroupDoc.data()! as Map<String, dynamic>;
+        final List<String> memberIds = List<String>.from(oldGroupData['memberIds'] ?? []);
+        
+        memberIds.remove(currentUser.uid);
+
+        if (memberIds.isEmpty) {
+          transaction.delete(oldGroupRef!);
+        } else {
+          String newOwnerId = oldGroupData['ownerId'];
+          if (newOwnerId == currentUser.uid) {
+            newOwnerId = memberIds.first;
+          }
+          transaction.update(oldGroupRef!, {
+            'memberIds': memberIds,
+            'ownerId': newOwnerId,
+            'updatedAt': Timestamp.fromDate(DateTime.now()),
+          });
+        }
+      }
+
+      final newGroupData = newGroupDoc.data()! as Map<String, dynamic>;
+      final List<String> newMemberIds = List<String>.from(newGroupData['memberIds'] ?? []);
+      
+      if (newMemberIds.length >= 5) {
+        throw Exception('참여하려는 그룹의 인원이 가득 찼습니다.');
+      }
+      
+      if (!newMemberIds.contains(currentUser.uid)) {
+        newMemberIds.add(currentUser.uid);
+      }
+
+      transaction.update(newGroupRef, {
+        'memberIds': newMemberIds,
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
 
-      // 2. 그룹에 멤버 추가
-      final groupDoc = await _firebaseService
-          .getDocument('groups/${invitation.groupId}')
-          .get();
-
-      if (groupDoc.exists) {
-        final currentMemberIds = List<String>.from(
-          groupDoc.data()!['memberIds'] ?? [],
-        );
-        final updatedMemberIds = [...currentMemberIds, currentUser.uid];
-
-        await groupDoc.reference.update({
-          'memberIds': updatedMemberIds,
-          'updatedAt': Timestamp.fromDate(DateTime.now()),
-        });
-      } else {
-        throw Exception('그룹을 찾을 수 없습니다.');
-      }
-
-      // 3. 사용자의 현재 그룹 ID 업데이트
-      await _userService.usersCollection.doc(currentUser.uid).update({
+      final userRef = _userService.usersCollection.doc(currentUser.uid);
+      transaction.update(userRef, {
         'currentGroupId': invitation.groupId,
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
 
-      // 시스템 메시지 전송
-      await _messageService.sendSystemMessage(
-        groupId: invitation.groupId,
-        content: '${currentUserInfo.nickname}님이 그룹에 참여했습니다.',
-        metadata: {'type': 'member_joined', 'userId': currentUser.uid},
-      );
-    } catch (e) {
-      throw Exception('초대 수락에 실패했습니다: $e');
-    }
+      final invRef = _invitationsCollection.doc(invitationId);
+      transaction.update(invRef, {
+        'status': InvitationStatus.accepted.toString().split('.').last,
+        'respondedAt': Timestamp.fromDate(DateTime.now()),
+      });
+    });
+
+    // 시스템 메시지 전송 (트랜잭션 성공 후)
+    await _messageService.sendSystemMessage(
+      groupId: invitation.groupId,
+      content: '${currentUserInfo.nickname}님이 그룹에 참여했습니다.',
+      metadata: {'type': 'member_joined', 'userId': currentUser.uid},
+    );
   }
+
 
   // 초대 거절
   Future<void> rejectInvitation(String invitationId) async {
