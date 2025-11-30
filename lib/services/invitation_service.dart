@@ -2,10 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../models/group_model.dart';
 import '../models/invitation_model.dart';
+import '../models/message_model.dart'; // [Added] Import for system message
 import 'firebase_service.dart';
 import 'user_service.dart';
 import 'group_service.dart';
 import 'message_service.dart';
+import 'chatroom_service.dart'; // [Added] Import ChatroomService
 
 class InvitationService {
   static final InvitationService _instance = InvitationService._internal();
@@ -16,6 +18,7 @@ class InvitationService {
   final UserService _userService = UserService();
   final GroupService _groupService = GroupService();
   final MessageService _messageService = MessageService();
+  final ChatroomService _chatroomService = ChatroomService(); // [Added] Instance
 
   // 초대 컬렉션 참조
   CollectionReference<Map<String, dynamic>> get _invitationsCollection =>
@@ -191,18 +194,21 @@ class InvitationService {
 
     final currentUserInfo = await _userService.getUserById(currentUser.uid);
     if (currentUserInfo == null) throw Exception('사용자 정보를 찾을 수 없습니다.');
-    
+
+    // Capture old group ID for post-transaction message sending (Pre-match case)
+    final oldGroupId = currentUserInfo.currentGroupId;
+
     await _firebaseService.runTransaction((transaction) async {
       // 1. READ all necessary data first.
       DocumentSnapshot? oldGroupDoc;
       DocumentReference? oldGroupRef;
 
       if (currentUserInfo.currentGroupId != null) {
-        final oldGroupId = currentUserInfo.currentGroupId!;
-        if (oldGroupId.contains('_')) {
-          oldGroupRef = _firebaseService.getCollection('chatrooms').doc(oldGroupId);
+        final currentGroupId = currentUserInfo.currentGroupId!;
+        if (currentGroupId.contains('_')) {
+          oldGroupRef = _firebaseService.getCollection('chatrooms').doc(currentGroupId);
         } else {
-          oldGroupRef = _firebaseService.getCollection('groups').doc(oldGroupId);
+          oldGroupRef = _firebaseService.getCollection('groups').doc(currentGroupId);
         }
         oldGroupDoc = await transaction.get(oldGroupRef);
       }
@@ -212,39 +218,51 @@ class InvitationService {
       if (!newGroupDoc.exists) throw Exception('참여하려는 그룹을 찾을 수 없습니다.');
 
       // 2. WRITE all changes based on the data read above.
-      
+
       // A. Handle leaving the old group/chatroom.
       if (oldGroupDoc != null && oldGroupDoc.exists) {
-        final oldGroupId = currentUserInfo.currentGroupId!;
-        if (oldGroupId.contains('_')) { // It's a chatroom
-            final data = oldGroupDoc.data()! as Map<String, dynamic>;
-            final participants = List<String>.from(data['participants'] ?? []);
-            participants.remove(currentUser.uid);
+        final currentGroupId = currentUserInfo.currentGroupId!;
+        if (currentGroupId.contains('_')) { // It's a chatroom (Matched)
+          final data = oldGroupDoc.data()! as Map<String, dynamic>;
+          final participants = List<String>.from(data['participants'] ?? []);
+          participants.remove(currentUser.uid);
 
-            if (participants.isEmpty) {
-              transaction.delete(oldGroupRef!);
-            } else {
-              transaction.update(oldGroupRef!, {
-                'participants': participants,
-                'updatedAt': Timestamp.fromDate(DateTime.now()),
-              });
-            }
-        } else { // It's a regular group
-            final oldGroupData = oldGroupDoc.data()! as Map<String, dynamic>;
-            final memberIds = List<String>.from(oldGroupData['memberIds'] ?? []);
-            memberIds.remove(currentUser.uid);
+          if (participants.isEmpty) {
+            transaction.delete(oldGroupRef!);
+          } else {
+            // [FIX] Add System Message for leaving matched group
+            var systemMessage = MessageModel.createSystemMessage(
+              groupId: currentGroupId,
+              content: '${currentUserInfo.nickname}님이 나갔습니다.',
+            );
+            systemMessage = systemMessage.copyWith(
+              id: DateTime.now().millisecondsSinceEpoch.toString(),
+            );
 
-            if (memberIds.isEmpty) {
-              transaction.delete(oldGroupRef!);
-            } else {
-              String newOwnerId = oldGroupData['ownerId'];
-              if (newOwnerId == currentUser.uid) newOwnerId = memberIds.first;
-              transaction.update(oldGroupRef!, {
-                'memberIds': memberIds,
-                'ownerId': newOwnerId,
-                'updatedAt': Timestamp.fromDate(DateTime.now()),
-              });
-            }
+            transaction.update(oldGroupRef!, {
+              'participants': participants,
+              'messages': FieldValue.arrayUnion([systemMessage.toFirestore()]),
+              'lastMessage': systemMessage.toFirestore(),
+              'messageCount': FieldValue.increment(1),
+              'updatedAt': Timestamp.fromDate(DateTime.now()),
+            });
+          }
+        } else { // It's a regular group (Pre-match)
+          final oldGroupData = oldGroupDoc.data()! as Map<String, dynamic>;
+          final memberIds = List<String>.from(oldGroupData['memberIds'] ?? []);
+          memberIds.remove(currentUser.uid);
+
+          if (memberIds.isEmpty) {
+            transaction.delete(oldGroupRef!);
+          } else {
+            String newOwnerId = oldGroupData['ownerId'];
+            if (newOwnerId == currentUser.uid) newOwnerId = memberIds.first;
+            transaction.update(oldGroupRef!, {
+              'memberIds': memberIds,
+              'ownerId': newOwnerId,
+              'updatedAt': Timestamp.fromDate(DateTime.now()),
+            });
+          }
         }
       }
 
@@ -253,7 +271,7 @@ class InvitationService {
       final newMemberIds = List<String>.from(newGroupData['memberIds'] ?? []);
       if (newMemberIds.length >= 5) throw Exception('참여하려는 그룹의 인원이 가득 찼습니다.');
       if (!newMemberIds.contains(currentUser.uid)) newMemberIds.add(currentUser.uid);
-      
+
       transaction.update(newGroupRef, {
         'memberIds': newMemberIds,
         'updatedAt': Timestamp.fromDate(DateTime.now()),
@@ -273,6 +291,19 @@ class InvitationService {
         'respondedAt': Timestamp.fromDate(DateTime.now()),
       });
     });
+
+    // 3. [FIX] Send System Message for leaving Pre-match group (Post-transaction)
+    if (oldGroupId != null && !oldGroupId.contains('_')) {
+      try {
+        await _chatroomService.sendSystemMessage(
+          chatRoomId: oldGroupId,
+          content: '${currentUserInfo.nickname}님이 나갔습니다.',
+        );
+      } catch (e) {
+        debugPrint('Failed to send system message for old pre-match group: $e');
+        // Ignore error as user has already left
+      }
+    }
   }
 
   // 초대 거절
