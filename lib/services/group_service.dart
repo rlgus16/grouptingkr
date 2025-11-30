@@ -3,9 +3,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/group_model.dart';
 import '../models/user_model.dart';
+import '../models/message_model.dart';
 import 'firebase_service.dart';
 import 'user_service.dart';
 import 'chatroom_service.dart';
+import 'message_service.dart';
 import 'dart:async';
 
 class GroupService {
@@ -15,6 +17,8 @@ class GroupService {
 
   final FirebaseService _firebaseService = FirebaseService();
   final UserService _userService = UserService();
+  final MessageService _messageService = MessageService();
+  final ChatroomService _chatroomService = ChatroomService(); // [Added] Instance
 
   CollectionReference<Map<String, dynamic>> get _groupsCollection =>
       _firebaseService.getCollection('groups');
@@ -26,14 +30,16 @@ class GroupService {
       return _chatroomsCollection.doc(groupId).snapshots().map((doc) {
         if (doc.exists) {
           final data = doc.data() as Map<String, dynamic>;
+
+          // Null check for timestamps to prevent crashes
           return GroupModel(
             id: doc.id,
             name: '매칭된 그룹',
             ownerId: (data['participants'] as List<dynamic>).first as String,
             memberIds: List<String>.from(data['participants'] as List<dynamic>),
             status: GroupStatus.matched,
-            createdAt: (data['createdAt'] as Timestamp).toDate(),
-            updatedAt: (data['createdAt'] as Timestamp).toDate(),
+            createdAt: (data['createdAt'] as Timestamp? ?? Timestamp.now()).toDate(),
+            updatedAt: (data['updatedAt'] as Timestamp? ?? Timestamp.now()).toDate(),
             maxMembers: 10,
           );
         }
@@ -46,10 +52,10 @@ class GroupService {
       });
     }
   }
-  
+
   Future<GroupModel?> getGroupById(String groupId) async {
     if (groupId.contains('_')) {
-        return getMatchedGroupFromChatroom(groupId);
+      return getMatchedGroupFromChatroom(groupId);
     }
     try {
       final doc = await _groupsCollection.doc(groupId).get();
@@ -105,8 +111,8 @@ class GroupService {
       throw Exception('그룹 멤버 정보를 가져오는데 실패했습니다: $e');
     }
   }
-  
-    Future<List<UserModel>> _getUsersByIds(List<String> userIds) async {
+
+  Future<List<UserModel>> _getUsersByIds(List<String> userIds) async {
     if (userIds.isEmpty) return [];
 
     try {
@@ -114,7 +120,7 @@ class GroupService {
       const batchSize = 30;
       for (int i = 0; i < userIds.length; i += batchSize) {
         final batchIds = userIds.skip(i).take(batchSize).toList();
-        
+
         final querySnapshot = await _firebaseService.firestore
             .collection('users')
             .where(FieldPath.documentId, whereIn: batchIds)
@@ -136,7 +142,7 @@ class GroupService {
       return members.whereType<UserModel>().toList();
     }
   }
-  
+
   Future<GroupModel?> getUserCurrentGroup(String userId) async {
     try {
       final user = await _userService.getUserById(userId);
@@ -152,29 +158,31 @@ class GroupService {
       throw Exception('현재 그룹 정보를 가져오는데 실패했습니다: $e');
     }
   }
-  
+
   Future<GroupModel?> getMatchedGroupFromChatroom(String chatroomId) async {
     try {
       final doc = await _chatroomsCollection.doc(chatroomId).get();
       if (!doc.exists) return null;
 
       final data = doc.data() as Map<String, dynamic>;
+
+      // Null check for timestamps
       return GroupModel(
         id: doc.id,
         name: '매칭된 그룹',
         ownerId: (data['participants'] as List<dynamic>).first as String,
         memberIds: List<String>.from(data['participants'] as List<dynamic>),
         status: GroupStatus.matched,
-        createdAt: (data['createdAt'] as Timestamp).toDate(),
-        updatedAt: (data['createdAt'] as Timestamp).toDate(),
+        createdAt: (data['createdAt'] as Timestamp? ?? Timestamp.now()).toDate(),
+        updatedAt: (data['updatedAt'] as Timestamp? ?? Timestamp.now()).toDate(),
         maxMembers: 10,
       );
     } catch (e) {
       throw Exception('매칭된 그룹 정보를 가져오는데 실패했습니다: $e');
     }
   }
-  
-    Future<void> startMatching(String groupId) async {
+
+  Future<void> startMatching(String groupId) async {
     try {
       await _groupsCollection.doc(groupId).update({
         'status': GroupStatus.matching.toString().split('.').last,
@@ -193,44 +201,94 @@ class GroupService {
       throw Exception('매칭 취소에 실패했습니다: $e');
     }
   }
-  
+
   Future<void> leaveGroup(String groupId, String userId) async {
-    if(groupId.contains('_')) {
-      // Logic to leave a matched group (chatroom)
+    String nickname = '알 수 없는 사용자';
+    try {
+      final user = await _userService.getUserById(userId);
+      if (user != null) nickname = user.nickname;
+    } catch (e) {
+      debugPrint('Error fetching user nickname for leave message: $e');
+    }
+
+    if (groupId.contains('_')) {
+      // === Case A: Matched Group (Chatroom) ===
       final chatroomRef = _chatroomsCollection.doc(groupId);
+
       await _firebaseService.runTransaction((transaction) async {
-          final doc = await transaction.get(chatroomRef);
-          if(doc.exists) {
-            final List<String> participants = List<String>.from(doc.data()!['participants'] ?? []);
-            participants.remove(userId);
-            if(participants.isEmpty){
-                transaction.delete(chatroomRef);
-            } else {
-                transaction.update(chatroomRef, {'participants': participants});
-            }
+        final doc = await transaction.get(chatroomRef);
+        if(doc.exists) {
+          final List<String> participants = List<String>.from(doc.data()!['participants'] ?? []);
+          participants.remove(userId);
+
+          if (participants.isEmpty) {
+            transaction.delete(chatroomRef);
+          } else {
+            // Insert System Message directly into the chatroom doc
+            var systemMessage = MessageModel.createSystemMessage(
+              groupId: groupId,
+              content: '$nickname님이 나갔습니다.',
+            );
+            systemMessage = systemMessage.copyWith(
+              id: DateTime.now().millisecondsSinceEpoch.toString(),
+            );
+
+            transaction.update(chatroomRef, {
+              'participants': participants,
+              'messages': FieldValue.arrayUnion([systemMessage.toFirestore()]),
+              'lastMessage': systemMessage.toFirestore(),
+              'messageCount': FieldValue.increment(1),
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
           }
+        }
       });
-       await _userService.updateCurrentGroupId(userId, null);
+      await _userService.updateCurrentGroupId(userId, null);
 
     } else {
-      // Logic to leave a pre-match group
+      // === Case B: Pre-Match Group ===
       final groupRef = _groupsCollection.doc(groupId);
-       await _firebaseService.runTransaction((transaction) async {
-           final doc = await transaction.get(groupRef);
-           if(doc.exists) {
-             final group = GroupModel.fromFirestore(doc);
-             final newMemberIds = group.memberIds.where((id) => id != userId).toList();
-             if(newMemberIds.isEmpty) {
-                transaction.delete(groupRef);
-             } else {
-               transaction.update(groupRef, {
-                 'memberIds': newMemberIds,
-                 'ownerId': newMemberIds.first, // Simple reassignment
-               });
-             }
-           }
-       });
-       await _userService.updateCurrentGroupId(userId, null);
+      bool groupDeleted = false;
+
+      await _firebaseService.runTransaction((transaction) async {
+        final doc = await transaction.get(groupRef);
+        if(doc.exists) {
+          final group = GroupModel.fromFirestore(doc);
+          final newMemberIds = group.memberIds.where((id) => id != userId).toList();
+
+          if(newMemberIds.isEmpty) {
+            transaction.delete(groupRef);
+            groupDeleted = true;
+          } else {
+            String newOwnerId = group.ownerId;
+            if (group.ownerId == userId) {
+              newOwnerId = newMemberIds.first;
+            }
+
+            transaction.update(groupRef, {
+              'memberIds': newMemberIds,
+              'ownerId': newOwnerId,
+              'updatedAt': Timestamp.fromDate(DateTime.now()),
+            });
+          }
+        }
+      });
+
+      if (!groupDeleted) {
+        try {
+          // [FIX] Use ChatroomService to update the chatroom/messages
+          // This works because ChatController listens to the chatroom stream
+          // even for pre-match groups (which have a corresponding chatroom doc)
+          await _chatroomService.sendSystemMessage(
+            chatRoomId: groupId,
+            content: '$nickname님이 나갔습니다.',
+          );
+        } catch (e) {
+          debugPrint('Failed to send system message for pre-match group: $e');
+        }
+      }
+
+      await _userService.updateCurrentGroupId(userId, null);
     }
   }
 }
