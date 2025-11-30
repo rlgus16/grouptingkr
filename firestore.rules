@@ -21,7 +21,6 @@ service cloud.firestore {
       // Allow any authenticated user to read group data. This is necessary for viewing invites.
       allow read: if request.auth != null;
       allow delete: if request.auth != null && request.auth.uid == resource.data.ownerId;
-
       allow update: if request.auth != null && (
         // Rule for an existing member making changes (e.g., leaving, owner actions)
         request.auth.uid in resource.data.memberIds ||
@@ -34,9 +33,21 @@ service cloud.firestore {
       );
     }
 
-    // Chatrooms collection (for post-match)
+    // Chatrooms collection (for post-match AND pre-match group chat)
     match /chatrooms/{chatroomId} {
-      allow read, write, update: if request.auth != null && request.auth.uid in resource.data.participants;
+      // Allow access if user is in the participants list
+      // OR if the user is a member of the group with the same ID (for pre-matched groups)
+      allow read, write, update: if request.auth != null && (
+        (resource != null && request.auth.uid in resource.data.participants) ||
+        (exists(/databases/$(database)/documents/groups/$(chatroomId)) &&
+         request.auth.uid in get(/databases/$(database)/documents/groups/$(chatroomId)).data.memberIds)
+      );
+
+      // Allow creating the chatroom if it doesn't exist, provided the user is a member of the group
+      allow create: if request.auth != null && (
+         exists(/databases/$(database)/documents/groups/$(chatroomId)) &&
+         request.auth.uid in get(/databases/$(database)/documents/groups/$(chatroomId)).data.memberIds
+      );
     }
 
     // Messages collection
