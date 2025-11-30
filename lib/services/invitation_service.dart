@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/group_model.dart';
 import '../models/invitation_model.dart';
 import 'firebase_service.dart';
@@ -22,47 +23,41 @@ class InvitationService {
 
   // 사용자가 받은 초대 목록 스트림
   Stream<List<InvitationModel>> getReceivedInvitationsStream(String userId) {
-
     return _invitationsCollection
         .where('toUserId', isEqualTo: userId)
         .where(
-          'status',
-          isEqualTo: InvitationStatus.pending.toString().split('.').last,
-        )
-        // 임시로 orderBy 제거 (색인 생성 완료 후 다시 추가하시길 바랍니다!)
-        // .orderBy('createdAt', descending: true)
+      'status',
+      isEqualTo: InvitationStatus.pending.toString().split('.').last,
+    )
         .snapshots()
         .map((snapshot) {
+      final invitations = snapshot.docs
+          .map((doc) => InvitationModel.fromFirestore(doc))
+          .where((invitation) => invitation.isValid) // 유효한 초대만 필터링
+          .toList();
 
-          final invitations = snapshot.docs
-              .map((doc) => InvitationModel.fromFirestore(doc))
-              .where((invitation) => invitation.isValid) // 유효한 초대만 필터링
-              .toList();
+      // 메모리에서 정렬 (createdAt 기준 내림차순)
+      invitations.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-          // 메모리에서 정렬 (createdAt 기준 내림차순)
-          invitations.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-          return invitations;
-        });
+      return invitations;
+    });
   }
 
   // 사용자가 보낸 초대 목록 스트림
   Stream<List<InvitationModel>> getSentInvitationsStream(String userId) {
     return _invitationsCollection
         .where('fromUserId', isEqualTo: userId)
-        // 임시로 orderBy 제거 (색인 생성 완료 후 다시 추가)
-        // .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-          final invitations = snapshot.docs
-              .map((doc) => InvitationModel.fromFirestore(doc))
-              .toList();
+      final invitations = snapshot.docs
+          .map((doc) => InvitationModel.fromFirestore(doc))
+          .toList();
 
-          // 메모리에서 정렬 (createdAt 기준 내림차순)
-          invitations.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      // 메모리에서 정렬 (createdAt 기준 내림차순)
+      invitations.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-          return invitations;
-        });
+      return invitations;
+    });
   }
 
   // 초대 보내기
@@ -72,7 +67,6 @@ class InvitationService {
     String? message,
   }) async {
     try {
-
       final currentUser = _firebaseService.currentUser;
       if (currentUser == null) {
         throw Exception('로그인이 필요합니다.');
@@ -117,9 +111,9 @@ class InvitationService {
           .where('toUserId', isEqualTo: toUser.uid)
           .where('groupId', isEqualTo: groupId)
           .where(
-            'status',
-            isEqualTo: InvitationStatus.pending.toString().split('.').last,
-          )
+        'status',
+        isEqualTo: InvitationStatus.pending.toString().split('.').last,
+      )
           .get();
 
       if (existingInvitations.docs.isNotEmpty) {
@@ -162,9 +156,7 @@ class InvitationService {
         content: invitationMessage,
       );
 
-      // 초대 전송 완료
     } catch (e) {
-      // 초대 전송 실패
       throw Exception('초대 전송에 실패했습니다: $e');
     }
   }
@@ -182,7 +174,7 @@ class InvitationService {
     }
   }
 
-  // 초대 수락
+  // 초대 수락 (핵심 수정 부분)
   Future<void> acceptInvitation(String invitationId) async {
     final currentUser = _firebaseService.currentUser;
     if (currentUser == null) {
@@ -210,13 +202,62 @@ class InvitationService {
     }
 
     await _firebaseService.runTransaction((transaction) async {
-      DocumentReference? oldGroupRef;
-      DocumentSnapshot? oldGroupDoc;
+      // 1. 기존 그룹에서 나가기 (매칭된 그룹 vs 일반 그룹 분기 처리)
       if (currentUserInfo.currentGroupId != null) {
-        oldGroupRef = _firebaseService.getCollection('groups').doc(currentUserInfo.currentGroupId!);
-        oldGroupDoc = await transaction.get(oldGroupRef);
+        final oldGroupId = currentUserInfo.currentGroupId!;
+
+        if (oldGroupId.contains('_')) {
+          // Case A: 매칭된 그룹(Chatroom)에서 나가기
+          final chatroomRef = _firebaseService.getCollection('chatrooms').doc(oldGroupId);
+          final chatroomDoc = await transaction.get(chatroomRef);
+
+          if (chatroomDoc.exists) {
+            final data = chatroomDoc.data()!;
+            final participants = List<String>.from(data['participants'] ?? []);
+
+            // 참여자 목록에서 제거
+            participants.remove(currentUser.uid);
+
+            if (participants.isEmpty) {
+              // 아무도 남지 않으면 채팅방 삭제
+              transaction.delete(chatroomRef);
+            } else {
+              // 남은 사람이 있으면 업데이트
+              transaction.update(chatroomRef, {
+                'participants': participants,
+                'updatedAt': Timestamp.fromDate(DateTime.now()),
+              });
+            }
+          }
+        } else {
+          // Case B: 일반 그룹(Groups)에서 나가기
+          final oldGroupRef = _firebaseService.getCollection('groups').doc(oldGroupId);
+          final oldGroupDoc = await transaction.get(oldGroupRef);
+
+          if (oldGroupDoc.exists) {
+            final oldGroupData = oldGroupDoc.data()!;
+            final memberIds = List<String>.from(oldGroupData['memberIds'] ?? []);
+
+            memberIds.remove(currentUser.uid);
+
+            if (memberIds.isEmpty) {
+              transaction.delete(oldGroupRef);
+            } else {
+              String newOwnerId = oldGroupData['ownerId'];
+              if (newOwnerId == currentUser.uid) {
+                newOwnerId = memberIds.first;
+              }
+              transaction.update(oldGroupRef, {
+                'memberIds': memberIds,
+                'ownerId': newOwnerId,
+                'updatedAt': Timestamp.fromDate(DateTime.now()),
+              });
+            }
+          }
+        }
       }
 
+      // 2. 새 그룹에 참여하기
       final newGroupRef = _firebaseService.getCollection('groups').doc(invitation.groupId);
       final newGroupDoc = await transaction.get(newGroupRef);
 
@@ -224,34 +265,13 @@ class InvitationService {
         throw Exception('참여하려는 그룹을 찾을 수 없습니다.');
       }
 
-      if (oldGroupDoc != null && oldGroupDoc.exists) {
-        final oldGroupData = oldGroupDoc.data()! as Map<String, dynamic>;
-        final List<String> memberIds = List<String>.from(oldGroupData['memberIds'] ?? []);
-        
-        memberIds.remove(currentUser.uid);
+      final newGroupData = newGroupDoc.data()!;
+      final newMemberIds = List<String>.from(newGroupData['memberIds'] ?? []);
 
-        if (memberIds.isEmpty) {
-          transaction.delete(oldGroupRef!);
-        } else {
-          String newOwnerId = oldGroupData['ownerId'];
-          if (newOwnerId == currentUser.uid) {
-            newOwnerId = memberIds.first;
-          }
-          transaction.update(oldGroupRef!, {
-            'memberIds': memberIds,
-            'ownerId': newOwnerId,
-            'updatedAt': Timestamp.fromDate(DateTime.now()),
-          });
-        }
-      }
-
-      final newGroupData = newGroupDoc.data()! as Map<String, dynamic>;
-      final List<String> newMemberIds = List<String>.from(newGroupData['memberIds'] ?? []);
-      
       if (newMemberIds.length >= 5) {
         throw Exception('참여하려는 그룹의 인원이 가득 찼습니다.');
       }
-      
+
       if (!newMemberIds.contains(currentUser.uid)) {
         newMemberIds.add(currentUser.uid);
       }
@@ -261,12 +281,14 @@ class InvitationService {
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
 
+      // 3. 사용자 상태 업데이트
       final userRef = _userService.usersCollection.doc(currentUser.uid);
       transaction.update(userRef, {
         'currentGroupId': invitation.groupId,
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
 
+      // 4. 초대 상태 업데이트
       final invRef = _invitationsCollection.doc(invitationId);
       transaction.update(invRef, {
         'status': InvitationStatus.accepted.toString().split('.').last,
@@ -274,7 +296,6 @@ class InvitationService {
       });
     });
   }
-
 
   // 초대 거절
   Future<void> rejectInvitation(String invitationId) async {
@@ -284,27 +305,21 @@ class InvitationService {
         throw Exception('로그인이 필요합니다.');
       }
 
-      // 초대 정보 가져오기
-      final invitationDoc = await _invitationsCollection
-          .doc(invitationId)
-          .get();
+      final invitationDoc = await _invitationsCollection.doc(invitationId).get();
       if (!invitationDoc.exists) {
         throw Exception('초대를 찾을 수 없습니다.');
       }
 
       final invitation = InvitationModel.fromFirestore(invitationDoc);
 
-      // 초대 대상 확인
       if (invitation.toUserId != currentUser.uid) {
         throw Exception('해당 초대를 거절할 권한이 없습니다.');
       }
 
-      // 초대 유효성 확인
       if (!invitation.canRespond) {
         throw Exception('만료되었거나 이미 처리된 초대입니다.');
       }
 
-      // 초대 상태 업데이트
       await _invitationsCollection.doc(invitationId).update({
         'status': InvitationStatus.rejected.toString().split('.').last,
         'respondedAt': Timestamp.fromDate(DateTime.now()),
@@ -333,9 +348,9 @@ class InvitationService {
 
       final expiredInvitations = await _invitationsCollection
           .where(
-            'status',
-            isEqualTo: InvitationStatus.pending.toString().split('.').last,
-          )
+        'status',
+        isEqualTo: InvitationStatus.pending.toString().split('.').last,
+      )
           .where('createdAt', isLessThan: Timestamp.fromDate(cutoffTime))
           .get();
 
@@ -351,6 +366,7 @@ class InvitationService {
         await batch.commit();
       }
     } catch (e) {
+      debugPrint('만료된 초대 정리 실패: $e');
     }
   }
 
