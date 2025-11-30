@@ -95,12 +95,19 @@ class GroupController extends ChangeNotifier {
   void _startGroupStream(String groupId) {
     _groupStreamSubscription?.cancel();
     _groupStreamSubscription = _groupService.getGroupStream(groupId).listen(
-      (group) async {
+          (group) async {
         final oldStatus = _currentGroup?.status;
         _currentGroup = group;
         if (group != null) {
           await _loadGroupMembers();
-          if (oldStatus != GroupStatus.matched && group.status == GroupStatus.matched) {
+
+          // [FIX] Added (oldStatus != null) check.
+          // This prevents the "Success" dialog from showing every time you open the app
+          // if you are already matched. It will only show if you were previously
+          // in a different state (like 'matching').
+          if (oldStatus != null &&
+              oldStatus != GroupStatus.matched &&
+              group.status == GroupStatus.matched) {
             onMatchingCompleted?.call();
           }
         } else {
@@ -110,13 +117,12 @@ class GroupController extends ChangeNotifier {
         notifyListeners();
       },
       onError: (error) async {
-        // This is the critical fix for the race condition.
+        // [Existing race condition fix preserved]
         final userId = _firebaseService.currentUserId;
         if (userId != null) {
           final user = await _userService.getUserById(userId);
-          // If the user has already been moved to a new group, ignore the error from the old one.
           if (user?.currentGroupId != groupId) {
-            return; 
+            return;
           }
         }
         _setError('그룹 정보 스트림 오류: $error');

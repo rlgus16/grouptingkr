@@ -11,7 +11,8 @@ interface GroupData {
   [key: string]: any;
 }
 
-// [FIXED] Handles matching logic with transaction safety to prevent "alone" groups
+// 1. [MATCHING LOGIC]
+// Finds a match and updates statuses safely. No notifications are sent here.
 export const handleGroupUpdate = functions.firestore
   .document("groups/{groupId}")
   .onUpdate(async (change, context) => {
@@ -23,7 +24,6 @@ export const handleGroupUpdate = functions.firestore
     if (beforeData.status !== "matching" && afterData.status === "matching") {
       console.log(`Group ${groupId} started matching. Looking for a pair.`);
 
-      // Find other groups that are also matching
       const matchingGroupsQuery = db.collection("groups")
         .where("status", "==", "matching")
         .where(admin.firestore.FieldPath.documentId(), "!=", groupId);
@@ -52,7 +52,7 @@ export const handleGroupUpdate = functions.firestore
 
         try {
           await db.runTransaction(async (transaction) => {
-            // [CRITICAL FIX] Read both documents INSIDE the transaction
+            // Read both documents INSIDE the transaction to prevent race conditions
             const group1Doc = await transaction.get(group1Ref);
             const group2Doc = await transaction.get(group2Ref);
 
@@ -63,7 +63,7 @@ export const handleGroupUpdate = functions.firestore
             const g1Data = group1Doc.data();
             const g2Data = group2Doc.data();
 
-            // Check if BOTH are still strictly in 'matching' status
+            // Validate that BOTH groups are still 'matching'
             if (g1Data?.status !== "matching") {
               throw new Error(`Self group ${groupId} is no longer matching.`);
             }
@@ -71,7 +71,7 @@ export const handleGroupUpdate = functions.firestore
               throw new Error(`Target group ${matchedCandidate!.id} is no longer available.`);
             }
 
-            // Perform the update only if validation passes
+            // Update statuses to 'matched'
             transaction.update(group1Ref, {
                 status: "matched",
                 matchedGroupId: matchedCandidate!.id
@@ -84,8 +84,6 @@ export const handleGroupUpdate = functions.firestore
           console.log(`Successfully matched ${groupId} with ${matchedCandidate.id}`);
         } catch (e) {
           console.log(`Transaction failed (race condition handled): ${e}`);
-          // If transaction fails, this execution stops safely.
-          // The 3rd group will remain in 'matching' status and wait for a 4th group.
         }
       } else {
         console.log("Found other matching groups, but none were compatible.");
@@ -93,7 +91,8 @@ export const handleGroupUpdate = functions.firestore
     }
   });
 
-// [PRESERVED] Handles chatroom creation after a match is confirmed
+// 2. [CHATROOM CREATION]
+// Creates the chatroom document. No notifications are sent here.
 export const handleMatchingCompletion = functions.firestore
   .document("groups/{groupId}")
   .onUpdate(async (change, context) => {
@@ -103,12 +102,10 @@ export const handleMatchingCompletion = functions.firestore
 
     if (beforeData.status !== "matched" && afterData.status === "matched") {
       const matchedGroupId = afterData.matchedGroupId;
-      if (!matchedGroupId) {
-        console.log("Matched group ID is missing.");
-        return;
-      }
+      if (!matchedGroupId) return;
 
-      // To prevent double execution (once for each group), only the group with the "higher" ID runs this
+      // Only the group with the "lexicographically higher" ID runs this logic
+      // This prevents the code from running twice (once for each group)
       if (groupId > matchedGroupId) {
           console.log(`Group ${groupId} deferring to ${matchedGroupId} to handle completion.`);
           return;
@@ -122,8 +119,7 @@ export const handleMatchingCompletion = functions.firestore
         const chatRoomDoc = await transaction.get(newChatRoomRef);
 
         if (chatRoomDoc.exists) {
-          console.log(`Chatroom ${newChatRoomId} already exists. Skipping creation.`);
-          return;
+          return; // Chatroom already exists
         }
 
         const group1Ref = db.collection("groups").doc(groupId);
@@ -135,29 +131,84 @@ export const handleMatchingCompletion = functions.firestore
           throw new Error("One or both groups in the match do not exist.");
         }
 
-        const group1Data = group1Doc.data();
-        const group2Data = group2Doc.data();
-
-        if (!group1Data || !group2Data) {
-            throw new Error("Group data is undefined.");
-        }
+        const group1Data = group1Doc.data()!;
+        const group2Data = group2Doc.data()!;
 
         const allMemberIds = [...new Set([...group1Data.memberIds, ...group2Data.memberIds])];
 
+        // Create the Chatroom
         transaction.set(newChatRoomRef, {
           groupId: newChatRoomId,
           participants: allMemberIds,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
+        // Update all users to point to the new chatroom
         for (const memberId of allMemberIds) {
           const userRef = db.collection("users").doc(memberId);
           transaction.update(userRef, { currentGroupId: newChatRoomId });
         }
 
-        // Clean up the old group documents
+        // Delete the old group documents
         transaction.delete(group1Ref);
         transaction.delete(group2Ref);
       });
+    }
+  });
+
+// 3. [NOTIFICATIONS]
+// Triggers ONLY when the chatroom is created. This ensures exactly ONE notification.
+export const notifyMatchOnChatroomCreate = functions.firestore
+  .document("chatrooms/{chatroomId}")
+  .onCreate(async (snapshot, context) => {
+    const chatroomData = snapshot.data();
+    const chatRoomId = context.params.chatroomId;
+    const participantIds = chatroomData.participants || [];
+
+    if (participantIds.length === 0) {
+      console.log("No participants in chatroom.");
+      return;
+    }
+
+    console.log(`Sending match notifications to: ${participantIds}`);
+
+    // Get tokens for all users in the chatroom
+    const usersQuery = await db.collection("users")
+      .where(admin.firestore.FieldPath.documentId(), "in", participantIds)
+      .get();
+
+    const tokens: string[] = [];
+    usersQuery.forEach((doc) => {
+      const userData = doc.data();
+      if (userData.fcmToken) {
+        tokens.push(userData.fcmToken);
+      }
+    });
+
+    if (tokens.length === 0) {
+      console.log("No FCM tokens found for users.");
+      return;
+    }
+
+    // Construct the notification payload
+    const message = {
+      notification: {
+        title: "매칭 성공! 🎉",
+        body: "새로운 그룹과 매칭되었습니다. 지금 채팅을 시작해보세요!",
+      },
+      data: {
+        type: "matching_completed",
+        chatRoomId: chatRoomId,
+        click_action: "FLUTTER_NOTIFICATION_CLICK",
+      },
+      tokens: tokens,
+    };
+
+    // Send Multicast Message
+    try {
+      const response = await admin.messaging().sendEachForMulticast(message);
+      console.log(`Notifications sent. Success: ${response.successCount}, Failure: ${response.failureCount}`);
+    } catch (error) {
+      console.error("Error sending match notifications:", error);
     }
   });
