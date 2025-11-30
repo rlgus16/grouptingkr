@@ -170,11 +170,11 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     final groupController = _groupController ?? context.read<GroupController>();
     final currentGroup = groupController.currentGroup;
     
-    String dialogContent = '상대방 그룹과 매칭되었습니다!\n채팅방에서 인사해보세요 👋';
+    String dialogContent = '매칭되었습니다!\n채팅방에서 인사해보세요 👋';
     
     if (currentGroup != null) {
       final memberCount = groupController.groupMembers.length;
-      dialogContent = '상대방 그룹과 매칭되었습니다!\n총 ${memberCount}명이 참여하는 채팅방에서 인사해보세요 👋';
+      dialogContent = '매칭되었습니다!\n채팅방에서 인사해보세요 👋';
     }
 
     showDialog(

@@ -181,114 +181,92 @@ class InvitationService {
       throw Exception('로그인이 필요합니다.');
     }
 
+    // Pre-fetch all necessary documents before starting the transaction.
     final invitationDoc = await _invitationsCollection.doc(invitationId).get();
-    if (!invitationDoc.exists) {
-      throw Exception('초대를 찾을 수 없습니다.');
-    }
+    if (!invitationDoc.exists) throw Exception('초대를 찾을 수 없습니다.');
 
     final invitation = InvitationModel.fromFirestore(invitationDoc);
-
-    if (invitation.toUserId != currentUser.uid) {
-      throw Exception('해당 초대를 수락할 권한이 없습니다.');
-    }
-
-    if (!invitation.canRespond) {
-      throw Exception('만료되었거나 이미 처리된 초대입니다.');
-    }
+    if (invitation.toUserId != currentUser.uid) throw Exception('해당 초대를 수락할 권한이 없습니다.');
+    if (!invitation.canRespond) throw Exception('만료되었거나 이미 처리된 초대입니다.');
 
     final currentUserInfo = await _userService.getUserById(currentUser.uid);
-    if (currentUserInfo == null) {
-      throw Exception('사용자 정보를 찾을 수 없습니다.');
-    }
-
+    if (currentUserInfo == null) throw Exception('사용자 정보를 찾을 수 없습니다.');
+    
     await _firebaseService.runTransaction((transaction) async {
-      // 1. 기존 그룹에서 나가기 (매칭된 그룹 vs 일반 그룹 분기 처리)
+      // 1. READ all necessary data first.
+      DocumentSnapshot? oldGroupDoc;
+      DocumentReference? oldGroupRef;
+
       if (currentUserInfo.currentGroupId != null) {
         final oldGroupId = currentUserInfo.currentGroupId!;
-
         if (oldGroupId.contains('_')) {
-          // Case A: 매칭된 그룹(Chatroom)에서 나가기
-          final chatroomRef = _firebaseService.getCollection('chatrooms').doc(oldGroupId);
-          final chatroomDoc = await transaction.get(chatroomRef);
+          oldGroupRef = _firebaseService.getCollection('chatrooms').doc(oldGroupId);
+        } else {
+          oldGroupRef = _firebaseService.getCollection('groups').doc(oldGroupId);
+        }
+        oldGroupDoc = await transaction.get(oldGroupRef);
+      }
 
-          if (chatroomDoc.exists) {
-            final data = chatroomDoc.data()!;
+      final newGroupRef = _firebaseService.getCollection('groups').doc(invitation.groupId);
+      final newGroupDoc = await transaction.get(newGroupRef);
+      if (!newGroupDoc.exists) throw Exception('참여하려는 그룹을 찾을 수 없습니다.');
+
+      // 2. WRITE all changes based on the data read above.
+      
+      // A. Handle leaving the old group/chatroom.
+      if (oldGroupDoc != null && oldGroupDoc.exists) {
+        final oldGroupId = currentUserInfo.currentGroupId!;
+        if (oldGroupId.contains('_')) { // It's a chatroom
+            final data = oldGroupDoc.data()! as Map<String, dynamic>;
             final participants = List<String>.from(data['participants'] ?? []);
-
-            // 참여자 목록에서 제거
             participants.remove(currentUser.uid);
 
             if (participants.isEmpty) {
-              // 아무도 남지 않으면 채팅방 삭제
-              transaction.delete(chatroomRef);
+              transaction.delete(oldGroupRef!);
             } else {
-              // 남은 사람이 있으면 업데이트
-              transaction.update(chatroomRef, {
+              transaction.update(oldGroupRef!, {
                 'participants': participants,
                 'updatedAt': Timestamp.fromDate(DateTime.now()),
               });
             }
-          }
-        } else {
-          // Case B: 일반 그룹(Groups)에서 나가기
-          final oldGroupRef = _firebaseService.getCollection('groups').doc(oldGroupId);
-          final oldGroupDoc = await transaction.get(oldGroupRef);
-
-          if (oldGroupDoc.exists) {
-            final oldGroupData = oldGroupDoc.data()!;
+        } else { // It's a regular group
+            final oldGroupData = oldGroupDoc.data()! as Map<String, dynamic>;
             final memberIds = List<String>.from(oldGroupData['memberIds'] ?? []);
-
             memberIds.remove(currentUser.uid);
 
             if (memberIds.isEmpty) {
-              transaction.delete(oldGroupRef);
+              transaction.delete(oldGroupRef!);
             } else {
               String newOwnerId = oldGroupData['ownerId'];
-              if (newOwnerId == currentUser.uid) {
-                newOwnerId = memberIds.first;
-              }
-              transaction.update(oldGroupRef, {
+              if (newOwnerId == currentUser.uid) newOwnerId = memberIds.first;
+              transaction.update(oldGroupRef!, {
                 'memberIds': memberIds,
                 'ownerId': newOwnerId,
                 'updatedAt': Timestamp.fromDate(DateTime.now()),
               });
             }
-          }
         }
       }
 
-      // 2. 새 그룹에 참여하기
-      final newGroupRef = _firebaseService.getCollection('groups').doc(invitation.groupId);
-      final newGroupDoc = await transaction.get(newGroupRef);
-
-      if (!newGroupDoc.exists) {
-        throw Exception('참여하려는 그룹을 찾을 수 없습니다.');
-      }
-
-      final newGroupData = newGroupDoc.data()!;
+      // B. Handle joining the new group.
+      final newGroupData = newGroupDoc.data()! as Map<String, dynamic>;
       final newMemberIds = List<String>.from(newGroupData['memberIds'] ?? []);
-
-      if (newMemberIds.length >= 5) {
-        throw Exception('참여하려는 그룹의 인원이 가득 찼습니다.');
-      }
-
-      if (!newMemberIds.contains(currentUser.uid)) {
-        newMemberIds.add(currentUser.uid);
-      }
-
+      if (newMemberIds.length >= 5) throw Exception('참여하려는 그룹의 인원이 가득 찼습니다.');
+      if (!newMemberIds.contains(currentUser.uid)) newMemberIds.add(currentUser.uid);
+      
       transaction.update(newGroupRef, {
         'memberIds': newMemberIds,
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
 
-      // 3. 사용자 상태 업데이트
+      // C. Update the user's status.
       final userRef = _userService.usersCollection.doc(currentUser.uid);
       transaction.update(userRef, {
         'currentGroupId': invitation.groupId,
         'updatedAt': Timestamp.fromDate(DateTime.now()),
       });
 
-      // 4. 초대 상태 업데이트
+      // D. Update the invitation status.
       final invRef = _invitationsCollection.doc(invitationId);
       transaction.update(invRef, {
         'status': InvitationStatus.accepted.toString().split('.').last,
