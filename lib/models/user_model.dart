@@ -37,18 +37,23 @@ class UserModel {
 
   // 나이 계산
   int get age {
-    final birth = DateTime(
-      int.parse(birthDate.substring(0, 4)),
-      int.parse(birthDate.substring(4, 6)),
-      int.parse(birthDate.substring(6, 8)),
-    );
-    final now = DateTime.now();
-    int age = now.year - birth.year;
-    if (now.month < birth.month ||
-        (now.month == birth.month && now.day < birth.day)) {
-      age--;
+    if (birthDate.length != 8) return 0;
+    try {
+      final birth = DateTime(
+        int.parse(birthDate.substring(0, 4)),
+        int.parse(birthDate.substring(4, 6)),
+        int.parse(birthDate.substring(6, 8)),
+      );
+      final now = DateTime.now();
+      int age = now.year - birth.year;
+      if (now.month < birth.month ||
+          (now.month == birth.month && now.day < birth.day)) {
+        age--;
+      }
+      return age;
+    } catch (e) {
+      return 0;
     }
-    return age;
   }
 
   // 메인 프로필 이미지
@@ -79,8 +84,8 @@ class UserModel {
       profileImages: List<String>.from(dataMap['profileImages'] ?? []),
       currentGroupId: dataMap['currentGroupId'],
       fcmToken: dataMap['fcmToken'],
-      createdAt: (dataMap['createdAt'] as Timestamp).toDate(),
-      updatedAt: (dataMap['updatedAt'] as Timestamp).toDate(),
+      createdAt: (dataMap['createdAt'] as Timestamp? ?? Timestamp.now()).toDate(),
+      updatedAt: (dataMap['updatedAt'] as Timestamp? ?? Timestamp.now()).toDate(),
       isProfileComplete: dataMap['isProfileComplete'] ?? false,
     );
   }

@@ -42,7 +42,7 @@ class MessageModel {
         (e) => e.toString().split('.').last == data['type'],
         orElse: () => MessageType.text,
       ),
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      createdAt: (data['createdAt'] as Timestamp? ?? Timestamp.now()).toDate(),
       readBy: List<String>.from(data['readBy'] ?? []),
       imageUrl: data['imageUrl'],
       senderProfileImage: data['senderProfileImage'],

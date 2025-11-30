@@ -273,13 +273,6 @@ class InvitationService {
         'respondedAt': Timestamp.fromDate(DateTime.now()),
       });
     });
-
-    // 시스템 메시지 전송 (트랜잭션 성공 후)
-    await _messageService.sendSystemMessage(
-      groupId: invitation.groupId,
-      content: '${currentUserInfo.nickname}님이 그룹에 참여했습니다.',
-      metadata: {'type': 'member_joined', 'userId': currentUser.uid},
-    );
   }
 
 
@@ -317,12 +310,6 @@ class InvitationService {
         'respondedAt': Timestamp.fromDate(DateTime.now()),
       });
 
-      // 시스템 메시지 전송
-      await _messageService.sendSystemMessage(
-        groupId: invitation.groupId,
-        content: '${invitation.toUserNickname}님이 초대를 거절했습니다.',
-        metadata: {'type': 'invitation_rejected', 'userId': currentUser.uid},
-      );
     } catch (e) {
       throw Exception('초대 거절에 실패했습니다: $e');
     }

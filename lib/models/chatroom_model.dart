@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:groupting/models/message_model.dart';
 
 class ChatMessage {
   final String id;
@@ -34,7 +35,7 @@ class ChatMessage {
         (e) => e.toString().split('.').last == data['type'],
         orElse: () => MessageType.text,
       ),
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      createdAt: (data['createdAt'] as Timestamp? ?? Timestamp.now()).toDate(),
       readBy: List<String>.from(data['readBy'] ?? []),
       metadata: data['metadata'] != null 
           ? Map<String, dynamic>.from(data['metadata']) 
@@ -84,7 +85,7 @@ class LastMessage {
         (e) => e.toString().split('.').last == data['type'],
         orElse: () => MessageType.text,
       ),
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      createdAt: (data['createdAt'] as Timestamp? ?? Timestamp.now()).toDate(),
     );
   }
 
@@ -98,8 +99,6 @@ class LastMessage {
     };
   }
 }
-
-enum MessageType { text, image, system }
 
 class ChatroomModel {
   final String id;
@@ -136,8 +135,8 @@ class ChatroomModel {
           ? LastMessage.fromMap(data['lastMessage'] as Map<String, dynamic>)
           : null,
       messageCount: data['messageCount'] ?? 0,
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-      updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+      createdAt: (data['createdAt'] as Timestamp? ?? Timestamp.now()).toDate(),
+      updatedAt: (data['updatedAt'] as Timestamp? ?? Timestamp.now()).toDate(),
     );
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:groupting/models/message_model.dart';
 import '../models/chatroom_model.dart';
 import '../models/user_model.dart';
 import '../utils/app_theme.dart';
@@ -91,7 +92,7 @@ class MessageBubble extends StatelessWidget {
                   boxShadow: message.type != MessageType.system
                       ? [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
+                            color: Colors.black.withOpacity(0.1),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -135,7 +136,7 @@ class MessageBubble extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 10,
                         color: isMe
-                            ? Colors.white.withValues(alpha: 0.8)
+                            ? Colors.white.withOpacity(0.8)
                             : AppTheme.textSecondary,
                       ),
                     ),

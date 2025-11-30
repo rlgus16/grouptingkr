@@ -2,301 +2,62 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // 기본 규칙: 인증되지 않은 사용자는 모든 접근 차단
+
+    // Default rule: block all access for unauthenticated users
     match /{document=**} {
       allow read, write: if false;
     }
-    
-    // 사용자 컬렉션
+
+    // Users collection
     match /users/{userId} {
-      // 사용자 문서 생성: 인증된 사용자가 본인의 문서 생성 (회원가입 시)
-      allow create: if request.auth != null && 
-        request.auth.uid == userId &&
-        request.resource.data.uid == request.auth.uid &&
-        // Firebase Auth 이메일과 Firestore email 필드 동기화 검증
-        request.resource.data.email == request.auth.token.email &&
-        // 필수 필드 검증 (email 필드 포함)
-        request.resource.data.keys().hasAll(['uid', 'email', 'phoneNumber', 'birthDate', 'gender', 'createdAt', 'updatedAt', 'isProfileComplete']);
-      
-      // 추가 완화 규칙: 신규 계정이 즉시 문서를 생성할 수 있도록
-      allow create: if request.auth != null && 
-        request.auth.uid == userId &&
-        request.resource.data.uid == userId &&
-        // Firebase Auth 이메일과 Firestore email 필드 동기화 검증
-        request.resource.data.email == request.auth.token.email &&
-        // 생성 시간이 현재 시간과 가까운 경우 (5분 이내)
-        request.time < request.resource.data.createdAt + duration.value(5, 'm');
-      
-      // 본인의 사용자 문서 읽기, 수정, 삭제 가능
+      allow create: if request.auth != null && request.auth.uid == userId;
       allow read, update, delete: if request.auth != null && request.auth.uid == userId;
-      
-      // 인증된 사용자는 다른 사용자 정보 읽기만 가능 (프로필 조회용)
-      allow read: if request.auth != null;
-      
-      // 중복 확인을 위한 읽기 권한 (회원가입 시 필요)
-      // 이메일, 사용자ID, 닉네임 중복 확인용
-      allow read: if true;
-      
-      // 임시 완화: "나중에 입력하기" 사용자 읽기 권한 문제 해결
-      // 문제 해결 후 제거 예정
       allow read: if request.auth != null;
     }
-    
-    // 그룹 컬렉션
+
+    // Groups collection (for pre-match)
     match /groups/{groupId} {
-      // 인증된 사용자는 그룹 생성 가능 (자신이 소유자인 경우만)
-      allow create: if request.auth != null &&
-        request.auth.uid == request.resource.data.ownerId &&
-        request.resource.data.keys().hasAll(['ownerId', 'memberIds', 'status', 'createdAt']);
-      
-      // 그룹 멤버는 항상 읽기 가능
-      allow read: if request.auth != null && 
-        request.auth.uid in resource.data.memberIds;
-      
-      // 그룹 소유자만 멤버 추가/제거 등 수정 가능
-      allow update: if request.auth != null && 
-        request.auth.uid == resource.data.ownerId;
-        
-      // 매칭 시작: 그룹 소유자(방장)만 가능
-      allow update: if request.auth != null && 
-        request.auth.uid == resource.data.ownerId &&
-        resource.data.status == 'active' &&
-        request.resource.data.status == 'matching' &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
-        
-      // 매칭 취소: 그룹 소유자(방장)만 가능
-      allow update: if request.auth != null && 
-        request.auth.uid == resource.data.ownerId &&
-        resource.data.status == 'matching' &&
-        request.resource.data.status in ['active', 'waiting'] &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
-      
-      // 초대 수락 시 자신을 그룹에 추가하는 경우 허용
-      allow update: if request.auth != null && 
-        // 새로 추가되는 멤버가 현재 사용자인지 확인
-        request.auth.uid in request.resource.data.memberIds &&
-        !(request.auth.uid in resource.data.memberIds) &&
-        // 새로운 멤버 수가 기존보다 정확히 1명 많아야 함
-        request.resource.data.memberIds.size() == resource.data.memberIds.size() + 1 &&
-        // 최대 인원 제한 확인 (5명)
-        request.resource.data.memberIds.size() <= 5 &&
-        // ownerId는 변경되지 않아야 함
-        request.resource.data.ownerId == resource.data.ownerId &&
-        // 그룹이 매칭 중이 아닌지 확인
-        resource.data.status != 'matching' &&
-        // memberIds와 updatedAt만 변경 가능
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds', 'updatedAt']);
-      
-      // 그룹 나가기 시 자신을 그룹에서 제거하는 경우 허용
-      allow update: if request.auth != null && 
-        // 기존 멤버였지만 새 멤버 목록에서는 제외된 사용자인지 확인
-        request.auth.uid in resource.data.memberIds &&
-        !(request.auth.uid in request.resource.data.memberIds) &&
-        // 새로운 멤버 수가 기존보다 정확히 1명 적어야 함
-        request.resource.data.memberIds.size() == resource.data.memberIds.size() - 1;
-      
-      // 방장이 나갈 때 방장 권한 이전 허용
-      allow update: if request.auth != null && 
-        // 방장이 나가는 상황
-        request.auth.uid == resource.data.ownerId &&
-        request.auth.uid in resource.data.memberIds &&
-        !(request.auth.uid in request.resource.data.memberIds) &&
-        // 새 방장이 기존 멤버 중 하나여야 함
-        request.resource.data.ownerId in resource.data.memberIds &&
-        request.resource.data.ownerId != resource.data.ownerId &&
-        // 멤버 수가 1명 줄어야 함
-        request.resource.data.memberIds.size() == resource.data.memberIds.size() - 1;
-      
-      // 매칭을 위해 'matching' 상태인 그룹은 인증된 사용자가 읽기 가능
-      allow read: if request.auth != null && 
-        resource.data.status == 'matching';
-      
-      // 매칭된 그룹 읽기 허용 (임시 완화 - 모든 인증된 사용자가 매칭된 그룹 읽기 가능)
-      allow read: if request.auth != null && 
-        resource.data.status == 'matched';
-      
-      // 매칭 관련 그룹 상태 확인을 위한 추가 읽기 권한
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.ownerId;
+      // Allow any authenticated user to read group data. This is necessary for viewing invites.
       allow read: if request.auth != null;
-      
-      // 매칭 완료를 위해 'matching' 상태인 그룹을 'matched' 상태로 업데이트 허용
-      // 단, 매칭되는 상대방 그룹의 멤버이거나 시스템 작업인 경우만 허용
-      allow update: if request.auth != null && 
-        resource.data.status == 'matching' &&
-        request.resource.data.status == 'matched' &&
-        request.resource.data.keys().hasAll(['status', 'matchedGroupId', 'updatedAt']) &&
-        // 매칭되는 상대방 그룹에 속한 사용자이거나 현재 그룹 멤버인 경우만 허용
-        (request.auth.uid in resource.data.memberIds ||
-         isUserInGroup(request.auth.uid, request.resource.data.matchedGroupId));
+      allow delete: if request.auth != null && request.auth.uid == resource.data.ownerId;
 
-      // 매칭된 그룹에서 나갈때 상대방 그룹 업데이트 요청
-     	allow update: if request.auth != null && 
-      	request.resource.data.status == 'matched' &&
-        request.resource.data.keys().hasAll(['updatedAt']);
-      
-      // 그룹 소유자(방장)만 삭제 가능
-      allow delete: if request.auth != null && 
-        request.auth.uid == resource.data.ownerId;
-    }
-    
-    // 채팅방 컬렉션 (새로운 구조 - 메시지 배열 기반)
-    match /chatrooms/{chatroomId} {
-      // 채팅방 생성: 인증된 사용자만 가능하고 자신이 참여자인 경우
-      allow create: if request.auth != null &&
-        request.resource.data.keys().hasAll(['groupId', 'participants', 'messages', 'messageCount', 'createdAt', 'updatedAt']) &&
-        request.auth.uid in request.resource.data.participants;
-        
-      // 매칭된 채팅방 생성: 복합 ID 형태의 채팅방 (_로 구분)
-      // 두 그룹 중 하나에라도 속한 사용자가 생성 가능
-      allow create: if request.auth != null &&
-        request.resource.data.keys().hasAll(['groupId', 'participants', 'messages', 'messageCount', 'createdAt', 'updatedAt']) &&
-        chatroomId.matches('.*_.*') &&
-        isUserInMatchedGroups(request.auth.uid, chatroomId);
-      
-      // 채팅방 읽기: 참여자만 가능
-      allow read: if request.auth != null && 
-        request.auth.uid in resource.data.participants;
-      
-      // 채팅방 업데이트: 참여자만 가능 (메시지 추가, 읽음 처리)
-      allow update: if request.auth != null && 
-      	request.auth.uid in resource.data.participants && 
-      	isUserInGroup(request.auth.uid, chatroomId);;
-      
-      // 채팅방 삭제: 참여자만 가능
-      allow delete: if request.auth != null && 
-        request.auth.uid in resource.data.participants;
-        
-      // 매칭된 채팅방 특별 규칙: 복합 ID 형태의 채팅방 (_로 구분)
-      // 두 그룹 중 하나에라도 속한 사용자는 접근 가능
-      allow read, update: if request.auth != null && 
-        chatroomId.matches('.*_.*') &&
-        isUserInMatchedGroups(request.auth.uid, chatroomId);
-    }
-    
-    // 매칭된 그룹 채팅방 접근 권한 확인 함수
-    function isUserInMatchedGroups(userId, chatroomId) {
-      let groupIds = chatroomId.split('_');
-      return groupIds.size() == 2 && (
-        isUserInGroup(userId, groupIds[0]) || 
-        isUserInGroup(userId, groupIds[1])
-      );
-    }
-    
-    // 사용자가 특정 그룹에 속하는지 확인하는 함수
-    function isUserInGroup(userId, groupId) {
-      return exists(/databases/$(database)/documents/groups/$(groupId)) &&
-        userId in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
-    }
-    
-    // 사용자가 특정 그룹의 방장인지 확인하는 함수
-    function isGroupOwner(userId, groupId) {
-      return exists(/databases/$(database)/documents/groups/$(groupId)) &&
-        userId == get(/databases/$(database)/documents/groups/$(groupId)).data.ownerId;
-    }
-    
-    // 그룹이 매칭 중인지 확인하는 함수
-    function isGroupMatching(groupId) {
-      return exists(/databases/$(database)/documents/groups/$(groupId)) &&
-        get(/databases/$(database)/documents/groups/$(groupId)).data.status == 'matching';
-    }
-    
-    // 메시지 컬렉션 (초대 메시지 포함)
-    match /messages/{messageId} {
-      // 인증된 사용자만 메시지 생성 가능
-      allow create: if request.auth != null &&
-        request.resource.data.keys().hasAll(['groupId', 'senderId', 'content', 'type', 'createdAt']);
-      
-      // 인증된 사용자만 메시지 읽기 가능
-      allow read: if request.auth != null;
-      
-      // 메시지 작성자만 메시지 수정 가능 (초대 응답 등)
       allow update: if request.auth != null && (
-        request.auth.uid == resource.data.senderId ||
-        // 시스템 메시지의 경우 senderId가 'system'일 수 있음
-        resource.data.senderId == 'system'
+        // Rule for an existing member making changes (e.g., leaving, owner actions)
+        request.auth.uid in resource.data.memberIds ||
+        // Rule for a new user accepting an invitation
+        (
+          !(request.auth.uid in resource.data.memberIds) &&
+          request.resource.data.memberIds == resource.data.memberIds.concat([request.auth.uid]) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds', 'updatedAt'])
+        )
       );
-      
-      // 메시지 작성자만 삭제 가능
-      allow delete: if request.auth != null && 
-        request.auth.uid == resource.data.senderId;
-    }
-    
-    // 초대 컬렉션
-    match /invitations/{invitationId} {
-      // 초대 보낸 사람만 생성 가능 (그룹 방장이고 그룹이 매칭 중이 아닌 경우)
-      allow create: if request.auth != null && 
-        request.auth.uid == request.resource.data.fromUserId &&
-        request.resource.data.keys().hasAll(['fromUserId', 'toUserId', 'groupId', 'status', 'createdAt']) &&
-        // 초대를 보내는 사용자가 해당 그룹의 방장인지 확인
-        isGroupOwner(request.auth.uid, request.resource.data.groupId) &&
-        // 그룹이 매칭 중이 아닌지 확인 (매칭 중에는 초대 불가)
-        !isGroupMatching(request.resource.data.groupId);
-      
-      // 초대 보낸 사람과 받는 사람만 읽기 가능
-      allow read: if request.auth != null && (
-        request.auth.uid == resource.data.fromUserId ||
-        request.auth.uid == resource.data.toUserId
-      );
-      
-      // 초대 받는 사람만 수정 가능 (수락/거절) - 상태와 응답 시간 변경 허용
-      allow update: if request.auth != null && 
-        request.auth.uid == resource.data.toUserId &&
-        request.resource.data.fromUserId == resource.data.fromUserId &&
-        request.resource.data.toUserId == resource.data.toUserId &&
-        request.resource.data.groupId == resource.data.groupId &&
-        request.resource.data.status in ['accepted', 'rejected'] &&
-        (request.resource.data.keys().hasAll(['status', 'updatedAt']) ||
-         request.resource.data.keys().hasAll(['status', 'respondedAt']));
-      
-      // 초대 보낸 사람만 삭제 가능 (취소)
-      allow delete: if request.auth != null && 
-        request.auth.uid == resource.data.fromUserId;
-    }
-    
-    // 사용자ID 선점 컬렉션 (중복 방지용)
-    match /usernames/{userId} {
-      // 인증된 사용자는 선점 상태 읽기 가능 (중복 확인용)
-      allow read: if request.auth != null;
-      
-      // 인증된 사용자는 본인의 UID로만 선점 생성 가능
-      allow create: if request.auth != null && 
-        request.resource.data.uid == request.auth.uid &&
-        request.resource.data.keys().hasAll(['uid', 'originalUserId', 'reservedAt', 'type']);
-      
-      // 본인이 선점한 것만 삭제 가능
-      allow delete: if request.auth != null && 
-        resource.data.uid == request.auth.uid;
-    }
-    
-    // 닉네임 선점 컬렉션 (중복 방지용)
-    match /nicknames/{nickname} {
-      // 인증된 사용자는 선점 상태 읽기 가능 (중복 확인용)
-      allow read: if request.auth != null;
-      
-      // 인증된 사용자는 본인의 UID로만 선점 생성 가능
-      allow create: if request.auth != null && 
-        request.resource.data.uid == request.auth.uid &&
-        request.resource.data.keys().hasAll(['uid', 'originalNickname', 'reservedAt', 'type']);
-      
-      // 본인이 선점한 것만 삭제 가능
-      allow delete: if request.auth != null && 
-        resource.data.uid == request.auth.uid;
-    }
-    
-    // 전화번호 선점 컬렉션 (중복 방지용) -> 닉네임과 이메일처럼 중복방지 값으로 정하기 다만, 여러 개 계정 사용 가능하도록 만들 것이라면 정리가 필요한 룰
-    match /phoneNumbers/{phoneNumber} {
-      // 인증된 사용자는 선점 상태 읽기 가능 (중복 확인용)
-      allow read: if request.auth != null;
-      
-      // 인증된 사용자는 본인의 UID로만 선점 생성 가능
-      allow create: if request.auth != null && 
-        request.resource.data.uid == request.auth.uid &&
-        request.resource.data.keys().hasAll(['uid', 'originalPhoneNumber', 'reservedAt', 'type']);
-      
-      // 본인이 선점한 것만 삭제 가능
-      allow delete: if request.auth != null && 
-        resource.data.uid == request.auth.uid;
     }
 
+    // Chatrooms collection (for post-match)
+    match /chatrooms/{chatroomId} {
+      allow read, write, update: if request.auth != null && request.auth.uid in resource.data.participants;
+    }
+
+    // Messages collection
+    match /messages/{messageId} {
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.senderId;
+      allow read: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.senderId;
+    }
+
+    // Invitations collection
+    match /invitations/{invitationId} {
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.fromUserId;
+      allow read: if request.auth != null && (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
+      allow update: if request.auth != null && request.auth.uid == resource.data.toUserId;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.fromUserId;
+    }
+
+    // Nicknames collection
+    match /nicknames/{nickname} {
+      allow read: if request.auth != null;
+      allow create, delete: if request.auth != null && request.auth.uid == request.auth.uid;
+    }
   }
-} 
+}
