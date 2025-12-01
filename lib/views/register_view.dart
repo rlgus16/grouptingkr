@@ -19,22 +19,24 @@ class _RegisterViewState extends State<RegisterView> {
   final _confirmPasswordController = TextEditingController();
   final _phoneController = TextEditingController();
   final _birthDateController = TextEditingController();
-  
+
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   String _selectedGender = '';
-  
-  // 중복 검증 상태
+
+  // 이메일 중복 검증 상태
   bool _isCheckingEmail = false;
   String? _emailValidationMessage;
-  
-  // 디바운싱 타이머 (메모리 누수 방지)
-  Timer? _debounceTimer;
+  Timer? _emailDebounceTimer;
+
+  // [ADDED] 전화번호 중복 검증 상태
+  bool _isCheckingPhone = false;
+  String? _phoneValidationMessage;
+  Timer? _phoneDebounceTimer;
 
   @override
   void initState() {
     super.initState();
-    // 임시 저장된 회원가입 데이터가 있으면 복원
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _restoreTemporaryData();
     });
@@ -42,7 +44,8 @@ class _RegisterViewState extends State<RegisterView> {
 
   @override
   void dispose() {
-    _debounceTimer?.cancel();
+    _emailDebounceTimer?.cancel();
+    _phoneDebounceTimer?.cancel(); // [ADDED] 타이머 해제
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -54,19 +57,18 @@ class _RegisterViewState extends State<RegisterView> {
   void _restoreTemporaryData() {
     final authController = context.read<AuthController>();
     final tempData = authController.tempRegistrationData;
-    
+
     if (tempData != null) {
       setState(() {
         _emailController.text = tempData['email'] ?? '';
         _phoneController.text = tempData['phoneNumber'] ?? '';
         _birthDateController.text = tempData['birthDate'] ?? '';
         _selectedGender = tempData['gender'] ?? '';
-        // 비밀번호는 보안상 복원하지 않음
       });
     }
   }
 
-  // 이메일 중복 검증 (실시간) - 최적화
+  // 이메일 중복 검증
   Future<void> _checkEmailDuplicate(String email) async {
     if (email.isEmpty || !RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(email)) {
       if (mounted && _emailValidationMessage != null) {
@@ -88,7 +90,7 @@ class _RegisterViewState extends State<RegisterView> {
     try {
       final authController = context.read<AuthController>();
       final isDuplicate = await authController.isEmailDuplicate(email);
-      
+
       if (mounted) {
         final newMessage = isDuplicate ? '이미 사용 중인 이메일입니다.' : '사용 가능한 이메일입니다.';
         setState(() {
@@ -106,6 +108,46 @@ class _RegisterViewState extends State<RegisterView> {
     }
   }
 
+  // [ADDED] 전화번호 중복 검증
+  Future<void> _checkPhoneNumberDuplicate(String phoneNumber) async {
+    if (phoneNumber.isEmpty || !RegExp(r'^010\d{8}$').hasMatch(phoneNumber)) {
+      if (mounted && _phoneValidationMessage != null) {
+        setState(() {
+          _phoneValidationMessage = null;
+          _isCheckingPhone = false;
+        });
+      }
+      return;
+    }
+
+    if (mounted && !_isCheckingPhone) {
+      setState(() {
+        _isCheckingPhone = true;
+        _phoneValidationMessage = null;
+      });
+    }
+
+    try {
+      final authController = context.read<AuthController>();
+      final isDuplicate = await authController.isPhoneNumberDuplicate(phoneNumber);
+
+      if (mounted) {
+        final newMessage = isDuplicate ? '이미 사용 중인 전화번호입니다.' : '사용 가능한 전화번호입니다.';
+        setState(() {
+          _isCheckingPhone = false;
+          _phoneValidationMessage = newMessage;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isCheckingPhone = false;
+          _phoneValidationMessage = '전화번호 확인 중 오류가 발생했습니다.';
+        });
+      }
+    }
+  }
+
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -116,13 +158,12 @@ class _RegisterViewState extends State<RegisterView> {
       return;
     }
 
-    // 필수 데이터 검증 강화
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
     final phoneNumber = _phoneController.text.trim();
     final birthDate = _birthDateController.text.trim();
-    
-    if (email.isEmpty || password.isEmpty || 
+
+    if (email.isEmpty || password.isEmpty ||
         phoneNumber.isEmpty || birthDate.isEmpty || _selectedGender.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('모든 필수 정보를 입력해주세요.')),
@@ -130,10 +171,10 @@ class _RegisterViewState extends State<RegisterView> {
       return;
     }
 
-    // 실시간 중복 검증이 완료되지 않았다면 강제로 재검증
+    final authController = context.read<AuthController>();
+
+    // 이메일 중복 확인
     if (_emailValidationMessage == null && email.isNotEmpty) {
-      // 이메일 중복 재검증
-      final authController = context.read<AuthController>();
       final isEmailDuplicate = await authController.isEmailDuplicate(email);
       if (isEmailDuplicate) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -143,20 +184,34 @@ class _RegisterViewState extends State<RegisterView> {
       }
     }
 
-    // 중복 검증 확인
     if (_emailValidationMessage == '이미 사용 중인 이메일입니다.') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('이미 사용 중인 이메일입니다. 다른 이메일을 사용해주세요.')),
       );
       return;
     }
-    final authController = context.read<AuthController>();
-    
-    // 이전 에러 메시지 클리어
+
+    // [ADDED] 전화번호 중복 확인
+    if (_phoneValidationMessage == null && phoneNumber.isNotEmpty) {
+      final isPhoneDuplicate = await authController.isPhoneNumberDuplicate(phoneNumber);
+      if (isPhoneDuplicate) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('이미 사용 중인 전화번호입니다. 다른 번호를 사용해주세요.')),
+        );
+        return;
+      }
+    }
+
+    if (_phoneValidationMessage == '이미 사용 중인 전화번호입니다.') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('이미 사용 중인 전화번호입니다. 다른 번호를 사용해주세요.')),
+      );
+      return;
+    }
+
     authController.clearError();
 
     try {
-      // 회원가입 데이터를 임시 저장 (Firebase 계정은 생성하지 않음)
       authController.saveTemporaryRegistrationData(
         email: email,
         password: password,
@@ -166,7 +221,6 @@ class _RegisterViewState extends State<RegisterView> {
       );
 
       if (mounted) {
-        // 프로필 생성 화면으로 이동 (회원가입 페이지를 스택에 유지)
         Navigator.pushNamed(context, '/profile-create');
       }
     } catch (e) {
@@ -240,7 +294,7 @@ class _RegisterViewState extends State<RegisterView> {
                   ),
                   const SizedBox(height: 32),
 
-                  // 이메일 입력 (자물쇠 표시)
+                  // 이메일 입력
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -250,24 +304,21 @@ class _RegisterViewState extends State<RegisterView> {
                         decoration: InputDecoration(
                           labelText: '이메일',
                           prefixIcon: const Icon(Icons.email),
-                          suffixIcon: _isCheckingEmail 
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: Padding(
-                                  padding: EdgeInsets.all(14.0),
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                ),
-                              )
-                            : const Icon(Icons.lock, color: AppTheme.textSecondary),
+                          suffixIcon: _isCheckingEmail
+                              ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: Padding(
+                              padding: EdgeInsets.all(14.0),
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                              : const Icon(Icons.lock, color: AppTheme.textSecondary),
                           helperText: '로그인 및 비밀번호 찾기에 사용할 이메일',
                         ),
                         onChanged: (value) {
-                          // 기존 타이머 취소 (메모리 누수 방지)
-                          _debounceTimer?.cancel();
-                          
-                          // 새 타이머 설정
-                          _debounceTimer = Timer(const Duration(milliseconds: 800), () {
+                          _emailDebounceTimer?.cancel();
+                          _emailDebounceTimer = Timer(const Duration(milliseconds: 800), () {
                             if (mounted && _emailController.text == value && value.isNotEmpty) {
                               _checkEmailDuplicate(value);
                             }
@@ -300,7 +351,7 @@ class _RegisterViewState extends State<RegisterView> {
                   ),
                   const SizedBox(height: 16),
 
-                  // 비밀번호 입력
+                  // 비밀번호 입력 (생략)
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
@@ -333,7 +384,7 @@ class _RegisterViewState extends State<RegisterView> {
                   ),
                   const SizedBox(height: 16),
 
-                  // 비밀번호 확인
+                  // 비밀번호 확인 (생략)
                   TextFormField(
                     controller: _confirmPasswordController,
                     obscureText: _obscureConfirmPassword,
@@ -365,36 +416,74 @@ class _RegisterViewState extends State<RegisterView> {
                   ),
                   const SizedBox(height: 16),
 
-                  // 전화번호 입력 (자물쇠 표시)
-                  TextFormField(
-                    controller: _phoneController,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-                      LengthLimitingTextInputFormatter(11),
+                  // [UPDATED] 전화번호 입력
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      TextFormField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.number,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                          LengthLimitingTextInputFormatter(11),
+                        ],
+                        decoration: InputDecoration(
+                          labelText: '전화번호',
+                          prefixIcon: const Icon(Icons.phone),
+                          // 로딩 중이면 스피너, 아니면 자물쇠 아이콘
+                          suffixIcon: _isCheckingPhone
+                              ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: Padding(
+                              padding: EdgeInsets.all(14.0),
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          )
+                              : const Icon(Icons.lock, color: AppTheme.textSecondary),
+                          helperText: '11자리 숫자만 입력 (예: 01012345678)',
+                        ),
+                        // [ADDED] 변경 시 중복 확인 트리거
+                        onChanged: (value) {
+                          _phoneDebounceTimer?.cancel();
+                          _phoneDebounceTimer = Timer(const Duration(milliseconds: 800), () {
+                            if (mounted && _phoneController.text == value && value.isNotEmpty) {
+                              _checkPhoneNumberDuplicate(value);
+                            }
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return '전화번호를 입력해주세요.';
+                          }
+                          if (value.length != 11) {
+                            return '전화번호는 11자리여야 합니다.';
+                          }
+                          if (!RegExp(r'^010\d{8}$').hasMatch(value)) {
+                            return '010으로 시작하는 11자리 번호를 입력해주세요.';
+                          }
+                          return null;
+                        },
+                      ),
+                      // [ADDED] 검증 메시지 표시
+                      if (_phoneValidationMessage != null)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 12, top: 4),
+                          child: Text(
+                            _phoneValidationMessage!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _phoneValidationMessage == '사용 가능한 전화번호입니다.'
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          ),
+                        ),
                     ],
-                    decoration: const InputDecoration(
-                      labelText: '전화번호',
-                      prefixIcon: Icon(Icons.phone),
-                      suffixIcon: Icon(Icons.lock, color: AppTheme.textSecondary),
-                      helperText: '11자리 숫자만 입력 (예: 01012345678)',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '전화번호를 입력해주세요.';
-                      }
-                      if (value.length != 11) {
-                        return '전화번호는 11자리여야 합니다.';
-                      }
-                      if (!RegExp(r'^010\d{8}$').hasMatch(value)) {
-                        return '010으로 시작하는 11자리 번호를 입력해주세요.';
-                      }
-                      return null;
-                    },
                   ),
                   const SizedBox(height: 16),
 
-                  // 생년월일 입력 (자물쇠 표시)
+                  // 생년월일 입력
                   TextFormField(
                     controller: _birthDateController,
                     keyboardType: TextInputType.number,
@@ -415,13 +504,12 @@ class _RegisterViewState extends State<RegisterView> {
                       if (value.length != 8) {
                         return '생년월일은 8자리여야 합니다.';
                       }
-                      
-                      // 날짜 유효성 검사
+
                       try {
                         final year = int.parse(value.substring(0, 4));
                         final month = int.parse(value.substring(4, 6));
                         final day = int.parse(value.substring(6, 8));
-                        
+
                         final currentYear = DateTime.now().year;
                         if (year < 1900 || year > currentYear) {
                           return '유효한 연도를 입력해주세요.';
@@ -432,13 +520,12 @@ class _RegisterViewState extends State<RegisterView> {
                         if (day < 1 || day > 31) {
                           return '유효한 일을 입력해주세요.';
                         }
-                        
-                        // 실제 날짜 생성해서 유효성 검사
+
                         DateTime(year, month, day);
                       } catch (e) {
                         return '유효한 날짜를 입력해주세요.';
                       }
-                      
+
                       return null;
                     },
                   ),
@@ -479,8 +566,8 @@ class _RegisterViewState extends State<RegisterView> {
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(vertical: 12),
                                     decoration: BoxDecoration(
-                                      color: _selectedGender == '남' 
-                                          ? AppTheme.primaryColor 
+                                      color: _selectedGender == '남'
+                                          ? AppTheme.primaryColor
                                           : Colors.grey[200],
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -488,8 +575,8 @@ class _RegisterViewState extends State<RegisterView> {
                                       '남성',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
-                                        color: _selectedGender == '남' 
-                                            ? Colors.white 
+                                        color: _selectedGender == '남'
+                                            ? Colors.white
                                             : Colors.black,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -508,8 +595,8 @@ class _RegisterViewState extends State<RegisterView> {
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(vertical: 12),
                                     decoration: BoxDecoration(
-                                      color: _selectedGender == '여' 
-                                          ? AppTheme.primaryColor 
+                                      color: _selectedGender == '여'
+                                          ? AppTheme.primaryColor
                                           : Colors.grey[200],
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -517,8 +604,8 @@ class _RegisterViewState extends State<RegisterView> {
                                       '여성',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
-                                        color: _selectedGender == '여' 
-                                            ? Colors.white 
+                                        color: _selectedGender == '여'
+                                            ? Colors.white
                                             : Colors.black,
                                         fontWeight: FontWeight.w500,
                                       ),
@@ -599,7 +686,6 @@ class _RegisterViewState extends State<RegisterView> {
                   // 로그인 버튼
                   TextButton(
                     onPressed: () {
-                      // 로그인 페이지로 이동할 때 오류 메시지 클리어
                       final authController = context.read<AuthController>();
                       authController.clearError();
                       Navigator.pushNamed(context, '/login');
