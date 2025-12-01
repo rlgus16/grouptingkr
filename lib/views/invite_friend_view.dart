@@ -90,7 +90,6 @@ class _InviteFriendViewState extends State<InviteFriendView> {
                       const SizedBox(height: 8),
                       Text(
                         '• 친구의 닉네임을 정확히 입력해주세요\n'
-                        '• 이미 다른 그룹에 속한 친구는 초대할 수 없습니다\n'
                         '• 최대 5명까지 그룹을 구성할 수 있습니다',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),

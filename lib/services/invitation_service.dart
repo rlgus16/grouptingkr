@@ -46,20 +46,17 @@ class InvitationService {
     });
   }
 
-  // 사용자가 보낸 초대 목록 스트림
+// 사용자가 보낸 초대 목록 스트림 (최근 10개만 표시)
   Stream<List<InvitationModel>> getSentInvitationsStream(String userId) {
     return _invitationsCollection
         .where('fromUserId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true) // 최신순으로 정렬
+        .limit(10) // 10개로 제한
         .snapshots()
         .map((snapshot) {
-      final invitations = snapshot.docs
+      return snapshot.docs
           .map((doc) => InvitationModel.fromFirestore(doc))
           .toList();
-
-      // 메모리에서 정렬 (createdAt 기준 내림차순)
-      invitations.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-      return invitations;
     });
   }
 
