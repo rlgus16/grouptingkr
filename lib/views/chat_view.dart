@@ -27,7 +27,7 @@ class _ChatViewState extends State<ChatView> {
     super.initState();
     // FCM 서비스에 현재 채팅방 설정
     FCMService().setCurrentChatRoom(widget.groupId);
-    
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         try {
@@ -35,7 +35,7 @@ class _ChatViewState extends State<ChatView> {
           _chatController = chatController;
           chatController.startMessageStream(widget.groupId);
         } catch (e) {
-          // ChatView initState 에러: $e
+          debugPrint('ChatView initState 에러: $e');
         }
       }
     });
@@ -58,7 +58,7 @@ class _ChatViewState extends State<ChatView> {
   void dispose() {
     // FCM 서비스에서 현재 채팅방 해제
     FCMService().clearCurrentChatRoom();
-    
+
     // 안전하게 ChatController 정리 (dispose 중임을 알림)
     try {
       _chatController?.clearData(fromDispose: true);
@@ -74,7 +74,7 @@ class _ChatViewState extends State<ChatView> {
     // MediaQuery로 키보드 높이 감지
     final mediaQuery = MediaQuery.of(context);
     final isKeyboardVisible = mediaQuery.viewInsets.bottom > 0;
-    
+
     return Scaffold(
       resizeToAvoidBottomInset: true, // 키보드가 올라올 때 화면 크기 조정
       appBar: AppBar(
@@ -101,7 +101,7 @@ class _ChatViewState extends State<ChatView> {
               if (mounted) {
                 Navigator.of(context).pushNamedAndRemoveUntil(
                   '/login',
-                  (route) => false,
+                      (route) => false,
                 );
               }
             });
@@ -129,54 +129,54 @@ class _ChatViewState extends State<ChatView> {
                 child: chatController.messages.isEmpty
                     ? _buildEmptyMessageView(groupController)
                     : ListView.builder(
-                        reverse: true,
-                        padding: EdgeInsets.only(
-                          left: 16,
-                          right: 16,
-                          top: 16,
-                          // 키보드가 보일 때는 하단 패딩을 줄여서 오버플로우 방지
-                          bottom: isKeyboardVisible ? 4 : 16,
-                        ),
-                        itemCount: chatController.messages.length,
-                        itemBuilder: (context, index) {
-                          final message =
-                              chatController.messages[chatController
-                                      .messages
-                                      .length -
-                                  1 -
-                                  index];
-                          final senderProfile = message.senderId != 'system'
-                              ? chatController.matchedGroupMembers
-                                    .where(
-                                      (member) =>
-                                          member.uid == message.senderId,
-                                    )
-                                    .firstOrNull
-                              : null;
+                  reverse: true,
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                    // 키보드가 보일 때는 하단 패딩을 줄여서 오버플로우 방지
+                    bottom: isKeyboardVisible ? 4 : 16,
+                  ),
+                  itemCount: chatController.messages.length,
+                  itemBuilder: (context, index) {
+                    final message =
+                    chatController.messages[chatController
+                        .messages
+                        .length -
+                        1 -
+                        index];
+                    final senderProfile = message.senderId != 'system'
+                        ? chatController.matchedGroupMembers
+                        .where(
+                          (member) =>
+                      member.uid == message.senderId,
+                    )
+                        .firstOrNull
+                        : null;
 
-                          return MessageBubble(
-                            message: message,
-                            isMe: chatController.isMyMessage(message),
-                            senderProfile: senderProfile,
-                            onTap: message.senderId != 'system'
-                                ? () {
-                                    final member = groupController
-                                        .getMemberById(message.senderId);
-                                    if (member != null &&
-                                        member.uid.isNotEmpty) {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              ProfileDetailView(user: member),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                : null,
+                    return MessageBubble(
+                      message: message,
+                      isMe: chatController.isMyMessage(message),
+                      senderProfile: senderProfile,
+                      onTap: message.senderId != 'system'
+                          ? () {
+                        final member = groupController
+                            .getMemberById(message.senderId);
+                        if (member != null &&
+                            member.uid.isNotEmpty) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  ProfileDetailView(user: member),
+                            ),
                           );
-                        },
-                      ),
+                        }
+                      }
+                          : null,
+                    );
+                  },
+                ),
               ),
 
               // 메시지 입력 영역 - SafeArea 적용으로 안전한 영역 확보
@@ -192,14 +192,14 @@ class _ChatViewState extends State<ChatView> {
                     color: Colors.white,
                     border: Border(top: BorderSide(color: AppTheme.gray200)),
                     // 키보드가 올라올 때 약간의 그림자 추가로 분리감 제공
-                    boxShadow: isKeyboardVisible 
+                    boxShadow: isKeyboardVisible
                         ? [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: const Offset(0, -2),
-                            ),
-                          ]
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 4,
+                        offset: const Offset(0, -2),
+                      ),
+                    ]
                         : null,
                   ),
                   child: Row(
@@ -266,18 +266,17 @@ class _ChatViewState extends State<ChatView> {
             ],
           );
         },
-        ),
+      ),
     );
   }
 
   // 채팅 헤더 (매칭 전/후 상태에 따라 다른 UI)
   Widget _buildChatHeader(
-    BuildContext context,
-    GroupController groupController,
-    ChatController chatController,
-  ) {
+      BuildContext context,
+      GroupController groupController,
+      ChatController chatController,
+      ) {
     final isMatched = groupController.isMatched;
-    final currentGroup = groupController.currentGroup!;
     final groupMembers = groupController.groupMembers;
 
     return Container(
@@ -306,7 +305,7 @@ class _ChatViewState extends State<ChatView> {
               ),
               const Spacer(),
               Text(
-                '총${groupMembers.length}명',
+                '${groupMembers.length}명',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppTheme.textSecondary,
                 ),
@@ -314,7 +313,7 @@ class _ChatViewState extends State<ChatView> {
             ],
           ),
           const SizedBox(height: 12),
-          
+
           // 매칭 전: 현재 그룹 멤버들 + 초대 상태
           if (!isMatched) ...[_buildInvitationStatus(context, groupController)],
         ],
@@ -324,20 +323,22 @@ class _ChatViewState extends State<ChatView> {
 
   // 초대 상태 표시
   Widget _buildInvitationStatus(
-    BuildContext context,
-    GroupController groupController,
-  ) {
+      BuildContext context,
+      GroupController groupController,
+      ) {
     final sentInvitations = groupController.sentInvitations;
     final pendingCount = sentInvitations
         .where((inv) => inv.status.toString().split('.').last == 'pending')
         .length;
 
-    // [빠른손] 매칭 중인 경우 "매칭 중..." 상태 표시
+    // [UPDATED] 매칭 중이거나, (방장이고 + 대기중인 초대 없고 + 인원 미달일 때) 표시
     if (groupController.isMatching ||
-        (pendingCount == 0 &&
+        (groupController.isOwner && // 방장 권한 체크 추가
+            pendingCount == 0 &&
             groupController.currentGroup!.memberIds.length < 5)) {
       return GestureDetector(
         onTap: () {
+          // 매칭 중이 아닐 때만(즉, 초대 버튼일 때만) 클릭 허용
           if (!groupController.isMatching) {
             Navigator.push(
               context,
@@ -356,7 +357,6 @@ class _ChatViewState extends State<ChatView> {
           ),
           child: Row(
             children: [
-              // [빠른손] 매칭 중 상태일 때 아이콘 변경
               Icon(
                 groupController.isMatching
                     ? Icons.hourglass_empty
@@ -369,7 +369,6 @@ class _ChatViewState extends State<ChatView> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  // [빠른손] 매칭 중 상태일 때 문구 변경
                   groupController.isMatching
                       ? '매칭 중...'
                       : '친구를 더 초대해보세요! (${groupController.currentGroup!.memberIds.length}/5명)',
@@ -386,7 +385,8 @@ class _ChatViewState extends State<ChatView> {
         ),
       );
     }
-    
+
+    // 초대 대기 중인 경우
     if (pendingCount > 0) {
       return Container(
         margin: const EdgeInsets.only(top: 12),
@@ -401,10 +401,7 @@ class _ChatViewState extends State<ChatView> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                // [빠른손] 매칭 중 상태일 때 문구 변경
-                groupController.isMatching
-                    ? '매칭 중...'
-                    : '$pendingCount명의 친구가 초대 응답을 기다리고 있습니다',
+                '$pendingCount명의 친구가 초대 응답을 기다리고 있습니다',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Colors.orange,
                   fontWeight: FontWeight.w500,
@@ -415,7 +412,8 @@ class _ChatViewState extends State<ChatView> {
         ),
       );
     }
-    
+
+    // 아무 상태도 아닐 때 빈 공간 반환 (필수)
     return const SizedBox.shrink();
   }
 
@@ -423,7 +421,7 @@ class _ChatViewState extends State<ChatView> {
   Widget _buildEmptyMessageView(GroupController groupController) {
     final isMatched = groupController.isMatched;
     final memberCount = groupController.groupMembers.length;
-    
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -435,11 +433,11 @@ class _ChatViewState extends State<ChatView> {
           ),
           const SizedBox(height: 16),
           Text(
-            isMatched 
+            isMatched
                 ? '매칭이 성공했습니다!\n상대방과 대화를 시작해보세요!'
                 : memberCount > 1
-                    ? '그룹 채팅이 시작되었습니다!\n친구들과 대화를 나누세요!'
-                    : '아직 그룹에 혼자 있습니다.\n친구들을 초대해보세요!',
+                ? '그룹 채팅이 시작되었습니다!\n친구들과 대화를 나누세요!'
+                : '아직 그룹에 혼자 있습니다.\n친구들을 초대해보세요!',
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: AppTheme.textSecondary,
@@ -447,7 +445,9 @@ class _ChatViewState extends State<ChatView> {
               height: 1.4,
             ),
           ),
-          if (!isMatched && memberCount == 1) ...[
+
+          // [UPDATED] 방장 권한 체크 추가
+          if (!isMatched && memberCount == 1 && groupController.isOwner) ...[
             const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: () {
