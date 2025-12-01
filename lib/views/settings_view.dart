@@ -714,7 +714,7 @@ class _SettingsViewState extends State<SettingsView> {
             onPressed: () {
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('버그 신고가 접수되었습니다. 빠른 시일 내에 확인하겠습니다.')),
+                const SnackBar(content: Text('버그 신고가 접수되었습니다.')),
               );
             },
             child: const Text('신고하기'),
