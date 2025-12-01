@@ -212,3 +212,61 @@ export const notifyMatchOnChatroomCreate = functions.firestore
       console.error("Error sending match notifications:", error);
     }
   });
+
+// 4. [INVITATION NOTIFICATION]
+// Triggers when a new invitation is created
+export const notifyInvitation = functions.firestore
+  .document("invitations/{invitationId}")
+  .onCreate(async (snapshot, context) => {
+    const invitationData = snapshot.data();
+    const invitationId = context.params.invitationId;
+    const toUserId = invitationData.toUserId;
+    const fromUserNickname = invitationData.fromUserNickname;
+
+    if (!toUserId) {
+      console.log("No toUserId in invitation.");
+      return;
+    }
+
+    console.log(`Sending invitation notification to user: ${toUserId}`);
+
+    // Get the recipient's FCM token
+    const userDoc = await db.collection("users").doc(toUserId).get();
+    if (!userDoc.exists) {
+      console.log(`User ${toUserId} not found.`);
+      return;
+    }
+
+    const userData = userDoc.data();
+    const fcmToken = userData?.fcmToken;
+
+    if (!fcmToken) {
+      console.log(`No FCM token for user ${toUserId}.`);
+      return;
+    }
+
+    // Construct the notification payload
+    // Matches the data structure expected by _handleInvitationForegroundMessage in lib/services/fcm_service.dart
+    const message = {
+      token: fcmToken,
+      notification: {
+        title: "그룹팅",
+        body: `${fromUserNickname}님이 그룹에 초대했습니다.`,
+      },
+      data: {
+        type: "new_invitation",
+        invitationId: invitationId,
+        fromUserNickname: fromUserNickname,
+        fromUserProfileImage: invitationData.fromUserProfileImage || "",
+        showAsLocalNotification: "true", // Client triggers local notification manually for rich UI
+        click_action: "FLUTTER_NOTIFICATION_CLICK",
+      },
+    };
+
+    try {
+      await admin.messaging().send(message);
+      console.log(`Invitation notification sent to ${toUserId}`);
+    } catch (error) {
+      console.error("Error sending invitation notification:", error);
+    }
+  });

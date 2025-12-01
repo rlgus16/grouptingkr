@@ -306,7 +306,7 @@ class _ChatViewState extends State<ChatView> {
               ),
               const Spacer(),
               Text(
-                '${groupMembers.length}명',
+                '총${groupMembers.length}명',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppTheme.textSecondary,
                 ),

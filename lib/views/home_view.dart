@@ -1265,7 +1265,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
             ),
             const SizedBox(height: 8),
             Text(
-              '멤버 수: ${groupController.groupMembers.length}/5',
+              '총 멤버: ${groupController.groupMembers.length}명',
               style: const TextStyle(color: AppTheme.textSecondary),
             ),
             // 채팅 버튼 (매칭 전/후 모두 표시) -> 요청 사항 반영
