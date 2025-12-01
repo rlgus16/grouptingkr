@@ -79,16 +79,6 @@ class _SettingsViewState extends State<SettingsView> {
               icon: Icons.security_outlined,
               children: [
                 _buildSwitchTile(
-                  title: '프로필 공개',
-                  subtitle: '다른 사용자에게 내 프로필을 표시합니다',
-                  value: _showProfileToOthers,
-                  onChanged: (value) {
-                    setState(() {
-                      _showProfileToOthers = value;
-                    });
-                  },
-                ),
-                _buildSwitchTile(
                   title: '위치 정보 접근',
                   subtitle: '활동지역 기반 매칭을 위해 위치 정보를 사용합니다',
                   value: _allowLocationAccess,
@@ -127,13 +117,6 @@ class _SettingsViewState extends State<SettingsView> {
                   title: '비밀번호 변경',
                   onTap: () {
                     _showChangePasswordDialog();
-                  },
-                ),
-                _buildMenuTile(
-                  icon: Icons.download_outlined,
-                  title: '내 데이터 다운로드',
-                  onTap: () {
-                    _showDataDownloadDialog();
                   },
                 ),
                 _buildMenuTile(
