@@ -1369,32 +1369,16 @@ class AuthController extends ChangeNotifier {
   // 전화번호 중복 확인 (users 컬렉션 + 선점 시스템)
   Future<bool> isPhoneNumberDuplicate(String phoneNumber) async {
     try {
-      final trimmedPhoneNumber = phoneNumber.trim();
-      
-      // 1. users 컬렉션에서 실제 데이터 확인 (우선순위)
-      final users = await _firebaseService.getCollection('users')
-          .where('phoneNumber', isEqualTo: trimmedPhoneNumber)
-          .limit(1)
-          .get();
-      
-      // 컬렉션에 이미 저장된 전화번호
-      if (users.docs.isNotEmpty) {
-        return true;
-      }
-      
-      // 2. phoneNumbers 컬렉션에서 선점 상태 확인 (보조)
-      try {
-        final phoneDoc = await _firebaseService.getDocument('phoneNumbers/$trimmedPhoneNumber').get();
-        if (phoneDoc.exists) {
-          return true;
-        }
-      } catch (reservationError) {
-        // 선점 시스템 오류는 무시하고 users 컬렉션 결과만 사용
-      }
-      
-      return false;
+      // Call the Cloud Function to securely check availability
+      final result = await FirebaseFunctions.instance
+          .httpsCallable('checkPhoneNumber')
+          .call({'phoneNumber': phoneNumber});
+
+      // The function returns { isDuplicate: true/false }
+      return result.data['isDuplicate'] == true;
     } catch (e) {
-      // 전화번호 중복 확인 오류로 안전하게 false 반환
+      debugPrint('Phone number check failed: $e');
+      // Return false on error so we don't block the user
       return false;
     }
   }

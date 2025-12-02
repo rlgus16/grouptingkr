@@ -359,3 +359,38 @@ export const checkEmail = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError("internal", "Error checking email availability.");
   }
 });
+
+// 전화번호 중복 확인
+// Checks for phone number duplicates in Firestore.
+export const checkPhoneNumber = functions.https.onCall(async (data, context) => {
+  const phoneNumber = data.phoneNumber;
+
+  if (!phoneNumber || typeof phoneNumber !== 'string') {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The function must be called with one argument 'phoneNumber'."
+    );
+  }
+
+  // Remove any potential whitespace
+  const cleanPhoneNumber = phoneNumber.trim();
+
+  try {
+    // Check 'users' collection for this phone number
+    const usersQuery = await db.collection("users")
+      .where("phoneNumber", "==", cleanPhoneNumber)
+      .limit(1)
+      .get();
+
+    if (!usersQuery.empty) {
+      return { isDuplicate: true };
+    }
+
+    // Available
+    return { isDuplicate: false };
+
+  } catch (error) {
+    console.error("Error checking phone number:", error);
+    throw new functions.https.HttpsError("internal", "Error checking phone number availability.");
+  }
+});
