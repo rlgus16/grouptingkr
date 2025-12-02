@@ -177,49 +177,6 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
     });
   }
 
-  // 데이터 복원 확인 다이얼로그 표시 (플래그 관리 추가)
-  void _showRestoreConfirmDialog(Map<String, dynamic> tempProfileData, AuthController authController) {
-    showDialog(
-      context: context,
-      barrierDismissible: false, // 뒤로가기로 닫지 못하도록 설정
-      builder: (context) => PopScope(
-        canPop: true,
-        onPopInvokedWithResult: (didPop, result) {
-          if (didPop) {
-            // 다이얼로그가 닫힐 때 플래그 리셋
-            _isRestoreDialogShown = false;
-          }
-        },
-        child: AlertDialog(
-          title: const Text('이전 입력 정보 발견'),
-          content: const Text(
-            '이전에 입력하던 프로필 정보가 있습니다.\n복원하시겠습니까?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _isRestoreDialogShown = false; // 플래그 리셋
-                // 복원하지 않고 임시 데이터 정리
-                authController.clearTemporaryProfileData();
-              },
-              child: const Text('새로 작성'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _isRestoreDialogShown = false; // 플래그 리셋
-                // 데이터 복원 (이미지 포함)
-                _performDataRestoreWithImages(tempProfileData, authController);
-              },
-              child: const Text('복원하기'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // 현재 입력 중인 프로필 데이터 백업
   Future<void> _backupCurrentProfileData() async {
     final authController = context.read<AuthController>();
@@ -565,13 +522,13 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
         final savedAt = DateTime.tryParse(savedAtStr);
         if (savedAt != null &&
             DateTime.now().difference(savedAt).inHours < 24) {
-          // 24시간 이내 데이터면 복원 다이얼로그 표시
-          _isRestoreDialogShown = true; // 다이얼로그 표시 플래그 설정
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted && !_isRestoringData) {
-              _showRestoreConfirmDialog(tempProfileData, authController);
-            }
-          });
+          // 24시간 이내 데이터면 복원 다이얼로그 표시 - 제거됨
+          // _isRestoreDialogShown = true;
+          // WidgetsBinding.instance.addPostFrameCallback((_) {
+          //   if (mounted && !_isRestoringData) {
+          //     _showRestoreConfirmDialog(tempProfileData, authController);
+          //   }
+          // });
         } else {
           // 24시간 지났으면 데이터 정리
           authController.clearTemporaryProfileData();
