@@ -313,3 +313,49 @@ export const checkNickname = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError("internal", "Error checking nickname availability.");
   }
 });
+
+// 이메일 중복 확인
+// Checks for email duplicates in Firebase Auth and Firestore.
+export const checkEmail = functions.https.onCall(async (data, context) => {
+  const email = data.email;
+
+  if (!email || typeof email !== 'string') {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "The function must be called with one argument 'email'."
+    );
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+
+  try {
+    // 1. Check Firebase Auth (Source of Truth)
+    try {
+      await admin.auth().getUserByEmail(normalizedEmail);
+      // If this succeeds, the user exists
+      return { isDuplicate: true };
+    } catch (authError: any) {
+      // If error is 'user-not-found', we continue to check Firestore
+      if (authError.code !== 'auth/user-not-found') {
+        throw authError;
+      }
+    }
+
+    // 2. Check 'users' collection (Just in case of data mismatch)
+    const usersQuery = await db.collection("users")
+      .where("email", "==", normalizedEmail)
+      .limit(1)
+      .get();
+
+    if (!usersQuery.empty) {
+      return { isDuplicate: true };
+    }
+
+    // Available
+    return { isDuplicate: false };
+
+  } catch (error) {
+    console.error("Error checking email:", error);
+    throw new functions.https.HttpsError("internal", "Error checking email availability.");
+  }
+});

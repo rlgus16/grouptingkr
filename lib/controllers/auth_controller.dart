@@ -1331,42 +1331,20 @@ class AuthController extends ChangeNotifier {
     _setError(null);
   }
 
-  // 이메일 중복 확인 (Firebase Auth + Firestore 이중 체크)
+  // 이메일 중복 확인
   Future<bool> isEmailDuplicate(String email) async {
     try {
-      final normalizedEmail = email.trim().toLowerCase();
-      
-      // 1단계: Firebase Auth에서 이메일 중복 확인 (우선순위)
-      try {
-        final signInMethods = await _firebaseService.auth.fetchSignInMethodsForEmail(normalizedEmail);
-        if (signInMethods.isNotEmpty) {
-          // Firebase Auth에 이미 등록된 이메일
-          return true;
-        }
-      } catch (authError) {
-        // Firebase Auth 이메일 확인 오류 (계속 진행)
-        // Auth 오류가 발생해도 Firestore 체크는 계속 진행
-      }
-      
-      // 2단계: Firestore users 컬렉션에서 이메일 중복 확인 (보조 검증)
-      try {
-        final users = await _firebaseService.getCollection('users')
-            .where('email', isEqualTo: normalizedEmail)
-            .limit(1)
-            .get();
-        
-        // 이미 저장된 이메일이 있으면 중복
-        if (users.docs.isNotEmpty) {
-          return true;
-        }
-      } catch (firestoreError) {
-        // Firestore 오류가 발생한 경우, Firebase Auth 결과에 의존
-        // 이미 위에서 Firebase Auth 체크를 했으므로 false 반환
-      }
-      
-      return false;
+      // Call the Cloud Function to securely check availability
+      final result = await FirebaseFunctions.instance
+          .httpsCallable('checkEmail')
+          .call({'email': email});
+
+      // The function returns { isDuplicate: true/false }
+      return result.data['isDuplicate'] == true;
     } catch (e) {
-      // 전체 오류 시에는 안전하게 false 반환 (Firebase Auth에서 최종 확인됨)
+      debugPrint('Email check failed: $e');
+      // Return false so we don't block the user if the server is down,
+      // but you could also handle the error differently.
       return false;
     }
   }
