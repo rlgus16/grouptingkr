@@ -368,15 +368,20 @@ class _ProfileEditViewState extends State<ProfileEditView> {
                     controller: _introductionController,
                     decoration: const InputDecoration(
                       labelText: '소개글',
-                      hintText: '자신을 소개해주세요',
-                      prefixIcon: Icon(Icons.edit_outlined),
+                      prefixIcon: Icon(Icons.edit),
                       alignLabelWithHint: true,
+                      helperText: '100자 이내',
                     ),
-                    maxLines: 4,
+                    maxLines: 3,
                     maxLength: 100,
+                    // [수정됨] validator 로직 변경
                     validator: (value) {
-                      if (value != null && value.trim().length > 100) {
-                        return '소개글은 100자 이하로 입력해주세요.';
+                      if (value == null || value.trim().isEmpty) {
+                        return '소개글을 입력해주세요.';
+                      }
+                      // 5자 미만 체크 추가
+                      if (value.trim().length < 5) {
+                        return '소개글은 5자 이상 작성해주세요.';
                       }
                       return null;
                     },
