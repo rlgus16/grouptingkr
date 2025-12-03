@@ -512,9 +512,19 @@ class _ProfileEditViewState extends State<ProfileEditView> {
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
+    // 닉네임 중복 체크 확인
     if (_nicknameValidationMessage == '이미 사용 중인 닉네임입니다.') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('이미 사용 중인 닉네임입니다. 다른 닉네임을 사용해주세요.')),
+      );
+      return;
+    }
+
+    // 이미지 최소 1장 필수 체크
+    final hasImages = _imageSlots.any((image) => image != null);
+    if (!hasImages) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('사진을 최소 1장 등록해주세요.')),
       );
       return;
     }
@@ -529,7 +539,7 @@ class _ProfileEditViewState extends State<ProfileEditView> {
       try {
         await FirebaseStorage.instance.refFromURL(imageUrl).delete();
       } catch (e) {
-        // 이미지 삭제 실패: $e
+        // 이미지 삭제 실패: $e (무시하고 진행)
       }
     }
 
