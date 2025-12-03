@@ -27,11 +27,6 @@ class AuthController extends ChangeNotifier {
   UserModel? _currentUserModel;
   bool _isInitialized = false;
 
-  // 차단된 사용자 ID 목록 및 리스너
-  List<String> _blockedUserIds = [];
-  List<String> get blockedUserIds => _blockedUserIds;
-  StreamSubscription<QuerySnapshot>? _blockedUsersSubscription;
-
   // 로그아웃 시 호출할 콜백
   VoidCallback? onSignOutCallback;
 
@@ -45,10 +40,11 @@ class AuthController extends ChangeNotifier {
   // 회원가입 진행 중 플래그
   bool _isRegistrationInProgress = false;
 
-  // 차단 목록 관리 변수 (양방향)
+  // 차단 목록 관리 변수
   List<String> _blockedUserIds = [];
+  List<String> get blockedUserIds => _blockedUserIds;
 
-  // 기존 _blockedUsersSubscription 대신 아래 두 변수를 사용합니다.
+  // 양방향 차단 구독 변수
   StreamSubscription? _sub1; // 내가 차단한 목록 구독
   StreamSubscription? _sub2; // 나를 차단한 목록 구독
 
