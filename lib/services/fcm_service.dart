@@ -171,8 +171,6 @@ class FCMService {
           final bool? grantedNotificationPermission = await androidImplementation.requestNotificationsPermission();
           debugPrint('Android 알림 권한: $grantedNotificationPermission');
 
-          final bool? grantedExactAlarmPermission = await androidImplementation.requestExactAlarmsPermission();
-          debugPrint('Android 정확한 알람 권한: $grantedExactAlarmPermission');
         }
       }
 
