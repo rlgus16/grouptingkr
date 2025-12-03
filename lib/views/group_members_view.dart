@@ -19,7 +19,7 @@ class GroupMembersView extends StatelessWidget {
       ),
       body: Consumer<GroupController>(
         builder: (context, groupController, _) {
-          final members = groupController.groupMembers;
+          final members = groupController.allGroupMembersRaw;
 
           if (members.isEmpty) {
             return const Center(
