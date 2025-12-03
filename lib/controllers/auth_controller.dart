@@ -27,15 +27,20 @@ class AuthController extends ChangeNotifier {
   UserModel? _currentUserModel;
   bool _isInitialized = false;
 
+  // 로그아웃 시 호출할 콜백
   VoidCallback? onSignOutCallback;
 
-  // 임시 저장 데이터 (기존 코드 호환성을 위해 남겨두지만 사용하지 않음)
+  // 임시 데이터 저장 (호환성 유지)
   Map<String, dynamic>? _tempRegistrationData;
   Map<String, dynamic>? _tempProfileData;
 
+  // Auth 상태 변경 리스너
   StreamSubscription<User?>? _authStateSubscription;
+
+  // 회원가입 진행 중 플래그
   bool _isRegistrationInProgress = false;
 
+  // Getters
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   UserModel? get currentUserModel => _currentUserModel;
@@ -54,21 +59,63 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 에러 메시지 변환
+  // 에러 설정 (외부 노출)
+  void setError(String? error) {
+    _setError(error);
+  }
+
+  // 에러 초기화
+  void clearError() {
+    _setError(null);
+  }
+
+  // Firebase Auth 에러를 한국어로 변환 (로그인용)
+  String _getKoreanErrorMessage(dynamic error) {
+    if (error is FirebaseAuthException) {
+      switch (error.code) {
+        case 'user-not-found':
+          return '등록되지 않은 아이디입니다.';
+        case 'wrong-password':
+          return '비밀번호가 올바르지 않습니다.';
+        case 'invalid-email':
+          return '올바르지 않은 이메일 형식입니다.';
+        case 'user-disabled':
+          return '비활성화된 계정입니다.';
+        case 'too-many-requests':
+          return '시도가 너무 많습니다. 잠시 후 다시 시도해주세요.';
+        case 'invalid-credential':
+          return '아이디 또는 비밀번호가 올바르지 않습니다.';
+        case 'network-request-failed':
+          return '네트워크 연결을 확인해주세요.';
+        default:
+          return '오류가 발생했습니다: ${error.message}';
+      }
+    }
+    return '오류가 발생했습니다.';
+  }
+
+  // Firebase Auth 에러를 한국어로 변환 (회원가입용)
   String _getKoreanRegisterErrorMessage(dynamic error) {
     if (error is FirebaseAuthException) {
       switch (error.code) {
-        case 'email-already-in-use': return '이미 사용 중인 아이디입니다.';
-        case 'weak-password': return '비밀번호가 너무 간단합니다.';
-        case 'invalid-email': return '올바르지 않은 아이디 형식입니다.';
-        case 'network-request-failed': return '네트워크 연결을 확인해주세요.';
-        default: return '회원가입 오류: ${error.message}';
+        case 'email-already-in-use':
+          return '이미 사용 중인 아이디입니다.';
+        case 'weak-password':
+          return '비밀번호가 너무 간단합니다.';
+        case 'invalid-email':
+          return '올바르지 않은 아이디 형식입니다.';
+        case 'network-request-failed':
+          return '네트워크 연결을 확인해주세요.';
+        default:
+          return '회원가입 오류: ${error.message}';
       }
     }
     return '회원가입 중 오류가 발생했습니다: $error';
   }
 
+  // ===========================================================================
   // [NEW] 즉시 회원가입 메서드 (임시 저장 없이 바로 가입)
+  // ===========================================================================
   Future<bool> register({
     required String email,
     required String password,
@@ -89,10 +136,14 @@ class AuthController extends ChangeNotifier {
 
       if (duplicates['email'] == true) {
         _setError('이미 사용 중인 이메일입니다.');
+        _setLoading(false);
+        _isRegistrationInProgress = false;
         return false;
       }
       if (duplicates['phoneNumber'] == true) {
         _setError('이미 사용 중인 전화번호입니다.');
+        _setLoading(false);
+        _isRegistrationInProgress = false;
         return false;
       }
 
@@ -103,14 +154,20 @@ class AuthController extends ChangeNotifier {
 
       if (user == null) {
         _setError('계정 생성에 실패했습니다.');
+        _setLoading(false);
+        _isRegistrationInProgress = false;
         return false;
       }
 
       // 3. 전화번호 선점 (개선된 로직 사용)
       final phoneReserved = await reservePhoneNumber(phoneNumber, user.uid);
       if (!phoneReserved) {
-        await user.delete(); // 실패 시 계정 롤백
+        try {
+          await user.delete(); // 실패 시 계정 롤백
+        } catch (_) {}
         _setError('전화번호 선점 실패: 이미 사용 중입니다.');
+        _setLoading(false);
+        _isRegistrationInProgress = false;
         return false;
       }
 
@@ -255,20 +312,208 @@ class AuthController extends ChangeNotifier {
     }
   }
 
+  // ===========================================================================
+  // 기존 기능들 (로그인, 비밀번호 변경 등) - RESTORED
+  // ===========================================================================
+
+  // 이메일과 비밀번호로 로그인
+  Future<void> signInWithEmail(String email, String password) async {
+    try {
+      _setLoading(true);
+      _setError(null);
+
+      final userCredential = await _firebaseService.auth
+          .signInWithEmailAndPassword(email: email.trim().toLowerCase(), password: password);
+
+      if (userCredential.user != null) {
+        await _loadUserData(userCredential.user!.uid);
+
+        if (_currentUserModel != null) {
+          notifyListeners();
+          try {
+            await _fcmService.retryTokenSave();
+          } catch (_) {}
+        } else {
+          // 사용자 데이터 없음 (계정 복구 시도)
+          await _attemptAccountRecovery(userCredential.user!);
+          notifyListeners();
+          if (_currentUserModel != null) {
+            try { await _fcmService.retryTokenSave(); } catch (_) {}
+          }
+        }
+      } else {
+        _setError('로그인에 실패했습니다.');
+      }
+
+      _setLoading(false);
+    } catch (e) {
+      _setError(_getKoreanErrorMessage(e));
+      _setLoading(false);
+    }
+  }
+
+  // 기존 호환성 유지용
+  Future<void> signInWithEmailAndPassword(String email, String password) async {
+    await signInWithEmail(email, password);
+  }
+
   // 로그아웃
   Future<void> signOut() async {
     try {
       _setLoading(true);
       if (onSignOutCallback != null) onSignOutCallback!();
+
       await _firebaseService.auth.signOut();
+
       _currentUserModel = null;
       _tempRegistrationData = null;
       _tempProfileData = null;
+
       _setLoading(false);
       notifyListeners();
     } catch (e) {
       _setLoading(false);
       rethrow;
+    }
+  }
+
+  // 비밀번호 변경
+  Future<bool> changePassword(String currentPassword, String newPassword) async {
+    try {
+      _setLoading(true);
+      _setError(null);
+
+      final currentUser = _firebaseService.currentUser;
+      if (currentUser == null) {
+        _setError('로그인된 사용자가 없습니다.');
+        return false;
+      }
+
+      if (newPassword.length < 6) {
+        _setError('새 비밀번호는 최소 6자 이상이어야 합니다.');
+        return false;
+      }
+
+      if (currentPassword == newPassword) {
+        _setError('새 비밀번호는 현재 비밀번호와 달라야 합니다.');
+        return false;
+      }
+
+      // 재인증
+      final credential = EmailAuthProvider.credential(
+        email: currentUser.email!,
+        password: currentPassword,
+      );
+      await currentUser.reauthenticateWithCredential(credential);
+
+      // 변경
+      await currentUser.updatePassword(newPassword);
+
+      _setLoading(false);
+      return true;
+    } catch (e) {
+      String errorMessage = '비밀번호 변경에 실패했습니다';
+      if (e is FirebaseAuthException) {
+        switch (e.code) {
+          case 'wrong-password': errorMessage = '현재 비밀번호가 올바르지 않습니다.'; break;
+          case 'weak-password': errorMessage = '새 비밀번호가 너무 약합니다.'; break;
+          case 'requires-recent-login': errorMessage = '다시 로그인한 후 시도해주세요.'; break;
+          default: errorMessage = '오류: ${e.message}';
+        }
+      }
+      _setError(errorMessage);
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  // 계정 삭제
+  Future<bool> deleteAccount() async {
+    try {
+      _setLoading(true);
+      _setError(null);
+
+      final currentUser = _firebaseService.currentUser;
+      if (currentUser == null) {
+        _setError('로그인된 사용자가 없습니다.');
+        return false;
+      }
+
+      final userId = currentUser.uid;
+      final HttpsCallable callable = _functions.httpsCallable('deleteUserAccount');
+
+      try {
+        final HttpsCallableResult result = await callable.call({'userId': userId});
+
+        if (result.data['success'] == true) {
+          if (onSignOutCallback != null) onSignOutCallback!();
+          _currentUserModel = null;
+          _tempRegistrationData = null;
+          _tempProfileData = null;
+          _setLoading(false);
+          notifyListeners();
+          return true;
+        } else {
+          _setError(result.data['message'] ?? '계정 삭제에 실패했습니다.');
+          _setLoading(false);
+          return false;
+        }
+      } on FirebaseFunctionsException catch (e) {
+        _setError('계정 삭제 오류: ${e.message}');
+        _setLoading(false);
+        return false;
+      }
+    } catch (e) {
+      _setError('계정 삭제 실패: $e');
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  // 계정 복구 (유령 계정 처리)
+  Future<void> _attemptAccountRecovery(User firebaseUser) async {
+    try {
+      final userService = UserService();
+      UserModel? existingUser;
+
+      for (int attempt = 1; attempt <= 3; attempt++) {
+        try {
+          existingUser = await userService.getUserById(firebaseUser.uid);
+          if (existingUser != null) break;
+        } catch (_) {
+          if (attempt < 3) await Future.delayed(Duration(milliseconds: 500));
+        }
+      }
+
+      if (existingUser != null) {
+        _currentUserModel = existingUser;
+        return;
+      }
+
+      // 복구용 기본 문서 생성
+      final recoveredUser = UserModel(
+        uid: firebaseUser.uid,
+        email: firebaseUser.email ?? '',
+        phoneNumber: '',
+        birthDate: '',
+        gender: '',
+        nickname: '',
+        introduction: '',
+        height: 0,
+        activityArea: '',
+        profileImages: [],
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+        isProfileComplete: false,
+      );
+
+      await userService.createUser(recoveredUser);
+      _currentUserModel = recoveredUser;
+
+    } catch (e) {
+      await _firebaseService.signOut();
+      _currentUserModel = null;
+      _setError('계정 정보 복구 실패. 다시 회원가입해주세요.');
     }
   }
 
@@ -313,6 +558,8 @@ class AuthController extends ChangeNotifier {
         } else {
           if (_isRegistrationInProgress) return;
           _currentUserModel = null;
+          _tempRegistrationData = null;
+          _tempProfileData = null;
           notifyListeners();
         }
       });
@@ -327,7 +574,19 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  // 중복 확인, 프로필 완성 등 필요한 기존 메서드들 유지
+  // 사용자 정보 새로고침
+  Future<void> refreshCurrentUser() async {
+    if (_firebaseService.currentUser != null) {
+      await _loadUserData(_firebaseService.currentUser!.uid);
+    }
+  }
+
+  // FirebaseService 접근용
+  FirebaseService get firebaseService => _firebaseService;
+
+  // ===========================================================================
+  // 중복 확인 관련
+  // ===========================================================================
   Future<bool> isEmailDuplicate(String email) async {
     try {
       final result = await _functions.httpsCallable('checkEmail').call({'email': email});
@@ -357,8 +616,57 @@ class AuthController extends ChangeNotifier {
     return results;
   }
 
-  // 프로필 완성 (기존 회원가입 로직에서 분리됨 - 이미 로그인된 유저가 호출)
-  Future<void> createCompleteUserProfile(String uid, String phoneNumber, String birthDate, String gender, String nickname, String introduction, int height, String activityArea, List<String> profileImages) async {
+  // ===========================================================================
+  // 프로필 관련 (ProfileCreateView 호환성)
+  // ===========================================================================
+
+  // 임시 데이터 저장 (프로필 화면용)
+  void saveTemporaryProfileData({
+    required String nickname,
+    required String introduction,
+    required String height,
+    required String activityArea,
+    List<String>? profileImagePaths,
+    List<String>? profileImageBytes,
+    int? mainProfileIndex,
+  }) {
+    _tempProfileData = {
+      'nickname': nickname,
+      'introduction': introduction,
+      'height': height,
+      'activityArea': activityArea,
+      'profileImagePaths': profileImagePaths ?? [],
+      'profileImageBytes': profileImageBytes ?? [],
+      'mainProfileIndex': mainProfileIndex ?? 0,
+      'savedAt': DateTime.now().toIso8601String(),
+    };
+    notifyListeners();
+  }
+
+  // 임시 데이터 정리
+  void clearTemporaryData() {
+    _tempRegistrationData = null;
+    _tempProfileData = null;
+    notifyListeners();
+  }
+
+  void clearTemporaryProfileData() {
+    _tempProfileData = null;
+    notifyListeners();
+  }
+
+  // 프로필 완성 (새로워진 로직 - 이미 로그인된 유저용)
+  Future<void> createCompleteUserProfile(
+      String uid,
+      String phoneNumber,
+      String birthDate,
+      String gender,
+      String nickname,
+      String introduction,
+      int height,
+      String activityArea,
+      List<String> profileImages,
+      ) async {
     try {
       final user = UserModel(
         uid: uid,
@@ -383,24 +691,7 @@ class AuthController extends ChangeNotifier {
     }
   }
 
-  // 나머지 필요한 getter, setter
-  FirebaseService get firebaseService => _firebaseService;
-  void clearTemporaryData() { _tempRegistrationData = null; _tempProfileData = null; notifyListeners(); }
-  void clearTemporaryProfileData() { _tempProfileData = null; notifyListeners(); }
-  void saveTemporaryProfileData({required String nickname, required String introduction, required String height, required String activityArea, List<String>? profileImageBytes, int? mainProfileIndex}) {
-    _tempProfileData = {
-      'nickname': nickname, 'introduction': introduction, 'height': height, 'activityArea': activityArea,
-      'profileImageBytes': profileImageBytes ?? [], 'mainProfileIndex': mainProfileIndex ?? 0, 'savedAt': DateTime.now().toIso8601String(),
-    };
-    notifyListeners();
-  }
-  void clearError() => _setError(null);
-  void setError(String? msg) => _setError(msg);
-  Future<void> refreshCurrentUser() async {
-    if (_firebaseService.currentUser != null) await _loadUserData(_firebaseService.currentUser!.uid);
-  }
-
-  // (호환성 유지용 빈 메서드)
+  // (호환성 유지용 빈 메서드들)
   void saveTemporaryRegistrationData({required String email, required String password, required String phoneNumber, required String birthDate, required String gender}) {}
   Future<void> completeRegistrationWithoutProfile() async {}
   Future<void> completeRegistrationWithProfile({required String nickname, required String introduction, required int height, required String activityArea, List<XFile>? profileImages}) async {}
