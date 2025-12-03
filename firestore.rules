@@ -3,28 +3,26 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Default rule: block all access for unauthenticated users
+    // 기본 규칙: 인증되지 않은 접근 차단
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Users collection
+    // 사용자 컬렉션
     match /users/{userId} {
       allow create: if request.auth != null && request.auth.uid == userId;
       allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+      // 다른 유저 정보 읽기 허용 (프로필 조회 등)
       allow read: if request.auth != null;
     }
 
-    // Groups collection (for pre-match)
+    // 그룹 컬렉션
     match /groups/{groupId} {
       allow create: if request.auth != null && request.auth.uid == request.resource.data.ownerId;
-      // Allow any authenticated user to read group data. This is necessary for viewing invites.
       allow read: if request.auth != null;
       allow delete: if request.auth != null && request.auth.uid == resource.data.ownerId;
       allow update: if request.auth != null && (
-        // Rule for an existing member making changes (e.g., leaving, owner actions)
         request.auth.uid in resource.data.memberIds ||
-        // Rule for a new user accepting an invitation
         (
           !(request.auth.uid in resource.data.memberIds) &&
           request.resource.data.memberIds == resource.data.memberIds.concat([request.auth.uid]) &&
@@ -33,31 +31,27 @@ service cloud.firestore {
       );
     }
 
-    // Chatrooms collection (for post-match AND pre-match group chat)
+    // 채팅방 컬렉션
     match /chatrooms/{chatroomId} {
-      // Allow access if user is in the participants list
-      // OR if the user is a member of the group with the same ID (for pre-matched groups)
       allow read, write, update: if request.auth != null && (
         (resource != null && request.auth.uid in resource.data.participants) ||
         (exists(/databases/$(database)/documents/groups/$(chatroomId)) &&
          request.auth.uid in get(/databases/$(database)/documents/groups/$(chatroomId)).data.memberIds)
       );
-
-      // Allow creating the chatroom if it doesn't exist, provided the user is a member of the group
       allow create: if request.auth != null && (
          exists(/databases/$(database)/documents/groups/$(chatroomId)) &&
          request.auth.uid in get(/databases/$(database)/documents/groups/$(chatroomId)).data.memberIds
       );
     }
 
-    // Messages collection
+    // 메시지 컬렉션
     match /messages/{messageId} {
       allow create: if request.auth != null && request.auth.uid == request.resource.data.senderId;
       allow read: if request.auth != null;
       allow update, delete: if request.auth != null && request.auth.uid == resource.data.senderId;
     }
 
-    // Invitations collection
+    // 초대장 컬렉션
     match /invitations/{invitationId} {
       allow create: if request.auth != null && request.auth.uid == request.resource.data.fromUserId;
       allow read: if request.auth != null && (request.auth.uid == resource.data.fromUserId || request.auth.uid == resource.data.toUserId);
@@ -65,10 +59,27 @@ service cloud.firestore {
       allow delete: if request.auth != null && request.auth.uid == resource.data.fromUserId;
     }
 
-    // Nicknames collection
+    // [수정됨] 닉네임 선점 규칙 (좀비 데이터 정리 허용)
     match /nicknames/{nickname} {
       allow read: if request.auth != null;
-      allow create, delete: if request.auth != null && request.auth.uid == request.auth.uid;
+      // 생성은 누구나 가능 (단, 앱 로직에서 중복 체크)
+      allow create: if request.auth != null;
+      // 삭제/수정 조건: 내 것이거나 OR 연결된 유저(uid)가 DB에 없으면(좀비) 삭제 가능
+      allow update, delete: if request.auth != null && (
+        request.auth.uid == resource.data.uid ||
+        !exists(/databases/$(database)/documents/users/$(resource.data.uid))
+      );
+    }
+
+    // [추가됨] 전화번호 선점 규칙 (좀비 데이터 정리 허용)
+    match /phoneNumbers/{phoneNumber} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      // 삭제/수정 조건: 내 것이거나 OR 연결된 유저(uid)가 DB에 없으면(좀비) 삭제 가능
+      allow update, delete: if request.auth != null && (
+        request.auth.uid == resource.data.uid ||
+        !exists(/databases/$(database)/documents/users/$(resource.data.uid))
+      );
     }
   }
 }
