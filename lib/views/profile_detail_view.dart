@@ -114,8 +114,8 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
       builder: (context) => AlertDialog(
         title: const Text('사용자 차단'),
         content: Text(
-              '서로의 프로필 차단\n서로의 채팅 메세지 차단\n서로의 초대 메세지 차단\n\n'
-                  '${widget.user.nickname}님을 차단하시겠습니까?\n',
+          '서로의 프로필 차단\n서로의 채팅 메세지 차단\n서로의 초대 메세지 차단\n\n'
+              '${widget.user.nickname}님을 차단하시겠습니까?\n',
         ),
         actions: [
           TextButton(
@@ -129,7 +129,6 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
                 if (currentUser == null) return;
 
                 // 'blocks' 컬렉션에 저장 (양방향 차단 지원)
-                // 문서 ID를 '내ID_상대ID'로 설정하여 중복 방지
                 final blockDocId = '${currentUser.uid}_${widget.user.uid}';
 
                 await FirebaseFirestore.instance
@@ -169,8 +168,41 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
 
   @override
   Widget build(BuildContext context) {
+    // [수정됨] 차단 여부 실시간 확인 (watch 사용)
+    final authController = context.watch<AuthController>();
+    final isBlocked = authController.blockedUserIds.contains(widget.user.uid);
+
+    // [추가됨] 차단된 사용자일 경우 프로필 내용을 숨김
+    if (isBlocked) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('프로필'),
+          elevation: 0,
+          backgroundColor: Colors.white,
+          foregroundColor: AppTheme.textPrimary,
+        ),
+        body: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.block, size: 48, color: AppTheme.textSecondary),
+              SizedBox(height: 16),
+              Text(
+                '정보를 확인할 수 없는 사용자입니다.',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: AppTheme.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     // 현재 로그인한 유저인지 확인 (본인 프로필에는 차단/신고 버튼 숨김)
-    final isMe = context.read<AuthController>().currentUserModel?.uid == widget.user.uid;
+    final isMe = authController.currentUserModel?.uid == widget.user.uid;
 
     return Scaffold(
       appBar: AppBar(
