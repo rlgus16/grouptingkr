@@ -189,58 +189,9 @@ class _ProfileCreateViewState extends State<ProfileCreateView> with WidgetsBindi
       // 회원가입에서 온 경우 이전 페이지(회원가입)로 돌아가기
       Navigator.pop(context);
     } else {
-      // AuthWrapper에서 온 경우 "나중에 설정하기" 옵션 제공
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('프로필 생성'),
-          content: const Text('프로필을 나중에 설정하고 바로 시작하시겠습니까?\n언제든지 마이페이지에서 프로필을 완성할 수 있습니다.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('계속 작성'),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-
-                // 프로필 생성을 건너뛰고 홈 화면으로 이동
-                final authController = context.read<AuthController>();
-
-                // 회원가입 데이터가 있으면 기본 정보만으로 계정 생성
-                if (authController.tempRegistrationData != null) {
-                  await authController.completeRegistrationWithoutProfile();
-
-                  if (mounted) {
-                    if (authController.errorMessage != null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(authController.errorMessage!)),
-                      );
-                    } else {
-                      // 홈 화면으로 이동
-                      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-                    }
-                  }
-                } else {
-                  // 이미 계정이 있는 경우 바로 홈 화면으로
-                  if (mounted) {
-                    Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
-                  }
-                }
-              },
-              child: const Text('나중에 설정'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // 로그아웃 확인 다이얼로그
-                _showLogoutConfirmDialog();
-              },
-              child: const Text('로그아웃', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        ),
-      );
+      // [수정됨] AuthWrapper에서 온 경우 "나중에 설정하기" 다이얼로그 제거
+      // 대신 바로 로그아웃 확인 다이얼로그 표시 (프로필 생성을 취소하려면 로그아웃 해야 함)
+      _showLogoutConfirmDialog();
     }
   }
 
