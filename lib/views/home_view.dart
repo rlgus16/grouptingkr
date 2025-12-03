@@ -696,7 +696,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
       Navigator.pushNamed(context, '/register');
     } else {
       // 프로필 완성 페이지로 이동
-      Navigator.pushNamed(context, '/profile-create');
+      Navigator.push(context, MaterialPageRoute(builder: (context) => ProfileEditView()));
     }
   }
 
@@ -1154,7 +1154,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                           barrierDismissible: false, // 프로필 완성을 강제하려면 false로 설정
                           builder: (context) => AlertDialog(
                             title: const Text('프로필 완성 필요'),
-                            content: const Text('원활한 서비스 이용을 위해 프로필을 완성해주세요.'),
+                            content: const Text('프로필을 완성해야 서비스 이용이 가능합니다.'),
                             actions: [
                               TextButton(
                                 onPressed: () {

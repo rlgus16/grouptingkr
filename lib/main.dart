@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:firebase_app_check/firebase_app_check.dart'; // [추가] App Check 패키지
-import 'package:flutter/foundation.dart'; // [추가] kReleaseMode 확인용
+import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:flutter/foundation.dart';
 
 import 'controllers/auth_controller.dart';
 import 'controllers/profile_controller.dart';
@@ -13,7 +13,7 @@ import 'controllers/chat_controller.dart';
 import 'views/login_view.dart';
 import 'views/home_view.dart';
 import 'views/register_view.dart';
-import 'views/profile_create_view.dart';
+// ProfileCreateView import 삭제됨
 import 'utils/app_theme.dart';
 import 'services/fcm_service.dart';
 import 'firebase_options.dart';
@@ -25,25 +25,19 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Firebase 초기화 (플랫폼별 설정 사용)
+    // Firebase 초기화
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    // [추가] App Check 활성화 (배포/개발 환경 분리 적용)
+    // App Check 활성화
     await FirebaseAppCheck.instance.activate(
-      // Android: 배포(Release) 시 Play Integrity, 개발(Debug) 시 Debug Provider 사용
       androidProvider: kReleaseMode
           ? AndroidProvider.playIntegrity
           : AndroidProvider.debug,
-
-      // iOS: 배포(Release) 시 App Attest, 개발(Debug) 시 Debug Provider 사용
       appleProvider: kReleaseMode
           ? AppleProvider.appAttest
           : AppleProvider.debug,
-
-      // Web: 필요 시 ReCaptcha v3 키 입력 (미사용 시 주석 처리)
-      // webProvider: ReCaptchaV3Provider('recaptcha-v3-site-key'),
     );
 
     // FCM 백그라운드 메시지 핸들러 설정
@@ -95,7 +89,7 @@ class MyApp extends StatelessWidget {
           '/': (context) => const AuthWrapper(),
           '/login': (context) => const LoginView(),
           '/register': (context) => const RegisterView(),
-          '/profile-create': (context) => const ProfileCreateView(),
+          // '/profile-create': (context) => const ProfileCreateView(), // 삭제됨
           '/home': (context) => const HomeView(),
         },
       ),
@@ -163,6 +157,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
 
+        // 로그인 상태가 해제된 경우
         if (_wasLoggedIn && !authController.isLoggedIn) {
           _controllersInitialized = false;
           _groupController = null;
@@ -171,6 +166,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
           return const LoginView();
         }
 
+        // 로그인 상태로 변경된 경우 (초기화 필요)
         if (!_wasLoggedIn && authController.isLoggedIn && !_controllersInitialized) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _initializeControllers();
@@ -180,6 +176,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         final previousWasLoggedIn = _wasLoggedIn;
         _wasLoggedIn = authController.isLoggedIn;
 
+        // 로그아웃 감지 (이중 체크)
         if (previousWasLoggedIn && !authController.isLoggedIn) {
           _controllersInitialized = false;
           _groupController = null;
@@ -187,10 +184,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
           return const LoginView();
         }
 
-        if (authController.tempRegistrationData != null) {
-          return const ProfileCreateView();
-        }
-
+        // 로그인하지 않은 상태
         if (!authController.isLoggedIn) {
           return const LoginView();
         }
@@ -200,21 +194,14 @@ class _AuthWrapperState extends State<AuthWrapper> {
           return const LoginView();
         }
 
+        // 사용자 데이터 로딩 중이거나 없는 경우 (일단 홈으로 보내거나 로딩 표시)
+        // HomeView 내부에서 데이터 없음을 처리하거나 재로딩하므로 HomeView로 보냄
         if (authController.currentUserModel == null) {
-          return const LoginView();
+          // 데이터 로딩을 기다리는 대신 HomeView로 보내서 처리
+          return const HomeView();
         }
 
-        if (!authController.currentUserModel!.isProfileComplete) {
-          final user = authController.currentUserModel!;
-          if (user.phoneNumber.isNotEmpty &&
-              user.gender.isNotEmpty &&
-              user.birthDate.isNotEmpty) {
-            return const HomeView();
-          } else {
-            return const ProfileCreateView();
-          }
-        }
-
+        // 프로필 미완성 상태라도 HomeView로 보내서 '프로필 완성하기' 카드를 띄움
         return const HomeView();
       },
     );

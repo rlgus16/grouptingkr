@@ -149,6 +149,7 @@ class _RegisterViewState extends State<RegisterView> {
   }
 
   Future<void> _register() async {
+    // 1. 폼 유효성 검사 (빈칸, 형식 체크)
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedGender.isEmpty) {
@@ -163,25 +164,36 @@ class _RegisterViewState extends State<RegisterView> {
     final phoneNumber = _phoneController.text.trim();
     final birthDate = _birthDateController.text.trim();
 
+    if (email.isEmpty || password.isEmpty ||
+        phoneNumber.isEmpty || birthDate.isEmpty || _selectedGender.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('모든 필수 정보를 입력해주세요.')),
+      );
+      return;
+    }
+
     final authController = context.read<AuthController>();
 
-    // 1. 중복 검사 (이미 UI에서 체크했지만 최종 확인)
+    // 2. 중복 검사 확인 (UI상 에러 메시지가 떠있는지 확인)
     if (_emailValidationMessage == '이미 사용 중인 이메일입니다.') {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이미 사용 중인 이메일입니다.')),
+        const SnackBar(content: Text('이미 사용 중인 이메일입니다. 다른 이메일을 사용해주세요.')),
       );
       return;
     }
+
     if (_phoneValidationMessage == '이미 사용 중인 전화번호입니다.') {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이미 사용 중인 전화번호입니다.')),
+        const SnackBar(content: Text('이미 사용 중인 전화번호입니다. 다른 번호를 사용해주세요.')),
       );
       return;
     }
 
+    // 에러 상태 초기화
     authController.clearError();
 
-    // 2. [변경됨] 임시 저장이 아닌 '즉시 가입' 시도
+    // 3. [핵심 변경] 임시 저장이 아닌 '즉시 가입' 시도
+    // AuthController에 새로 추가한 register 함수를 호출합니다.
     final success = await authController.register(
       email: email,
       password: password,
@@ -190,14 +202,16 @@ class _RegisterViewState extends State<RegisterView> {
       gender: _selectedGender,
     );
 
-    // 3. 가입 성공 시 프로필 설정 화면으로 이동
+    // 4. 가입 성공 여부에 따른 처리
     if (success && mounted) {
+      // 성공 시: 홈 화면으로 이동 (이전 화면 기록 모두 삭제)
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('회원가입이 완료되었습니다. 프로필을 설정해주세요.')),
+        const SnackBar(content: Text('가입되었습니다! 우선 프로필을 완성해주세요.')),
       );
-      // 로그인된 상태이므로 /profile-create로 이동하면 자동으로 '내 정보 수정' 모드로 동작함
-      Navigator.pushNamed(context, '/profile-create');
     } else if (mounted && authController.errorMessage != null) {
+      // 실패 시: 에러 메시지 표시
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(authController.errorMessage!)),
       );
