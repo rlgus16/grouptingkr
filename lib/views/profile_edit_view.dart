@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 import 'dart:typed_data';
@@ -117,10 +118,36 @@ class _ProfileEditViewState extends State<ProfileEditView> {
   // 이미지 선택 메서드
   Future<void> _selectSingleImage(int index) async {
     if (_isPickerActive) return;
-    
+
+    // 갤러리/저장소 권한 확인 로직
+    if (!kIsWeb) { // 웹이 아닐 때만 권한 체크
+      PermissionStatus status;
+
+      if (Platform.isAndroid) {
+        // Android 버전에 따라 권한 분기
+        // (단순화를 위해 photos로 통합 요청, permission_handler가 버전에 맞춰 처리)
+        status = await Permission.photos.request();
+
+        // Android 12 이하 대응 (photos가 거부되면 storage 요청)
+        if (status.isDenied || status.isPermanentlyDenied) {
+          status = await Permission.storage.request();
+        }
+      } else {
+        // iOS
+        status = await Permission.photos.request();
+      }
+
+      // 권한이 거부되었거나 영구적으로 거부된 경우
+      if (status.isDenied || status.isPermanentlyDenied) {
+        if (mounted) _showPermissionDialog(); // 다이얼로그 띄우기
+        return;
+      }
+    }
+
     try {
       _isPickerActive = true;
       final image = await _picker.pickImage(source: ImageSource.gallery);
+
       if (image != null) {
         setState(() {
           // 기존 이미지가 URL(String)이었다면 삭제 목록에 추가
@@ -140,6 +167,30 @@ class _ProfileEditViewState extends State<ProfileEditView> {
     } finally {
       _isPickerActive = false;
     }
+  }
+
+// 권한 설정 유도 다이얼로그
+  void _showPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('권한 설정 필요'),
+        content: const Text('프로필 사진을 등록하려면 갤러리 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings(); // permission_handler 기능: 앱 설정 화면으로 이동
+            },
+            child: const Text('설정으로 이동'),
+          ),
+        ],
+      ),
+    );
   }
 
   // 이미지 슬롯 삭제

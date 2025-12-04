@@ -46,10 +46,7 @@ class GroupController extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   GroupModel? get currentGroup => _currentGroup;
-  List<UserModel> get groupMembers => _groupMembers
-      .where((member) => !_blockedUserIds.contains(member.uid))
-      .toList();
-  List<UserModel> get allGroupMembersRaw => List.unmodifiable(_groupMembers);
+  List<UserModel> get groupMembers => _groupMembers.toList();
 
   List<InvitationModel> get receivedInvitations => _receivedInvitations
       .where((inv) => !_blockedUserIds.contains(inv.fromUserId))

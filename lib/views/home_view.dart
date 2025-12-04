@@ -174,7 +174,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     String dialogContent = '매칭되었습니다!\n채팅방에서 인사해보세요 👋';
     
     if (currentGroup != null) {
-      final memberCount = groupController.allGroupMembersRaw.length;
+      final memberCount = groupController.groupMembers.length;
       dialogContent = '매칭되었습니다!\n채팅방에서 인사해보세요 👋';
     }
 
@@ -1241,7 +1241,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
             ),
             const SizedBox(height: 8),
             Text(
-              '총 멤버: ${groupController.allGroupMembersRaw.length}명',
+              '총 멤버: ${groupController.groupMembers.length}명',
               style: const TextStyle(color: AppTheme.textSecondary),
             ),
             // 채팅 버튼 (매칭 전/후 모두 표시) -> 요청 사항 반영
@@ -1308,7 +1308,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                     // [UPDATED] 멤버 추가 버튼 (방장이고, 매칭 전이며, 멤버가 5명 미만일 때만 표시)
                     if (groupController.isOwner &&
                         !groupController.isMatched &&
-                        groupController.allGroupMembersRaw.length < 5)
+                        groupController.groupMembers.length < 5)
                       TextButton.icon(
                         onPressed: () {
                           Navigator.push(
@@ -1326,7 +1326,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                         ),
                       ),
                     // 전체 보기 버튼
-                    if (groupController.allGroupMembersRaw.length > 3)
+                    if (groupController.groupMembers.length > 3)
                       TextButton(
                         onPressed: () {
                           Navigator.push(
@@ -1347,12 +1347,12 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
               height: 80,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                itemCount: groupController.allGroupMembersRaw.length +
+                itemCount: groupController.groupMembers.length +
                     // [UPDATED] 방장이고, 매칭 전이며, 멤버가 5명 미만일 때 "+추가" 슬롯 표시
-                    (groupController.isOwner && !groupController.isMatched && groupController.allGroupMembersRaw.length < 5 ? 1 : 0),
+                    (groupController.isOwner && !groupController.isMatched && groupController.groupMembers.length < 5 ? 1 : 0),
                 itemBuilder: (context, index) {
                   // 멤버 추가 슬롯
-                  if (index == groupController.allGroupMembersRaw.length) {
+                  if (index == groupController.groupMembers.length) {
                     return Padding(
                       padding: const EdgeInsets.only(right: 12),
                       child: GestureDetector(
@@ -1401,7 +1401,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                   }
 
                   // 기존 멤버 표시
-                  final member = groupController.allGroupMembersRaw[index];
+                  final member = groupController.groupMembers[index];
                   // ... (rest of the code remains the same)
                   return Padding(
                     padding: const EdgeInsets.only(right: 12),
