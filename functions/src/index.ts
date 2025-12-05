@@ -446,3 +446,78 @@ export const banUserByAdmin = onCall(async (request) => {
     throw new HttpsError("internal", "Failed to ban user.");
   }
 });
+
+// 채팅방에 새로운 메시지가 추가되었을 때 알림 전송
+export const notifyNewMessage = onDocumentUpdated("chatrooms/{chatroomId}", async (event) => {
+    if (!event.data) return;
+
+    const beforeData = event.data.before.data();
+    const afterData = event.data.after.data();
+    const chatRoomId = event.params.chatroomId;
+
+    // lastMessage 필드가 변경되었는지 확인
+    const beforeLastMsg = beforeData?.lastMessage;
+    const afterLastMsg = afterData?.lastMessage;
+
+    // 메시지가 없거나, 이전 메시지와 ID가 같다면(메시지 변경이 아님) 무시
+    if (!afterLastMsg || (beforeLastMsg && beforeLastMsg.id === afterLastMsg.id)) {
+        return;
+    }
+
+    const newMessage = afterLastMsg;
+    const senderId = newMessage.senderId;
+    const senderNickname = newMessage.senderNickname;
+    const content = newMessage.type === 'image' ? '(사진)' : newMessage.content; // 이미지인 경우 텍스트 처리
+    const participants = afterData.participants || [];
+
+    // 보낸 사람(senderId)을 제외한 나머지 참가자들에게만 알림 전송
+    const recipientIds = participants.filter((uid: string) => uid !== senderId);
+
+    if (recipientIds.length === 0) return;
+
+    console.log(`Sending message notification from ${senderId} to ${recipientIds} in ${chatRoomId}`);
+
+    // 수신자들의 FCM 토큰 조회
+    // (참가자가 많을 경우 chunk로 나누는 로직이 필요할 수 있으나, 현재 최대 5vs5 소규모 그룹이므로 in 쿼리 사용 가능)
+    // Firestore 'in' 쿼리는 최대 10개까지만 가능하므로 주의 (현재 로직상 문제는 없어 보임)
+    const usersQuery = await db.collection("users")
+      .where(admin.firestore.FieldPath.documentId(), "in", recipientIds)
+      .get();
+
+    const tokens: string[] = [];
+    usersQuery.forEach((doc) => {
+      const userData = doc.data();
+      if (userData.fcmToken) {
+        tokens.push(userData.fcmToken);
+      }
+    });
+
+    if (tokens.length === 0) {
+      console.log("No recipient tokens found.");
+      return;
+    }
+
+    // 알림 메시지 구성
+    const messagePayload = {
+      notification: {
+        title: senderNickname, // 알림 제목에 보낸 사람 닉네임 표시
+        body: content,         // 알림 내용에 메시지 내용 표시
+      },
+      data: {
+        type: "new_message",   // 클라이언트에서 처리할 알림 타입
+        chatroomId: chatRoomId,
+        senderId: senderId,
+        click_action: "FLUTTER_NOTIFICATION_CLICK",
+      },
+      tokens: tokens, // 다중 전송
+    };
+
+    try {
+      const response = await admin.messaging().sendEachForMulticast(messagePayload);
+      console.log(`Message notifications sent. Success: ${response.successCount}, Failure: ${response.failureCount}`);
+
+      // 실패한 토큰 정리 로직이 필요하다면 여기에 추가 (예: 토큰 삭제)
+    } catch (error) {
+      console.error("Error sending message notifications:", error);
+    }
+});
