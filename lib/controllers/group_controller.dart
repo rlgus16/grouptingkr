@@ -243,7 +243,6 @@ class GroupController extends ChangeNotifier {
   }) async {
     if (_currentGroup == null) return false;
 
-    _setLoading(true);
     try {
       // 1. 그룹 통계 계산 (평균 나이, 성별 구성)
       int totalAge = 0;
@@ -283,11 +282,12 @@ class GroupController extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      _setError('필터 저장 실패: $e');
+      // [수정] 전체 화면 에러 전환 방지 (_setError 삭제)
+      // 대신 로그를 남기고 false를 반환하여 UI에서 처리
+      debugPrint('필터 저장 실패: $e');
       return false;
-    } finally {
-      _setLoading(false);
     }
+    // [수정] finally 블록 제거 (로딩 상태 변경 불필요)
   }
 
   Future<bool> startMatching() async {
