@@ -301,37 +301,26 @@ class _SettingsViewState extends State<SettingsView> {
       }
     }
   }
+// 서비스 이용약관 - 웹페이지 연결
+  Future<void> _showTermsOfService() async {
+    const url = 'https://www.notion.so/2c0e454bf6f5805f8d5efdc00ba53bdb';
 
-  // 서비스 이용약관
-  void _showTermsOfService() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('서비스 이용약관'),
-        content: const SingleChildScrollView(
-          child: Text(
-            '그룹팅 서비스 이용약관\n\n'
-            '제1조 (목적)\n'
-            '이 약관은 그룹팅 서비스 이용과 관련하여 회사와 이용자의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.\n\n'
-            '제2조 (서비스의 제공)\n'
-            '회사는 그룹 매칭 서비스를 제공합니다.\n\n'
-            '제3조 (이용자의 의무)\n'
-            '- 타인에게 피해를 주는 행위 금지\n'
-            '- 허위 정보 등록 금지\n'
-            '- 서비스의 안정적 운영에 지장을 주는 행위 금지\n\n'
-            '자세한 내용은 앱 내 이용약관을 참조해 주세요.',
-            style: TextStyle(fontSize: 14),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('확인'),
-          ),
-        ],
-      ),
-    );
+    final Uri uri = Uri.parse(url);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        throw 'Could not launch $url';
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('페이지를 열 수 없습니다.')),
+        );
+      }
+    }
   }
+
 
   // 비밀번호 변경
   void _showChangePasswordDialog() {

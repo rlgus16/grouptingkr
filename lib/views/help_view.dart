@@ -157,14 +157,8 @@ class HelpView extends StatelessWidget {
                   _buildContactItem(
                     icon: Icons.email_outlined,
                     title: '이메일 문의',
-                    subtitle: 'support@groupting.com',
+                    subtitle: 'sprt.groupting@gmail.com',
                     onTap: () => _sendEmail(),
-                  ),
-                  _buildContactItem(
-                    icon: Icons.phone_outlined,
-                    title: '전화 문의',
-                    subtitle: '1588-0000 (평일 09:00-18:00)',
-                    onTap: () => _makePhoneCall(),
                   ),
                   _buildContactItem(
                     icon: Icons.chat_bubble_outline,
@@ -223,7 +217,7 @@ class HelpView extends StatelessWidget {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          '이메일: 24시간 이내\n전화: 즉시 연결\n카카오톡: 운영시간 내 즉시',
+                          '이메일: 24시간 이내\n카카오톡: 운영시간 내 즉시',
                           style: TextStyle(
                             fontSize: 14,
                             color: AppTheme.textSecondary,
@@ -455,7 +449,7 @@ class HelpView extends StatelessWidget {
 
   Future<void> _openKakaoTalk() async {
     // 카카오톡 채널 링크 (실제 서비스에서는 실제 링크 사용이 필요. 현재 링크는 가볍게 테스트 작성용)
-    final Uri kakaoUri = Uri.parse('https://pf.kakao.com/_groupting');
+    final Uri kakaoUri = Uri.parse('http://pf.kakao.com/_znxjxgn/chat');
 
     try {
       if (await canLaunchUrl(kakaoUri)) {
