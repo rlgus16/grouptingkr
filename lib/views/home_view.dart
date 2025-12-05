@@ -258,12 +258,14 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     // 1. 컨트롤러 가져오기
     final groupController = context.read<GroupController>();
     final group = groupController.currentGroup;
+//  DB에 저장된 100(60세 이상) 등의 값을 슬라이더 범위(19~60) 내로 보정
+    double initMin = (group?.minAge.toDouble() ?? 20.0).clamp(19.0, 60.0);
+    double initMax = (group?.maxAge.toDouble() ?? 30.0).clamp(19.0, 60.0);
 
-    // 초기 값 설정
-    RangeValues currentAgeRange = RangeValues(
-        group?.minAge.toDouble() ?? 20.0,
-        group?.maxAge.toDouble() ?? 30.0
-    );
+    // 만약 데이터 오류로 min이 max보다 큰 경우 처리
+    if (initMin > initMax) initMin = initMax;
+
+    RangeValues currentAgeRange = RangeValues(initMin, initMax);
 
     String selectedGender = group?.preferredGender ?? '상관없음';
 
@@ -344,7 +346,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text(
-                        '선호 나이대',
+                        '상대 그룹 평균 나이',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -940,10 +942,22 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
       appBar: AppBar(
         title: const Text('그룹팅'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.tune), // 필터/설정 아이콘
-            tooltip: '매칭 필터',
-            onPressed: _showMatchFilterDialog,
+          // [수정됨] 매칭 필터 버튼 표시 조건 강화
+          Consumer<GroupController>(
+            builder: (context, groupController, _) {
+              // 조건:
+              if (groupController.isOwner && // 1. 방장이어야 함 (isOwner)
+                  !groupController.isMatched && // 2. 매칭 완료 상태가 아니어야 함 (!isMatched)
+                  !groupController.isMatching) { // 3. 매칭 진행 중 상태가 아니어야 함 (!isMatching)
+                return IconButton(
+                  icon: const Icon(Icons.tune),
+                  tooltip: '매칭 필터',
+                  onPressed: _showMatchFilterDialog,
+                );
+              }
+              // 조건에 맞지 않으면 숨김
+              return const SizedBox.shrink();
+            },
           ),
 
           // 더보기 메뉴
@@ -953,6 +967,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
           ),
         ],
       ),
+
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: 0, // 홈 화면이므로 0

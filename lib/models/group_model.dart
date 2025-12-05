@@ -13,11 +13,11 @@ class GroupModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final int maxMembers;
-  final String preferredGender; // "남자", "여자", "혼성", "상관없음"
+  final String preferredGender;
   final int minAge;
   final int maxAge;
-  final String groupGender;     // "남자", "여자", "혼성" (calculated)
-  final int averageAge;         // (calculated)
+  final String groupGender;
+  final int averageAge;
 
   GroupModel({
     required this.id,
@@ -40,6 +40,7 @@ class GroupModel {
   // Firestore에서 데이터를 가져올 때 사용
   factory GroupModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
+
     return GroupModel(
       id: doc.id,
       name: data['name'] ?? '',
@@ -47,12 +48,17 @@ class GroupModel {
       memberIds: List<String>.from(data['memberIds'] ?? []),
       description: data['description'],
       status: GroupStatus.values.firstWhere(
-        (e) => e.toString().split('.').last == data['status'],
+            (e) => e.toString().split('.').last == data['status'],
         orElse: () => GroupStatus.active,
       ),
       matchedGroupId: data['matchedGroupId'],
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-      updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+      // [수정됨] Timestamp가 null이거나 타입이 맞지 않을 경우 안전하게 처리
+      createdAt: data['createdAt'] is Timestamp
+          ? (data['createdAt'] as Timestamp).toDate()
+          : DateTime.now(), // 데이터가 없으면 현재 시간으로 대체
+      updatedAt: data['updatedAt'] is Timestamp
+          ? (data['updatedAt'] as Timestamp).toDate()
+          : DateTime.now(), // 데이터가 없으면 현재 시간으로 대체
       maxMembers: data['maxMembers'] ?? 5,
       preferredGender: data['preferredGender'] ?? '상관없음',
       minAge: data['minAge'] ?? 20,
@@ -62,7 +68,7 @@ class GroupModel {
     );
   }
 
-  // Firestore에 저장할 때 사용
+// Firestore에 저장할 때 사용
   Map<String, dynamic> toFirestore() {
     return {
       'name': name,
