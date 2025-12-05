@@ -40,16 +40,6 @@ class _SettingsViewState extends State<SettingsView> {
               icon: Icons.notifications_outlined,
               children: [
                 _buildSwitchTile(
-                  title: '푸시 알림',
-                  subtitle: '앱의 모든 알림을 받습니다',
-                  value: _pushNotifications,
-                  onChanged: (value) {
-                    setState(() {
-                      _pushNotifications = value;
-                    });
-                  },
-                ),
-                _buildSwitchTile(
                   title: '매칭 알림',
                   subtitle: '새로운 매칭 알림을 받습니다',
                   value: _matchingNotifications,

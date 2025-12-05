@@ -253,6 +253,124 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     }
   }
 
+// 매칭 필터 설정 다이얼로그
+  void _showMatchFilterDialog() {
+    // 예시 데이터 변수 (실제로는 Controller나 State로 관리 필요)
+    RangeValues _currentAgeRange = const RangeValues(20, 30);
+    bool _sameAreaOnly = true;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                  24,
+                  24,
+                  24,
+                  MediaQuery.of(context).viewInsets.bottom + 24
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        '매칭 필터 설정',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 1. 나이대 설정
+                  const Text(
+                    '상대 그룹 평균 나이',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('${_currentAgeRange.start.round()}세'),
+                      Text('${_currentAgeRange.end.round()}세'),
+                    ],
+                  ),
+                  RangeSlider(
+                    values: _currentAgeRange,
+                    min: 19,
+                    max: 60,
+                    divisions: 20,
+                    activeColor: AppTheme.primaryColor,
+                    labels: RangeLabels(
+                      _currentAgeRange.start.round().toString(),
+                      _currentAgeRange.end.round().toString(),
+                    ),
+                    onChanged: (RangeValues values) {
+                      setModalState(() {
+                        _currentAgeRange = values;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 24),
+
+
+                  const SizedBox(height: 32),
+
+                  // 적용 버튼
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // TODO: 실제 필터 설정 저장 로직 구현 (GroupController 등 연동)
+                        // groupController.updateMatchFilters(...);
+
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('매칭 필터가 적용되었습니다.')),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        '적용하기',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showMoreOptions() {
     showModalBottomSheet(
       context: context,
@@ -706,40 +824,12 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
       appBar: AppBar(
         title: const Text('그룹팅'),
         actions: [
-          // 초대 알림 (상시 표시)
-          Consumer<GroupController>(
-            builder: (context, groupController, _) {
-              return IconButton(
-                icon: Stack(
-                  children: [
-                    const Icon(Icons.notifications_outlined),
-                    // 초대가 있을 때만 빨간 점 표시
-                    if (groupController.receivedInvitations.isNotEmpty)
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: AppTheme.errorColor,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const InvitationListView(),
-                    ),
-                  );
-                },
-              );
-            },
+          IconButton(
+            icon: const Icon(Icons.tune), // 필터/설정 아이콘
+            tooltip: '매칭 필터',
+            onPressed: _showMatchFilterDialog,
           ),
+
           // 더보기 메뉴
           IconButton(
             icon: const Icon(Icons.more_vert),

@@ -513,11 +513,19 @@ export const notifyNewMessage = onDocumentUpdated("chatrooms/{chatroomId}", asyn
     };
 
     try {
-      const response = await admin.messaging().sendEachForMulticast(messagePayload);
-      console.log(`Message notifications sent. Success: ${response.successCount}, Failure: ${response.failureCount}`);
+          const response = await admin.messaging().sendEachForMulticast(messagePayload as any);
+          console.log(`Message notifications sent. Success: ${response.successCount}, Failure: ${response.failureCount}`);
 
-      // 실패한 토큰 정리 로직이 필요하다면 여기에 추가 (예: 토큰 삭제)
-    } catch (error) {
-      console.error("Error sending message notifications:", error);
-    }
-});
+          // 실패한 경우 구체적인 에러 이유를 로그로 출력
+          if (response.failureCount > 0) {
+            response.responses.forEach((resp, idx) => {
+              if (!resp.success) {
+                console.error(`Error sending to token ${tokens[idx]}:`, resp.error);
+              }
+            });
+          }
+
+        } catch (error) {
+          console.error("Error sending message notifications:", error);
+        }
+    });
