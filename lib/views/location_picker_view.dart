@@ -13,52 +13,68 @@ class LocationPickerView extends StatefulWidget {
 
 class _LocationPickerViewState extends State<LocationPickerView> {
   GoogleMapController? _mapController;
-  LatLng _currentPosition = const LatLng(37.5665, 126.9780); // 기본값: 서울시청
+  // 기본값: 서울시청
+  LatLng _currentPosition = const LatLng(37.5665, 126.9780);
   String _selectedAddress = '위치를 탐색 중입니다...';
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _getCurrentLocation();
+    _initCurrentLocation();
   }
 
-  // 현재 위치 가져오기
-  Future<void> _getCurrentLocation() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      setState(() => _isLoading = false);
-      return;
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        setState(() => _isLoading = false);
+  // 현재 위치 초기화
+  Future<void> _initCurrentLocation() async {
+    try {
+      // 1. 위치 서비스 활성화 여부 확인
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        // 위치 서비스 꺼져있음 -> 기본 위치로 지도 표시
+        if (mounted) setState(() => _isLoading = false);
         return;
       }
+
+      // 2. 권한 확인 및 요청
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          // 권한 거부됨 -> 기본 위치로 지도 표시
+          if (mounted) setState(() => _isLoading = false);
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        // 권한 영구 거부됨 -> 기본 위치로 지도 표시
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
+
+      // 3. 현재 위치 가져오기
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _currentPosition = LatLng(position.latitude, position.longitude);
+        _isLoading = false;
+      });
+
+      // 초기 위치 주소 변환
+      _getAddressFromLatLng(_currentPosition);
+
+    } catch (e) {
+      debugPrint("위치 오류: $e");
+      // 에러 발생 시에도 로딩을 끝내고 지도를 보여줌 (기본 위치)
+      if (mounted) setState(() => _isLoading = false);
     }
-
-    if (permission == LocationPermission.deniedForever) {
-      setState(() => _isLoading = false);
-      return;
-    }
-
-    final position = await Geolocator.getCurrentPosition();
-    setState(() {
-      _currentPosition = LatLng(position.latitude, position.longitude);
-      _isLoading = false;
-    });
-
-    // 초기 위치의 주소 가져오기
-    _getAddressFromLatLng(_currentPosition);
   }
 
-  // 좌표를 주소로 변환 (Reverse Geocoding)
+  // 좌표 -> 주소 변환
   Future<void> _getAddressFromLatLng(LatLng position) async {
     try {
       List<Placemark> placemarks = await placemarkFromCoordinates(
@@ -67,14 +83,17 @@ class _LocationPickerViewState extends State<LocationPickerView> {
         localeIdentifier: 'ko_KR',
       );
 
+      if (!mounted) return;
+
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
-        // 예: 서울특별시 강남구 역삼동
-        String address = '${place.administrativeArea} ${place.locality} ${place.subLocality} ${place.thoroughfare}'.replaceAll('null', '').trim();
+        // 주소 조합 (null 문자열 제거 및 공백 정리)
+        String address = '${place.administrativeArea} ${place.locality} ${place.thoroughfare}'
+            .replaceAll('null', '')
+            .trim();
 
-        // 너무 상세한 주소가 싫다면 아래처럼 간소화 가능
         if (address.isEmpty) {
-          address = '${place.street}';
+          address = place.street ?? '주소 정보 없음';
         }
 
         setState(() {
@@ -82,9 +101,11 @@ class _LocationPickerViewState extends State<LocationPickerView> {
         });
       }
     } catch (e) {
-      setState(() {
-        _selectedAddress = '주소를 찾을 수 없습니다.';
-      });
+      if (mounted) {
+        setState(() {
+          _selectedAddress = '주소를 찾을 수 없습니다.';
+        });
+      }
     }
   }
 
@@ -99,18 +120,21 @@ class _LocationPickerViewState extends State<LocationPickerView> {
       ),
       body: Stack(
         children: [
+          // 로딩 상태가 아닐 때만 지도 표시
           if (_isLoading)
             const Center(child: CircularProgressIndicator())
           else
             GoogleMap(
               initialCameraPosition: CameraPosition(
                 target: _currentPosition,
-                zoom: 15,
+                zoom: 16,
               ),
-              myLocationEnabled: true,
-              myLocationButtonEnabled: true,
-              onMapCreated: (controller) => _mapController = controller,
-              // 카메라가 멈췄을 때 중앙 좌표의 주소를 가져옴
+              myLocationEnabled: true, // 내 위치 파란 점 표시
+              myLocationButtonEnabled: true, // 내 위치로 이동 버튼
+              zoomControlsEnabled: false, // 줌 버튼 숨김 (UI 깔끔하게)
+              onMapCreated: (controller) {
+                _mapController = controller;
+              },
               onCameraIdle: () async {
                 if (_mapController != null) {
                   final bounds = await _mapController!.getVisibleRegion();
@@ -123,49 +147,73 @@ class _LocationPickerViewState extends State<LocationPickerView> {
               },
             ),
 
-          // 중앙 고정 핀 아이콘
+          // 지도 중앙 고정 핀
           const Center(
-            child: Icon(Icons.location_on, size: 40, color: AppTheme.primaryColor),
+            child: Padding(
+              padding: EdgeInsets.only(bottom: 40), // 핀 끝이 중앙에 오도록 살짝 올림
+              child: Icon(Icons.location_on, size: 50, color: AppTheme.primaryColor),
+            ),
           ),
 
-          // 하단 주소 표시 및 선택 버튼
+          // 하단 주소 표시 패널
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
             child: Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _selectedAddress,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // 선택된 주소를 반환하며 화면 닫기
-                        Navigator.pop(context, _selectedAddress);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('이 위치로 설정', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    ),
-                  ),
-                  const SizedBox(height:50)
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 15,
+                    offset: Offset(0, -2),
+                  )
                 ],
+              ),
+              child: SafeArea(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _selectedAddress,
+                      style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context, _selectedAddress);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text(
+                            '이 위치로 설정',
+                            style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white
+                            )
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                  ],
+                ),
               ),
             ),
           ),
