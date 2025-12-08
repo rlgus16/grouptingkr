@@ -6,8 +6,6 @@ import '../utils/app_theme.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../controllers/auth_controller.dart';
-import '../utils/app_theme.dart';
 
 // 설정 페이지
 class SettingsView extends StatefulWidget {
@@ -19,11 +17,8 @@ class SettingsView extends StatefulWidget {
 
 class _SettingsViewState extends State<SettingsView> {
   // 설정 상태 변수들
-  bool _pushNotifications = true;
   bool _matchingNotifications = true;
   bool _messageNotifications = true;
-  bool _showProfileToOthers = true;
-  bool _allowLocationAccess = true;
 
   @override
   Widget build(BuildContext context) {
@@ -84,16 +79,6 @@ class _SettingsViewState extends State<SettingsView> {
               title: '개인정보 보호',
               icon: Icons.security_outlined,
               children: [
-                _buildSwitchTile(
-                  title: '위치 정보 접근',
-                  subtitle: '활동지역 기반 매칭을 위해 위치 정보를 사용합니다',
-                  value: _allowLocationAccess,
-                  onChanged: (value) {
-                    setState(() {
-                      _allowLocationAccess = value;
-                    });
-                  },
-                ),
                 _buildMenuTile(
                   icon: Icons.lock_outline,
                   title: '개인정보 처리방침',
@@ -490,40 +475,6 @@ class _SettingsViewState extends State<SettingsView> {
     );
   }
 
-  // 데이터 다운로드
-  void _showDataDownloadDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('내 데이터 다운로드'),
-        content: const Text(
-          '내가 그룹팅에서 생성한 모든 데이터를 다운로드할 수 있습니다.\n\n'
-          '포함되는 데이터:\n'
-          '- 프로필 정보\n'
-          '- 매칭 기록\n'
-          '- 메세지 기록\n\n'
-          '다운로드를 요청하시겠습니까?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('데이터 다운로드 요청이 접수되었습니다. 이메일로 전송됩니다.'),
-                ),
-              );
-            },
-            child: const Text('다운로드 요청'),
-          ),
-        ],
-      ),
-    );
-  }
 
   // 계정 삭제
   void _showAccountDeletionDialog() {
