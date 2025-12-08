@@ -561,9 +561,10 @@ class _ProfileEditViewState extends State<ProfileEditView> {
   }
 
   Future<void> _saveProfile() async {
+    // 1. 폼 유효성 검사
     if (!_formKey.currentState!.validate()) return;
 
-    // 닉네임 중복 체크 확인
+    // 2. 닉네임 중복 체크 확인
     if (_nicknameValidationMessage == '이미 사용 중인 닉네임입니다.') {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('이미 사용 중인 닉네임입니다. 다른 닉네임을 사용해주세요.')),
@@ -571,7 +572,7 @@ class _ProfileEditViewState extends State<ProfileEditView> {
       return;
     }
 
-    // 이미지 최소 1장 필수 체크
+    // 3. 이미지 최소 1장 필수 체크
     final hasImages = _imageSlots.any((image) => image != null);
     if (!hasImages) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -585,20 +586,21 @@ class _ProfileEditViewState extends State<ProfileEditView> {
     final user = authController.currentUserModel;
     if (user == null) return;
 
-    // 1. 삭제할 이미지들 Firebase Storage에서 삭제
+    // 4. 삭제할 이미지들 Firebase Storage에서 삭제
     for (String imageUrl in _imagesToDelete) {
       try {
         await FirebaseStorage.instance.refFromURL(imageUrl).delete();
       } catch (e) {
-        // 이미지 삭제 실패: $e (무시하고 진행)
+        // 이미지 삭제 실패는 무시하고 진행 (이미 없는 경우 등)
+        debugPrint('이미지 삭제 실패: $e');
       }
     }
 
-    // 2. 최종 이미지 목록 생성 및 업로드
+    // 5. 최종 이미지 목록 생성 및 업로드
     List<String> finalImages = [];
     List<dynamic> sortedImageSlots = List.from(_imageSlots);
 
-    // 메인 프로필을 목록의 맨 앞으로 이동
+    // 메인 프로필(대표 사진)을 목록의 맨 앞으로 이동
     if (_mainProfileIndex >= 0 && _mainProfileIndex < sortedImageSlots.length) {
       final mainImage = sortedImageSlots.removeAt(_mainProfileIndex);
       if (mainImage != null) {
@@ -606,10 +608,13 @@ class _ProfileEditViewState extends State<ProfileEditView> {
       }
     }
 
+    // 이미지 리스트 순회하며 URL 수집 또는 업로드
     for (final image in sortedImageSlots) {
       if (image is String) {
+        // 기존 이미지 URL
         finalImages.add(image);
       } else if (image is XFile) {
+        // 새로 추가된 이미지 파일 -> 업로드 진행
         try {
           final fileName = '${user.uid}_profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
           final ref = FirebaseStorage.instance.ref().child('profile_images').child(user.uid).child(fileName);
@@ -636,6 +641,7 @@ class _ProfileEditViewState extends State<ProfileEditView> {
       }
     }
 
+    // 6. 컨트롤러를 통해 프로필 정보 업데이트 요청
     final success = await profileController.updateProfile(
       nickname: _nicknameController.text.trim(),
       introduction: _introductionController.text.trim(),
@@ -644,10 +650,12 @@ class _ProfileEditViewState extends State<ProfileEditView> {
       profileImages: finalImages,
     );
 
+    // 7. 성공 시 처리
     if (success && mounted) {
-      await authController.refreshCurrentUser();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('프로필이 성공적으로 업데이트되었습니다.')));
-      Navigator.pop(context);
+      await authController.refreshCurrentUser(); // 현재 사용자 정보 새로고침
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('프로필이 성공적으로 업데이트되었습니다.')));
+      Navigator.pop(context); // 화면 닫기
     } else if (mounted && profileController.errorMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(profileController.errorMessage!)),

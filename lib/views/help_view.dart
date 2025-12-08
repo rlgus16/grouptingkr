@@ -161,12 +161,6 @@ class HelpView extends StatelessWidget {
                     onTap: () => _sendEmail(),
                   ),
                   _buildContactItem(
-                    icon: Icons.chat_bubble_outline,
-                    title: '카카오톡 문의',
-                    subtitle: '@groupting',
-                    onTap: () => _openKakaoTalk(),
-                  ),
-                  _buildContactItem(
                     icon: Icons.bug_report_outlined,
                     title: '버그 신고',
                     subtitle: '앱 사용 중 문제가 발생했나요?',
@@ -217,7 +211,7 @@ class HelpView extends StatelessWidget {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          '이메일: 24시간 이내\n카카오톡: 운영시간 내 즉시',
+                          '이메일: 24시간 이내',
                           style: TextStyle(
                             fontSize: 14,
                             color: AppTheme.textSecondary,
@@ -433,34 +427,6 @@ class HelpView extends StatelessWidget {
     }
   }
 
-  Future<void> _makePhoneCall() async {
-    final Uri phoneUri = Uri(scheme: 'tel', path: '1588-0000');
-
-    try {
-      if (await canLaunchUrl(phoneUri)) {
-        await launchUrl(phoneUri);
-      } else {
-        throw 'Could not launch phone';
-      }
-    } catch (e) {
-      // 전화 실행 실패: $e
-    }
-  }
-
-  Future<void> _openKakaoTalk() async {
-    // 카카오톡 채널 링크 (실제 서비스에서는 실제 링크 사용이 필요. 현재 링크는 가볍게 테스트 작성용)
-    final Uri kakaoUri = Uri.parse('http://pf.kakao.com/_znxjxgn/chat');
-
-    try {
-      if (await canLaunchUrl(kakaoUri)) {
-        await launchUrl(kakaoUri, mode: LaunchMode.externalApplication);
-      } else {
-        throw 'Could not launch KakaoTalk';
-      }
-    } catch (e) {
-      // 카카오톡 실행 실패: $e
-    }
-  }
 
   void _showBugReportDialog(BuildContext context) {
     final bugReportController = TextEditingController();
