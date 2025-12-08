@@ -164,6 +164,7 @@ class _LocationPickerViewState extends State<LocationPickerView> {
                       child: const Text('이 위치로 설정', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     ),
                   ),
+                  const SizedBox(height:50)
                 ],
               ),
             ),
