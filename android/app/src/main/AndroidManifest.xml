@@ -77,5 +77,9 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="groupting_default" />
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyCVQHVPAYg2fmIRzCEZtxifaMhL3-wKWO4"/>
     </application>
 </manifest>

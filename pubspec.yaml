@@ -1,5 +1,5 @@
 name: groupting
-description: "친구들과 함께 그룹 소개팅을 즐길 수 있는 채팅 기반 매칭 앱"
+description: "친구들과 함께 즐기는 신개념 소개팅"
 
 publish_to: "none"
 
@@ -16,6 +16,9 @@ dependencies:
   country_code_picker: ^3.0.0
   package_info_plus: ^8.0.0
   flutter_email_sender: ^6.0.2
+  google_maps_flutter: ^2.5.0
+  geocoding: ^2.1.1
+  geolocator: ^10.1.0
 
   # Firebase
   firebase_core: ^3.1.1

@@ -10,6 +10,7 @@ import 'dart:typed_data';
 import '../controllers/auth_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../utils/app_theme.dart';
+import 'location_picker_view.dart';
 
 class ProfileEditView extends StatefulWidget {
   const ProfileEditView({super.key});
@@ -399,14 +400,32 @@ class _ProfileEditViewState extends State<ProfileEditView> {
                   // 활동지역 입력
                   TextFormField(
                     controller: _activityAreaController,
+                    readOnly: true, // 키보드가 올라오지 않게 설정
+                    onTap: () async {
+                      // 지도 화면으로 이동하고 결과값 받기
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LocationPickerView(),
+                        ),
+                      );
+
+                      // 받아온 주소가 있다면 컨트롤러에 입력
+                      if (result != null && result is String) {
+                        setState(() {
+                          _activityAreaController.text = result;
+                        });
+                      }
+                    },
                     decoration: const InputDecoration(
                       labelText: '활동지역',
-                      hintText: '활동지역을 입력하세요',
+                      hintText: '지도를 눌러 위치를 선택하세요',
                       prefixIcon: Icon(Icons.location_on_outlined),
+                      suffixIcon: Icon(Icons.map_outlined), // 지도 아이콘 추가
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return '활동지역을 입력해주세요.';
+                        return '활동지역을 선택해주세요.';
                       }
                       return null;
                     },
