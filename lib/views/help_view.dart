@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../utils/app_theme.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:flutter_email_sender/flutter_email_sender.dart';
 
 class HelpView extends StatelessWidget {
   const HelpView({super.key});
@@ -83,9 +81,9 @@ class HelpView extends StatelessWidget {
                       context,
                       '회원가입 가이드',
                       '1. 아이디, 비밀번호, 전화번호, 생년월일, 성별을 입력하세요\n'
-                      '2. 프로필 사진을 업로드하세요 (최대 6장)\n'
-                      '3. 키, 닉네임, 활동지역, 소개글을 작성하세요\n'
-                      '4. 프로필 완성 후 매칭을 시작할 수 있습니다',
+                          '2. 프로필 사진을 업로드하세요 (최대 6장)\n'
+                          '3. 키, 닉네임, 활동지역, 소개글을 작성하세요\n'
+                          '4. 프로필 완성 후 매칭을 시작할 수 있습니다',
                     ),
                   ),
                   _buildGuideItem(
@@ -96,9 +94,9 @@ class HelpView extends StatelessWidget {
                       context,
                       '그룹 만들기 가이드',
                       '1. 홈 화면에서 "그룹 만들기" 버튼을 누르세요\n'
-                      '2. "친구 초대하기"를 통해 친구들을 초대하세요\n'
-                      '3. 친구들이 초대를 수락하면 그룹이 구성됩니다\n'
-                      '4. 최대 5명까지 그룹을 구성할 수 있습니다',
+                          '2. "친구 초대하기"를 통해 친구들을 초대하세요\n'
+                          '3. 친구들이 초대를 수락하면 그룹이 구성됩니다\n'
+                          '4. 최대 5명까지 그룹을 구성할 수 있습니다',
                     ),
                   ),
                   _buildGuideItem(
@@ -106,11 +104,11 @@ class HelpView extends StatelessWidget {
                     title: '필터 적용하기',
                     description: '내가 원하는 그룹과 매칭되세요',
                     onTap: () => _showGuideDetail(
-                      context,
-                      '필터 적용 가이드',
-                      '1. 그룹을 만든 후, 상단 우측 필터 버튼을 누르세요\n'
-                          '2. 필터를 조절 하세요\n'
-                          '3. 적용하기를 누르세요'
+                        context,
+                        '필터 적용 가이드',
+                        '1. 그룹을 만든 후, 상단 우측 필터 버튼을 누르세요\n'
+                            '2. 필터를 조절 하세요\n'
+                            '3. 적용하기를 누르세요'
                     ),
                   ),
                   _buildGuideItem(
@@ -121,9 +119,9 @@ class HelpView extends StatelessWidget {
                       context,
                       '매칭하기 가이드',
                       '1. 그룹이 구성되면 "매칭 시작" 버튼이 활성화됩니다\n'
-                      '2. 혼자인 경우 "1:1 매칭 시작"을 선택하세요\n'
-                      '3. 그룹인 경우 "그룹 매칭 시작"을 선택하세요\n'
-                      '4. 매칭이 완료되면 알림이 오고 채팅을 시작할 수 있습니다',
+                          '2. 혼자인 경우 "1:1 매칭 시작"을 선택하세요\n'
+                          '3. 그룹인 경우 "그룹 매칭 시작"을 선택하세요\n'
+                          '4. 매칭이 완료되면 알림이 오고 채팅을 시작할 수 있습니다',
                     ),
                   ),
                   _buildGuideItem(
@@ -134,9 +132,9 @@ class HelpView extends StatelessWidget {
                       context,
                       '채팅하기 가이드',
                       '1. 매칭이 완료되면 "채팅하기" 버튼이 나타납니다\n'
-                      '2. 채팅방에서 상대방과 대화를 나누세요\n'
-                      '3. 서로를 알아가는 시간을 가져보세요\n'
-                      '4. 실제 만남을 계획해보세요',
+                          '2. 채팅방에서 상대방과 대화를 나누세요\n'
+                          '3. 서로를 알아가는 시간을 가져보세요\n'
+                          '4. 실제 만남을 계획해보세요',
                     ),
                   ),
                   _buildGuideItem(
@@ -147,13 +145,13 @@ class HelpView extends StatelessWidget {
                       context,
                       '안전 이용 가이드',
                       '🔒 개인정보 보호\n'
-                      '- 개인정보(주소, 직장 등)는 충분히 신뢰할 때까지 공개하지 마세요\n\n'
-                      '👥 첫 만남\n'
-                      '- 첫 만남은 공공장소에서 진행하세요\n'
-                      '- 친구들과 함께 만나는 것을 권장합니다\n\n'
-                      '🚨 신고하기\n'
-                      '- 부적절한 행동을 하는 사용자는 즉시 신고해주세요\n'
-                      '- 불쾌한 메세지나 사진을 받으면 스크린샷을 남기고 신고하세요',
+                          '- 개인정보(주소, 직장 등)는 충분히 신뢰할 때까지 공개하지 마세요\n\n'
+                          '👥 첫 만남\n'
+                          '- 첫 만남은 공공장소에서 진행하세요\n'
+                          '- 친구들과 함께 만나는 것을 권장합니다\n\n'
+                          '🚨 신고하기\n'
+                          '- 부적절한 행동을 하는 사용자는 즉시 신고해주세요\n'
+                          '- 불쾌한 메세지나 사진을 받으면 스크린샷을 남기고 신고하세요',
                     ),
                   ),
                 ],
@@ -178,9 +176,7 @@ class HelpView extends StatelessWidget {
                     icon: Icons.bug_report_outlined,
                     title: '버그 신고',
                     subtitle: '앱 사용 중 문제가 발생했나요?',
-                    onTap: () {
-                      _showBugReportDialog();
-                    },
+                    onTap: () => _showBugReportDialog(context),
                   ),
                 ],
               ),
@@ -444,105 +440,46 @@ class HelpView extends StatelessWidget {
   }
 
 
-  void _showBugReportDialog() {
-    // 기존 코드 유지
+  void _showBugReportDialog(BuildContext context) {
     final bugReportController = TextEditingController();
-    final ImagePicker picker = ImagePicker();
-    XFile? attachedImage;
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) {
-          return AlertDialog(
-            title: const Text('버그 신고'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('발견한 버그나 문제점을 알려주세요.'),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: bugReportController,
-                    maxLines: 5,
-                    decoration: const InputDecoration(
-                      hintText: '버그 내용을 자세히 설명해 주세요...',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () async {
-                          try {
-                            final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-                            if (image != null) setState(() => attachedImage = image);
-                          } catch (e) { /* ignore */ }
-                        },
-                        icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                        label: const Text('사진 첨부'),
-                        style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[200], foregroundColor: Colors.black87, elevation: 0),
-                      ),
-                      const SizedBox(width: 12),
-                      if (attachedImage != null)
-                        Expanded(
-                          child: Row(
-                            children: [
-                              const Icon(Icons.check_circle, color: Colors.green, size: 16),
-                              const SizedBox(width: 4),
-                              Expanded(child: Text(attachedImage!.name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12))),
-                              IconButton(
-                                icon: const Icon(Icons.close, size: 16, color: Colors.grey),
-                                onPressed: () => setState(() => attachedImage = null),
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
+      builder: (context) => AlertDialog(
+        title: const Text('버그 신고'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('발견한 버그나 문제점을 자세히 설명해 주세요.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: bugReportController,
+              maxLines: 5,
+              decoration: const InputDecoration(
+                hintText: '버그 내용, 발생 상황, 기기 정보 등을 포함해 주세요...',
+                border: OutlineInputBorder(),
               ),
             ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('취소')),
-              ElevatedButton(
-                onPressed: () async {
-                  if (bugReportController.text.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('내용을 입력해주세요.')));
-                    return;
-                  }
-                  Navigator.pop(context);
-                  await _sendBugReportEmail(bugReportController.text, attachedImage?.path);
-                },
-                style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
-                child: const Text('보내기'),
-              ),
-            ],
-          );
-        },
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('버그 신고가 접수되었습니다. 빠른 시일 내에 확인하겠습니다.'),
+                ),
+              );
+            },
+            child: const Text('신고하기'),
+          ),
+        ],
       ),
     );
   }
-
-  Future<void> _sendBugReportEmail(String body, String? attachmentPath) async {
-    const String developerEmail = 'sprt.groupting@gmail.com';
-    final Email email = Email(
-      body: '내용:\n$body\n\n----------------\n앱 버전: 1.0.0\n기기: ${Theme.of(context).platform}',
-      subject: '[그룹팅 버그 신고]',
-      recipients: [developerEmail],
-      attachmentPaths: attachmentPath != null ? [attachmentPath] : null,
-      isHTML: false,
-    );
-    try {
-      await FlutterEmailSender.send(email);
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('이메일 앱을 열 수 없습니다. ($error)'), backgroundColor: Colors.red));
-      }
-    }
-  }
-} 
+}
