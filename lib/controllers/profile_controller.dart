@@ -8,7 +8,6 @@ import 'package:image/image.dart' as img;
 import 'dart:typed_data';
 import '../services/firebase_service.dart';
 import '../services/user_service.dart';
-import '../models/user_model.dart';
 
 class ProfileController extends ChangeNotifier {
   final FirebaseService _firebaseService = FirebaseService();

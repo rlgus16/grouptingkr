@@ -89,7 +89,7 @@ class UserService {
         
         // ID 토큰 새로고침하여 권한 확인
         try {
-          final idToken = await currentAuthUser?.getIdToken(true);
+          await currentAuthUser?.getIdToken(true);
         } catch (tokenError) {
           if (attempt == maxRetries) {
             throw Exception('인증 토큰 갱신에 실패했습니다: $tokenError');

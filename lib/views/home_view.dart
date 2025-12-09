@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/group_controller.dart';
-import '../controllers/chat_controller.dart';
 import '../utils/app_theme.dart';
 import '../widgets/member_avatar.dart';
 import '../models/invitation_model.dart';
@@ -174,7 +173,6 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     String dialogContent = '매칭되었습니다!\n채팅방에서 인사해보세요 👋';
     
     if (currentGroup != null) {
-      final memberCount = groupController.groupMembers.length;
       dialogContent = '매칭되었습니다!\n채팅방에서 인사해보세요 👋';
     }
 
@@ -222,7 +220,6 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     
     try {
       final groupController = _groupController ?? context.read<GroupController>();
-      final chatController = context.read<ChatController>();
 
       if (groupController.currentGroup != null) {
         String chatRoomId;
@@ -799,8 +796,6 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
         return '거절됨';
       case InvitationStatus.expired:
         return '만료됨';
-      default:
-        return '알 수 없음';
     }
   }
 
@@ -1098,19 +1093,6 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
       builder: (context, authController, _) {
         final user = authController.currentUserModel;
         final firebaseUser = authController.firebaseService.currentUser;
-        
-        // === 새로운 로직: 더 정확한 사용자 상태 판단 ===
-        final hasBasicInfo = user != null && 
-            firebaseUser?.email?.isNotEmpty == true &&
-            user.phoneNumber.isNotEmpty && 
-            user.birthDate.isNotEmpty && 
-            user.gender.isNotEmpty;
-            
-        final hasCompleteProfile = hasBasicInfo &&
-            user!.nickname.isNotEmpty &&
-            user.height > 0 &&
-            user.activityArea.isNotEmpty &&
-            user.introduction.isNotEmpty;
         
         // 디버깅용 로그
         if (user != null) {

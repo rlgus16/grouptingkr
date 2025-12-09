@@ -44,7 +44,6 @@ class MemberAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final profileImage = user?.mainProfileImage ?? imageUrl;
-    final displayName = user?.nickname ?? name ?? '';
     final showOwnerBadge = isOwner ?? false;
     final showMatchedBadge = isMatched ?? false;
 

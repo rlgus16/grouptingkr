@@ -6,7 +6,6 @@ import '../controllers/chat_controller.dart';
 import '../services/fcm_service.dart';
 import '../utils/app_theme.dart';
 import '../widgets/message_bubble.dart';
-import '../widgets/member_avatar.dart';
 import 'profile_detail_view.dart';
 import 'invite_friend_view.dart';
 
@@ -285,7 +284,6 @@ class _ChatViewState extends State<ChatView> {
       ChatController chatController,
       ) {
     final isMatched = groupController.isMatched;
-    final groupMembers = groupController.groupMembers;
 
     return Container(
       padding: const EdgeInsets.all(16),

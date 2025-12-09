@@ -4,8 +4,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../controllers/auth_controller.dart';
 import '../services/user_service.dart'; // [추가] UserService import
 import '../utils/app_theme.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 // 설정 페이지

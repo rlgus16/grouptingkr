@@ -2,12 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../models/group_model.dart';
 import '../models/invitation_model.dart';
-import '../models/message_model.dart'; // [Added] Import for system message
+import '../models/message_model.dart';
 import 'firebase_service.dart';
 import 'user_service.dart';
 import 'group_service.dart';
 import 'message_service.dart';
-import 'chatroom_service.dart'; // [Added] Import ChatroomService
+import 'chatroom_service.dart';
 
 class InvitationService {
   static final InvitationService _instance = InvitationService._internal();
@@ -18,7 +18,7 @@ class InvitationService {
   final UserService _userService = UserService();
   final GroupService _groupService = GroupService();
   final MessageService _messageService = MessageService();
-  final ChatroomService _chatroomService = ChatroomService(); // [Added] Instance
+  final ChatroomService _chatroomService = ChatroomService();
 
   // 초대 컬렉션 참조
   CollectionReference<Map<String, dynamic>> get _invitationsCollection =>
@@ -117,7 +117,7 @@ class InvitationService {
           .get();
 
       if (existingInvitations.docs.isNotEmpty) {
-        throw Exception('이미 해당 사용자에게 초대를 보냈습니다.');
+        throw Exception('이미 초대를 보냈습니다.');
       }
 
       // 초대 생성
@@ -276,7 +276,7 @@ class InvitationService {
       }
 
       // B. Handle joining the new group.
-      final newGroupData = newGroupDoc.data()! as Map<String, dynamic>;
+      final newGroupData = newGroupDoc.data()!;
 
       // 참여하려는 그룹이 매칭중인지 확인
       final newGroupStatus = newGroupData['status'];

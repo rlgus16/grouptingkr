@@ -7,7 +7,6 @@ import '../models/message_model.dart';
 import 'firebase_service.dart';
 import 'user_service.dart';
 import 'chatroom_service.dart';
-import 'message_service.dart';
 import 'dart:async';
 
 class GroupService {
@@ -17,7 +16,6 @@ class GroupService {
 
   final FirebaseService _firebaseService = FirebaseService();
   final UserService _userService = UserService();
-  final MessageService _messageService = MessageService();
   final ChatroomService _chatroomService = ChatroomService(); // [Added] Instance
 
   CollectionReference<Map<String, dynamic>> get _groupsCollection =>

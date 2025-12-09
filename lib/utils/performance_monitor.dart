@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'dart:async';
 
 /// 그룹팅 성능 모니터링 유틸리티
 /// 실시간 채팅 성능 및 UI 응답성 측정
