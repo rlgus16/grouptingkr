@@ -5,6 +5,10 @@
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>프로필 사진을 등록하기 위해 갤러리 접근 권한이 필요합니다.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
+        <string>버그 신고를 위해 갤러리 접근 권한이 필요합니다.</string>
+        <key>NSCameraUsageDescription</key>
+        <string>버그 신고를 위해 카메라 접근 권한이 필요합니다.</string>
+		<key>NSPhotoLibraryUsageDescription</key>
         <string>버그 신고 시 사진 첨부를 위해 갤러리 접근 권한이 필요합니다.</string>
 		<key>NSCameraUsageDescription</key>
 		<string>프로필 사진을 촬영하기 위해 카메라 접근 권한이 필요합니다.</string>

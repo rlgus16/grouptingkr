@@ -1,4 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../utils/app_theme.dart';
 
@@ -424,7 +427,7 @@ class HelpView extends StatelessWidget {
   Future<void> _sendEmail() async {
     final Uri emailUri = Uri(
       scheme: 'mailto',
-      path: 'support@groupting.com',
+      path: 'sprt.groupting@gmail.com',
       query: 'subject=그룹팅 앱 문의&body=문의 내용을 작성해 주세요.',
     );
 
@@ -441,45 +444,116 @@ class HelpView extends StatelessWidget {
 
 
   void _showBugReportDialog(BuildContext context) {
-    final bugReportController = TextEditingController();
+    final TextEditingController _contentController = TextEditingController();
+    // 선택된 이미지 파일을 저장할 변수 (StatefulWidget 내부라면 setState 필요, 여기서는 다이얼로그 내부 상태 관리로 StatefulBuilder 사용)
+    XFile? _selectedImage;
+    final ImagePicker _picker = ImagePicker();
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('버그 신고'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('발견한 버그나 문제점을 자세히 설명해 주세요.'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: bugReportController,
-              maxLines: 5,
-              decoration: const InputDecoration(
-                hintText: '버그 내용, 발생 상황, 기기 정보 등을 포함해 주세요...',
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('버그 신고가 접수되었습니다. 빠른 시일 내에 확인하겠습니다.'),
-                ),
+      builder: (context) {
+        // 다이얼로그 내부에서 상태(이미지 미리보기)를 갱신하기 위해 StatefulBuilder 사용
+        return StatefulBuilder(
+          builder: (context, setState) {
+
+            // 이미지 선택 함수
+            Future<void> _pickImage() async {
+              final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+              if (image != null) {
+                setState(() {
+                  _selectedImage = image;
+                });
+              }
+            }
+
+            // 이메일 전송 함수
+            Future<void> _sendEmail() async {
+              String body = "버그 내용:\n${_contentController.text}\n\n";
+
+              // 이메일 객체 생성
+              final Email email = Email(
+                body: body,
+                subject: '[그룹팅 버그 신고]',
+                recipients: ['sprt.groupting@gmail.com'],
+                attachmentPaths: _selectedImage != null ? [_selectedImage!.path] : [],
+                isHTML: false,
               );
-            },
-            child: const Text('신고하기'),
-          ),
-        ],
-      ),
+
+              try {
+                await FlutterEmailSender.send(email);
+                Navigator.pop(context); // 성공 시 다이얼로그 닫기
+              } catch (error) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('이메일 앱을 열 수 없습니다. 기본 메일 앱을 확인해주세요.')),
+                );
+              }
+            }
+
+            return AlertDialog(
+              title: const Text('버그 신고'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('버그 내용을 상세히 적어주세요.'),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: _contentController,
+                      maxLines: 5,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: '예: 로그인 화면에서 버튼이 안 눌려요.',
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // 이미지 첨부 버튼 및 미리보기
+                    Row(
+                      children: [
+                        ElevatedButton.icon(
+                          onPressed: _pickImage,
+                          icon: const Icon(Icons.photo_camera),
+                          label: const Text('사진 첨부'),
+                          style: ElevatedButton.styleFrom(backgroundColor: Colors.grey[200], foregroundColor: Colors.black87, elevation: 0),
+                        ),
+                        const SizedBox(width: 10),
+                        if (_selectedImage != null)
+                          Expanded(
+                            child: Text(
+                              '사진 선택됨',
+                              style: TextStyle(color: Colors.green),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (_selectedImage != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Image.file(
+                          File(_selectedImage!.path),
+                          height: 100,
+                          width: 100,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('취소'),
+                ),
+                ElevatedButton(
+                  onPressed: _sendEmail,
+                  child: const Text('보내기'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }
