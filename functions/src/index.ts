@@ -238,6 +238,7 @@ export const notifyMatchOnChatroomCreate = onDocumentCreated("chatrooms/{chatroo
     const tokens: string[] = [];
     usersQuery.forEach((doc) => {
       const userData = doc.data();
+      if (userData.matchingNotification === false) return;
       if (userData.fcmToken) {
         tokens.push(userData.fcmToken);
       }
@@ -297,6 +298,13 @@ export const notifyInvitation = onDocumentCreated("invitations/{invitationId}", 
     }
 
     const userData = userDoc.data();
+    // 사용자가 초대 알림을 껐는지 확인 (invitationNotification이 false면 중단)
+        const isNotificationEnabled = userData?.invitationNotification !== false;
+
+        if (!isNotificationEnabled) {
+            console.log(`User ${toUserId} has disabled invitation notifications.`);
+            return;
+        }
     const fcmToken = userData?.fcmToken;
 
     if (!fcmToken) {
@@ -535,6 +543,7 @@ export const notifyNewMessage = onDocumentUpdated("chatrooms/{chatroomId}", asyn
     const tokens: string[] = [];
     usersQuery.forEach((doc) => {
       const userData = doc.data();
+      if (userData.chatNotification === false) return;
       if (userData.fcmToken) {
         tokens.push(userData.fcmToken);
       }
