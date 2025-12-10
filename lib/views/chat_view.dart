@@ -18,12 +18,14 @@ class ChatView extends StatefulWidget {
   State<ChatView> createState() => _ChatViewState();
 }
 
-class _ChatViewState extends State<ChatView> {
+class _ChatViewState extends State<ChatView> with WidgetsBindingObserver {
   ChatController? _chatController;
 
   @override
   void initState() {
     super.initState();
+    // 앱 상태 감지 옵저버 등록
+    WidgetsBinding.instance.addObserver(this);
     // FCM 서비스에 현재 채팅방 설정
     FCMService().setCurrentChatRoom(widget.groupId);
 
@@ -55,6 +57,8 @@ class _ChatViewState extends State<ChatView> {
 
   @override
   void dispose() {
+    // 옵저버 해제
+    WidgetsBinding.instance.removeObserver(this);
     // FCM 서비스에서 현재 채팅방 해제
     FCMService().clearCurrentChatRoom();
 
@@ -66,6 +70,18 @@ class _ChatViewState extends State<ChatView> {
     }
     _chatController = null;
     super.dispose();
+  }
+
+  // 앱 상태 변경 감지 메서드 추가
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      // 앱이 백그라운드로 감 (홈 버튼 누름) -> "나 채팅방 안 보고 있음" 처리
+      FCMService().clearCurrentChatRoom();
+    } else if (state == AppLifecycleState.resumed) {
+      // 앱이 다시 켜짐 -> "나 다시 채팅방 보고 있음" 처리
+      FCMService().setCurrentChatRoom(widget.groupId);
+    }
   }
 
   @override

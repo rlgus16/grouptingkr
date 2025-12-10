@@ -62,12 +62,42 @@ class MessageService {
 
       // 메시지 저장
       final docRef = _messagesCollection.doc();
-      await docRef.set(message.copyWith(id: docRef.id).toFirestore());
+      final messageWithId = message.copyWith(id: docRef.id); // ID 포함된 메시지 객체 생성
+      await docRef.set(messageWithId.toFirestore());
 
-      // 그룹의 마지막 메시지 정보 업데이트
-      await _updateGroupLastMessage(groupId, docRef.id);
+      // [핵심 수정 부분]
+      // 기존: await _updateGroupLastMessage(groupId, docRef.id);
+      // 변경: 아래 함수를 호출해야 서버(Cloud Functions)가 'chatrooms' 변경을 감지하고 알림을 보냅니다.
+      await _updateChatRoomLastMessage(groupId, messageWithId);
+
     } catch (e) {
       throw Exception('메시지 전송에 실패했습니다: $e');
+    }
+  }
+
+  // 채팅방(chatrooms) 컬렉션에 마지막 메시지 정보를 업데이트합니다.
+  Future<void> _updateChatRoomLastMessage(String chatRoomId, MessageModel message) async {
+    try {
+      // 1. chatrooms 컬렉션 업데이트 (알림 발송용)
+      await _firebaseService.getDocument('chatrooms/$chatRoomId').update({
+        'lastMessage': message.toFirestore(), // 메시지 전체 내용 저장 (닉네임, 내용 등)
+        'lastMessageId': message.id,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      // 2. groups 컬렉션 업데이트 (앱 내 채팅 목록 표시용 - 기존 로직 유지)
+      try {
+        await _firebaseService.getDocument('groups/$chatRoomId').update({
+          'lastMessageId': message.id,
+          'lastMessageTime': Timestamp.fromDate(DateTime.now()),
+          'updatedAt': Timestamp.fromDate(DateTime.now()),
+        });
+      } catch (e) {
+        // 그룹 ID와 채팅방 ID가 다른 경우 무시
+      }
+
+    } catch (e) {
+      print('채팅방 마지막 메시지 업데이트 실패: $e');
     }
   }
 
