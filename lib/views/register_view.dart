@@ -480,7 +480,6 @@ class _RegisterViewState extends State<RegisterView> {
                         keyboardType: TextInputType.number,
                         inputFormatters: [
                           FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-                          LengthLimitingTextInputFormatter(11),
                         ],
                         decoration: InputDecoration(
                           labelText: '전화번호',
@@ -536,12 +535,6 @@ class _RegisterViewState extends State<RegisterView> {
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return '전화번호를 입력해주세요.';
-                          }
-                          if (_selectedCountryCode == '+82') {
-                            if (value.length != 11) return '11자리여야 합니다.';
-                            if (!RegExp(r'^010\d{8}$').hasMatch(value)) {
-                              return '010으로 시작하는 번호';
-                            }
                           }
                           return null;
                         },
