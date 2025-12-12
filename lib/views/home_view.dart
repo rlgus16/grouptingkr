@@ -1516,7 +1516,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '그룹 멤버',
+                  '현재 그룹 멤버',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -1524,101 +1524,90 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
               ],
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              height: 80,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: groupController.groupMembers.length +
-                    // [UPDATED] 방장이고, 매칭 전이며, 멤버가 5명 미만일 때 "+추가" 슬롯 표시
-                    (groupController.isOwner && !groupController.isMatched && groupController.groupMembers.length < 5 ? 1 : 0),
-                itemBuilder: (context, index) {
-                  // 멤버 추가 슬롯
-                  if (index == groupController.groupMembers.length) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 12),
-                      child: GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const InviteFriendView(),
-                            ),
-                          );
-                        },
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: AppTheme.gray100,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppTheme.primaryColor,
-                                  width: 2,
-                                  style: BorderStyle.solid,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.add,
-                                color: AppTheme.primaryColor,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            const Text(
-                              '친구 초대',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: AppTheme.primaryColor,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+            Wrap(
+              spacing: 12.0,    // 아이템 사이의 가로 간격 (기존 Padding right 12 대체)
+              runSpacing: 16.0, // 줄바꿈 되었을 때 세로 간격
+              children: [
+                // [Part 1] 기존 멤버 리스트 표시
+                ...groupController.groupMembers.map((member) {
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ProfileDetailView(user: member),
                         ),
-                      ),
-                    );
-                  }
-
-                  // 기존 멤버 표시
-                  final member = groupController.groupMembers[index];
-                  // ... (rest of the code remains the same)
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                ProfileDetailView(user: member),
-                          ),
-                        );
-                      },
-                      child: Column(
-                        children: [
-                          MemberAvatar(
-                            imageUrl: member.mainProfileImage,
-                            name: member.nickname,
-                            isOwner: groupController.currentGroup!.isOwner(
-                              member.uid,
-                            ),
-                            size: 50,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            member.nickname,
-                            style: const TextStyle(fontSize: 12),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
+                      );
+                    },
+                    child: Column(
+                      // mainAxisSize: MainAxisSize.min, // 필요 시 추가
+                      children: [
+                        MemberAvatar(
+                          imageUrl: member.mainProfileImage,
+                          name: member.nickname,
+                          isOwner: groupController.currentGroup!.isOwner(member.uid),
+                          size: 50,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          member.nickname,
+                          style: const TextStyle(fontSize: 12),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   );
-                },
-              ),
-            ),
+                }), // .toList()는 Dart 최신 버전에서는 생략 가능 (... spread operator 사용 시)
+
+                // [Part 2] 친구 초대 버튼 ("+추가" 슬롯)
+                // 조건: 방장이고, 매칭 전이며, 멤버가 5명 미만일 때
+                if (groupController.isOwner &&
+                    !groupController.isMatched &&
+                    groupController.groupMembers.length < 5)
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const InviteFriendView(),
+                        ),
+                      );
+                    },
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: AppTheme.gray100,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppTheme.primaryColor,
+                              width: 2,
+                              style: BorderStyle.solid,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.add,
+                            color: AppTheme.primaryColor,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          '친구 초대',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: AppTheme.primaryColor,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            )
           ],
         ),
       ),
