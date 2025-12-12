@@ -4,8 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
-import 'package:image_picker/image_picker.dart'; // 패키지 추가 필요
-import 'package:flutter_email_sender/flutter_email_sender.dart'; // 패키지 추가 필요
+import 'package:image_picker/image_picker.dart';
+import 'package:flutter_email_sender/flutter_email_sender.dart';
 import '../models/user_model.dart';
 import '../utils/app_theme.dart';
 import '../controllers/auth_controller.dart';
@@ -20,6 +20,8 @@ class ProfileDetailView extends StatefulWidget {
 }
 
 class _ProfileDetailViewState extends State<ProfileDetailView> {
+  // 현재 보고 있는 이미지 인덱스 상태 관리
+  int _currentImageIndex = 0;
 
   // [수정됨] 신고하기 기능 (메시지 필수, 사진 첨부, 이메일 전송)
   void _showReportDialog(BuildContext context) {
@@ -345,6 +347,11 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
     // 현재 로그인한 유저인지 확인 (본인 프로필에는 차단/신고 버튼 숨김)
     final isMe = authController.currentUserModel?.uid == widget.user.uid;
 
+    // 성별에 따른 색상 결정 (나이 태그 및 인디케이터에 사용)
+    final themeColor = widget.user.gender == '여'
+        ? AppTheme.secondaryColor
+        : AppTheme.primaryColor;
+
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.user.nickname}님의 프로필'),
@@ -397,6 +404,12 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
               height: 400,
               child: widget.user.profileImages.isNotEmpty
                   ? PageView.builder(
+                // [추가됨] 페이지 변경 시 인덱스 업데이트
+                onPageChanged: (index) {
+                  setState(() {
+                    _currentImageIndex = index;
+                  });
+                },
                 itemCount: widget.user.profileImages.length,
                 itemBuilder: (context, index) {
                   return Container(
@@ -419,38 +432,36 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
               ),
             ),
 
-            // 프로필 이미지 개수 표시
+            // [추가됨] 이미지 페이지 인디케이터 (점)
+            if (widget.user.profileImages.length > 1)
+              Padding(
+                padding: const EdgeInsets.only(top: 12.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    widget.user.profileImages.length,
+                        (index) => Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        // 현재 페이지면 테마 색상, 아니면 회색
+                        color: _currentImageIndex == index
+                            ? themeColor
+                            : AppTheme.gray300,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+            // 기존 프로필 이미지 개수 표시 (점 인디케이터 아래에 유지)
             if (widget.user.profileImages.length > 1) ...[
               Container(
-                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.fromLTRB(16, 0, 16, 0), // 상단 여백 조정
                 decoration: BoxDecoration(
-                  color: AppTheme.gray50,
                   borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.photo_library_outlined,
-                      color: AppTheme.textSecondary,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '사진 ${widget.user.profileImages.length}장',
-                      style: const TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const Spacer(),
-                    const Text(
-                      '← 스와이프하여 사진 보기',
-                      style: TextStyle(
-                        color: AppTheme.textSecondary,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ],
@@ -479,13 +490,13 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                          color: themeColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
                           '${widget.user.age}세',
-                          style: const TextStyle(
-                            color: AppTheme.primaryColor,
+                          style: TextStyle(
+                            color: themeColor,
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
                           ),

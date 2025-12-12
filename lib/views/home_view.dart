@@ -930,8 +930,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
         title: Text(
           '그룹팅',
           style: GoogleFonts.gugi(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
+            fontSize: 24,
             color: AppTheme.primaryColor,
           ),
         ),
