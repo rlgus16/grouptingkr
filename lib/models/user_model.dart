@@ -17,7 +17,7 @@ class UserModel {
   final DateTime updatedAt;
   final bool isProfileComplete;
 
-  // [추가됨] 알림 설정 필드
+  // 알림 설정 필드
   final bool matchingNotification;
   final bool invitationNotification;
   final bool chatNotification;
@@ -38,7 +38,6 @@ class UserModel {
     required this.createdAt,
     required this.updatedAt,
     required this.isProfileComplete,
-    // [추가됨] 기본값 true 설정
     this.matchingNotification = true,
     this.invitationNotification = true,
     this.chatNotification = true,
@@ -96,7 +95,6 @@ class UserModel {
       createdAt: (dataMap['createdAt'] as Timestamp? ?? Timestamp.now()).toDate(),
       updatedAt: (dataMap['updatedAt'] as Timestamp? ?? Timestamp.now()).toDate(),
       isProfileComplete: dataMap['isProfileComplete'] ?? false,
-      // [추가됨] 필드 가져오기 (없으면 true)
       matchingNotification: dataMap['matchingNotification'] ?? true,
       invitationNotification: dataMap['invitationNotification'] ?? true,
       chatNotification: dataMap['chatNotification'] ?? true,
@@ -121,7 +119,6 @@ class UserModel {
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'isProfileComplete': isProfileComplete,
-      // [추가됨] 저장 필드
       'matchingNotification': matchingNotification,
       'invitationNotification': invitationNotification,
       'chatNotification': chatNotification,
@@ -145,7 +142,6 @@ class UserModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isProfileComplete,
-    // [추가됨]
     bool? matchingNotification,
     bool? invitationNotification,
     bool? chatNotification,
@@ -166,7 +162,6 @@ class UserModel {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isProfileComplete: isProfileComplete ?? this.isProfileComplete,
-      // [추가됨]
       matchingNotification: matchingNotification ?? this.matchingNotification,
       invitationNotification: invitationNotification ?? this.invitationNotification,
       chatNotification: chatNotification ?? this.chatNotification,

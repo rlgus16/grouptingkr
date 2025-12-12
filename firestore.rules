@@ -17,7 +17,7 @@ service cloud.firestore {
                get(/databases/$(database)/documents/users/$(request.auth.uid)).data.status == 'banned';
       }
 
-      // [추가됨] 접근 허용 조건: 인증됨 AND 차단되지 않음
+      // 접근 허용 조건: 인증됨 AND 차단되지 않음
       function isAuthenticatedAndNotBanned() {
         return request.auth != null && !isBanned();
       }
@@ -64,7 +64,7 @@ service cloud.firestore {
       // 다른 유저 정보 읽기 허용 (프로필 조회 등)
       allow read: if request.auth != null;
 
-      // [여기 추가됨 1] 차단 목록 서브 컬렉션 (내 차단 목록은 나만 관리)
+      // 차단 목록 서브 컬렉션 (내 차단 목록은 나만 관리)
       match /blocked_users/{blockedUserId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
@@ -150,7 +150,7 @@ service cloud.firestore {
           allow delete: if request.auth != null && request.auth.uid == resource.data.blockerId;
         }
 
-    // [여기 추가됨 2] 신고 컬렉션 (누구나 생성 가능)
+    // 신고 컬렉션 (누구나 생성 가능)
     match /reports/{reportId} {
       allow create: if request.auth != null;
     }

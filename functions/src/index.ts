@@ -108,7 +108,7 @@ export const handleGroupUpdate = onDocumentUpdated("groups/{groupId}", async (ev
 
           if (!isTargetHeightValid || !isMyHeightValid) continue;
 
-          // [수정됨] 모든 조건을 만족하면 매칭 대상으로 선정 (순서 변경)
+          // 모든 조건을 만족하면 매칭 대상으로 선정 (순서 변경)
           matchedCandidate = { ...targetData, id: doc.id } as GroupData;
           break;
       }

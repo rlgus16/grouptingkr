@@ -26,7 +26,7 @@ class _RegisterViewState extends State<RegisterView> {
   String _selectedGender = '';
   String _selectedCountryCode = '+82';
 
-  // [추가됨] 약관 동의 상태 변수
+  // 약관 동의 상태 변수
   bool _agreedToTerms = false;
   bool _agreedToPrivacy = false;
 
@@ -236,7 +236,7 @@ class _RegisterViewState extends State<RegisterView> {
     }
   }
 
-  // [추가됨] 약관 내용 보기 다이얼로그
+  // 약관 내용 보기 다이얼로그
   void _showTermsDialog(String title, String content) {
     showDialog(
       context: context,
@@ -266,7 +266,7 @@ class _RegisterViewState extends State<RegisterView> {
       return;
     }
 
-    // [추가됨] 약관 동의 확인 로직
+    // 약관 동의 확인 로직
     if (!_agreedToTerms || !_agreedToPrivacy) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -840,7 +840,7 @@ class _RegisterViewState extends State<RegisterView> {
 
                   const SizedBox(height: 32),
 
-                  // [추가됨] 약관 동의 체크박스 섹션
+                  // 약관 동의 체크박스 섹션
                   Container(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(

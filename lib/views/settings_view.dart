@@ -57,7 +57,7 @@ class _SettingsViewState extends State<SettingsView> {
     });
 
     try {
-      // ✅ 수정됨: 변경된 필드만 골라서 부분 업데이트 (Partial Update)
+      // 변경된 필드만 골라서 부분 업데이트 (Partial Update)
       // 이렇게 하면 currentGroupId 같은 중요 정보는 건드리지 않습니다.
       final Map<String, dynamic> updates = {};
       if (matching != null) updates['matchingNotification'] = matching;

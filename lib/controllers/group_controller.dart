@@ -125,7 +125,7 @@ class GroupController extends ChangeNotifier {
         if (group != null) {
           await _loadGroupMembers();
 
-          // ✅ 수정됨: 반드시 '매칭 중(matching)' 상태였던 경우에만 알림 발생
+          // 반드시 '매칭 중(matching)' 상태였던 경우에만 알림 발생
           if (oldStatus != null &&
               oldStatus == GroupStatus.matching && // 이 조건 추가
               group.status == GroupStatus.matched) {

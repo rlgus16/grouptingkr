@@ -23,7 +23,7 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
   // 현재 보고 있는 이미지 인덱스 상태 관리
   int _currentImageIndex = 0;
 
-  // [수정됨] 신고하기 기능 (메시지 필수, 사진 첨부, 이메일 전송)
+  // 신고하기 기능 (메시지 필수, 사진 첨부, 이메일 전송)
   void _showReportDialog(BuildContext context) {
     final reasonController = TextEditingController();
     final reasons = ['부적절한 사진', '욕설/비하 발언', '스팸/홍보', '사칭/사기', '기타'];
@@ -194,7 +194,7 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
     );
   }
 
-  // [추가됨] 신고 이메일 발송 함수
+  // 신고 이메일 발송 함수
   Future<void> _sendReportEmail({
     required UserModel reporter,
     required UserModel targetUser,
@@ -311,11 +311,11 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
 
   @override
   Widget build(BuildContext context) {
-    // [수정됨] 차단 여부 실시간 확인 (watch 사용)
+    // 차단 여부 실시간 확인 (watch 사용)
     final authController = context.watch<AuthController>();
     final isBlocked = authController.blockedUserIds.contains(widget.user.uid);
 
-    // [추가됨] 차단된 사용자일 경우 프로필 내용을 숨김
+    // 차단된 사용자일 경우 프로필 내용을 숨김
     if (isBlocked) {
       return Scaffold(
         appBar: AppBar(
@@ -404,7 +404,7 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
               height: 400,
               child: widget.user.profileImages.isNotEmpty
                   ? PageView.builder(
-                // [추가됨] 페이지 변경 시 인덱스 업데이트
+                // 페이지 변경 시 인덱스 업데이트
                 onPageChanged: (index) {
                   setState(() {
                     _currentImageIndex = index;
@@ -432,7 +432,7 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
               ),
             ),
 
-            // [추가됨] 이미지 페이지 인디케이터 (점)
+            // 이미지 페이지 인디케이터 (점)
             if (widget.user.profileImages.length > 1)
               Padding(
                 padding: const EdgeInsets.only(top: 12.0),

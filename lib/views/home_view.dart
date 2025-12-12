@@ -935,7 +935,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
           ),
         ),
         actions: [
-          // [수정됨] 매칭 필터 버튼 표시 조건 강화
+          // 매칭 필터 버튼 표시 조건 강화
           Consumer<GroupController>(
             builder: (context, groupController, _) {
               // 조건:
@@ -1369,7 +1369,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                                 onPressed: () {
                                   Navigator.pop(context); // 다이얼로그 닫기
 
-                                  // [수정됨] ProfileEditView로 이동하여 프로필 완성 유도
+                                  // ProfileEditView로 이동하여 프로필 완성 유도
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(builder: (context) => ProfileEditView()),

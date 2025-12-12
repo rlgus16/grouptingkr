@@ -444,7 +444,7 @@ class _ProfileEditViewState extends State<ProfileEditView> {
                     ),
                     maxLines: 6,
                     maxLength: 200,
-                    // [수정됨] validator 로직 변경
+                    // validator 로직 변경
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
                         return '소개글을 입력해주세요.';
