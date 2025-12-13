@@ -69,40 +69,40 @@ class InvitationService {
     try {
       final currentUser = _firebaseService.currentUser;
       if (currentUser == null) {
-        throw Exception('로그인이 필요합니다.');
+        throw ('로그인이 필요합니다.');
       }
 
       // 현재 사용자 정보 가져오기
       final fromUser = await _userService.getUserById(currentUser.uid);
       if (fromUser == null) {
-        throw Exception('사용자 정보를 찾을 수 없습니다.');
+        throw ('사용자 정보를 찾을 수 없습니다.');
       }
 
       // 대상 사용자 찾기 (정확한 닉네임 매칭)
       final toUser = await _userService.getUserByExactNickname(toUserNickname);
       if (toUser == null) {
-        throw Exception('해당 닉네임의 사용자를 찾을 수 없습니다.');
+        throw ('해당 닉네임의 사용자를 찾을 수 없습니다.');
       }
 
       // 자기 자신에게 초대 방지
       if (toUser.uid == currentUser.uid) {
-        throw Exception('자기 자신에게는 초대를 보낼 수 없습니다.');
+        throw ('자기 자신에게는 초대를 보낼 수 없습니다.');
       }
 
       // 그룹 정보 확인
       final group = await _groupService.getGroupById(groupId);
       if (group == null) {
-        throw Exception('그룹을 찾을 수 없습니다.');
+        throw ('그룹을 찾을 수 없습니다.');
       }
 
       // 방장인지 확인
       if (!group.isOwner(currentUser.uid)) {
-        throw Exception('그룹 방장만 초대를 보낼 수 있습니다.');
+        throw ('그룹 방장만 초대를 보낼 수 있습니다.');
       }
 
       // 그룹 인원 확인
       if (group.memberIds.length >= 5) {
-        throw Exception('그룹 인원이 가득 찼습니다. (최대 5명)');
+        throw ('그룹 인원이 가득 찼습니다. (최대 5명)');
       }
 
       // 이미 보낸 초대가 있는지 확인 (대기 중인 초대)
@@ -117,7 +117,7 @@ class InvitationService {
           .get();
 
       if (existingInvitations.docs.isNotEmpty) {
-        throw Exception('이미 초대를 보냈습니다.');
+        throw ('이미 초대를 보냈습니다.');
       }
 
       // 초대 생성
@@ -157,7 +157,7 @@ class InvitationService {
       );
 
     } catch (e) {
-      throw Exception('초대 전송에 실패했습니다: $e');
+      throw ('초대 전송에 실패했습니다: $e');
     }
   }
 
@@ -170,7 +170,7 @@ class InvitationService {
       });
       return true;
     } catch (e) {
-      throw Exception('초대 취소에 실패했습니다: $e');
+      throw ('초대 취소에 실패했습니다: $e');
     }
   }
 
@@ -178,19 +178,19 @@ class InvitationService {
   Future<void> acceptInvitation(String invitationId) async {
     final currentUser = _firebaseService.currentUser;
     if (currentUser == null) {
-      throw Exception('로그인이 필요합니다.');
+      throw ('로그인이 필요합니다.');
     }
 
     // Pre-fetch all necessary documents before starting the transaction.
     final invitationDoc = await _invitationsCollection.doc(invitationId).get();
-    if (!invitationDoc.exists) throw Exception('초대를 찾을 수 없습니다.');
+    if (!invitationDoc.exists) throw ('초대를 찾을 수 없습니다.');
 
     final invitation = InvitationModel.fromFirestore(invitationDoc);
-    if (invitation.toUserId != currentUser.uid) throw Exception('해당 초대를 수락할 권한이 없습니다.');
-    if (!invitation.canRespond) throw Exception('만료되었거나 이미 처리된 초대입니다.');
+    if (invitation.toUserId != currentUser.uid) throw ('해당 초대를 수락할 권한이 없습니다.');
+    if (!invitation.canRespond) throw ('만료되었거나 이미 처리된 초대입니다.');
 
     final currentUserInfo = await _userService.getUserById(currentUser.uid);
-    if (currentUserInfo == null) throw Exception('사용자 정보를 찾을 수 없습니다.');
+    if (currentUserInfo == null) throw ('사용자 정보를 찾을 수 없습니다.');
 
     // Capture old group ID for post-transaction message sending (Pre-match case)
     final oldGroupId = currentUserInfo.currentGroupId;
@@ -212,7 +212,7 @@ class InvitationService {
 
       final newGroupRef = _firebaseService.getCollection('groups').doc(invitation.groupId);
       final newGroupDoc = await transaction.get(newGroupRef);
-      if (!newGroupDoc.exists) throw Exception('참여하려는 그룹을 찾을 수 없습니다.');
+      if (!newGroupDoc.exists) throw ('참여하려는 그룹을 찾을 수 없습니다.');
 
       // 2. WRITE all changes based on the data read above.
 
@@ -254,14 +254,14 @@ class InvitationService {
             String newOwnerId = oldGroupData['ownerId'];
             if (newOwnerId == currentUser.uid) newOwnerId = memberIds.first;
 
-            // [UPDATED] Prepare update data
+            // Prepare update data
             final Map<String, dynamic> updates = {
               'memberIds': memberIds,
               'ownerId': newOwnerId,
               'updatedAt': Timestamp.fromDate(DateTime.now()),
             };
 
-            // [UPDATED] If the old group was matching, cancel it (revert to waiting)
+            // If the old group was matching, cancel it (revert to waiting)
             // This is critical to stop matching if a member leaves by accepting another invite
             final currentStatus = oldGroupData['status'];
             final matchingStatus = GroupStatus.matching.toString().split('.').last;
@@ -285,7 +285,7 @@ class InvitationService {
       }
 
       final newMemberIds = List<String>.from(newGroupData['memberIds'] ?? []);
-      if (newMemberIds.length >= 5) throw Exception('참여하려는 그룹의 인원이 가득 찼습니다.');
+      if (newMemberIds.length >= 5) throw ('참여하려는 그룹의 인원이 가득 찼습니다.');
       if (!newMemberIds.contains(currentUser.uid)) newMemberIds.add(currentUser.uid);
 
       transaction.update(newGroupRef, {
@@ -326,22 +326,22 @@ class InvitationService {
     try {
       final currentUser = _firebaseService.currentUser;
       if (currentUser == null) {
-        throw Exception('로그인이 필요합니다.');
+        throw ('로그인이 필요합니다.');
       }
 
       final invitationDoc = await _invitationsCollection.doc(invitationId).get();
       if (!invitationDoc.exists) {
-        throw Exception('초대를 찾을 수 없습니다.');
+        throw ('초대를 찾을 수 없습니다.');
       }
 
       final invitation = InvitationModel.fromFirestore(invitationDoc);
 
       if (invitation.toUserId != currentUser.uid) {
-        throw Exception('해당 초대를 거절할 권한이 없습니다.');
+        throw ('해당 초대를 거절할 권한이 없습니다.');
       }
 
       if (!invitation.canRespond) {
-        throw Exception('만료되었거나 이미 처리된 초대입니다.');
+        throw ('만료되었거나 이미 처리된 초대입니다.');
       }
 
       await _invitationsCollection.doc(invitationId).update({
@@ -350,7 +350,7 @@ class InvitationService {
       });
 
     } catch (e) {
-      throw Exception('초대 거절에 실패했습니다: $e');
+      throw ('초대 거절에 실패했습니다: $e');
     }
   }
 
@@ -361,7 +361,7 @@ class InvitationService {
       if (!doc.exists) return null;
       return InvitationModel.fromFirestore(doc);
     } catch (e) {
-      throw Exception('초대 정보를 가져오는데 실패했습니다: $e');
+      throw ('초대 정보를 가져오는데 실패했습니다: $e');
     }
   }
 
@@ -404,7 +404,7 @@ class InvitationService {
       }
       return true;
     } catch (e) {
-      throw Exception('초대 응답 실패: $e');
+      throw('초대 응답 실패: $e');
     }
   }
 }

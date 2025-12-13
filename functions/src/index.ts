@@ -272,7 +272,7 @@ export const notifyMatchOnChatroomCreate = onDocumentCreated("chatrooms/{chatroo
     }
   });
 
-// 4. [INVITATION NOTIFICATION]
+// [INVITATION NOTIFICATION]
 // Triggers when a new invitation is created
 export const notifyInvitation = onDocumentCreated("invitations/{invitationId}", async (event) => {
     const snapshot = event.data;

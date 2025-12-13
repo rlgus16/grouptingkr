@@ -60,7 +60,7 @@ class ChatroomService {
       return newChatroom;
     } catch (e) {
       debugPrint('Error in getOrCreateChatroom: $e');
-      throw Exception('Failed to initialize chatroom: $e');
+      throw ('Failed to initialize chatroom: $e');
     }
   }
 

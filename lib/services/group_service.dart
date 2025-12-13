@@ -60,7 +60,7 @@ class GroupService {
       if (!doc.exists) return null;
       return GroupModel.fromFirestore(doc);
     } catch (e) {
-      throw Exception('그룹 정보를 가져오는데 실패했습니다: $e');
+      throw ('그룹 정보를 가져오는데 실패했습니다: $e');
     }
   }
 
@@ -82,7 +82,7 @@ class GroupService {
       await _userService.updateCurrentGroupId(ownerId, docRef.id);
       return group;
     } catch (e) {
-      throw Exception('그룹 생성에 실패했습니다: $e');
+      throw ('그룹 생성에 실패했습니다: $e');
     }
   }
 
@@ -106,7 +106,7 @@ class GroupService {
       if (memberIds.isEmpty) return [];
       return await _getUsersByIds(memberIds);
     } catch (e) {
-      throw Exception('그룹 멤버 정보를 가져오는데 실패했습니다: $e');
+      throw ('그룹 멤버 정보를 가져오는데 실패했습니다: $e');
     }
   }
 
@@ -153,7 +153,7 @@ class GroupService {
         return await getGroupById(groupId);
       }
     } catch (e) {
-      throw Exception('현재 그룹 정보를 가져오는데 실패했습니다: $e');
+      throw ('현재 그룹 정보를 가져오는데 실패했습니다: $e');
     }
   }
 
@@ -176,7 +176,7 @@ class GroupService {
         maxMembers: 10,
       );
     } catch (e) {
-      throw Exception('매칭된 그룹 정보를 가져오는데 실패했습니다: $e');
+      throw ('매칭된 그룹 정보를 가져오는데 실패했습니다: $e');
     }
   }
 
@@ -188,7 +188,7 @@ class GroupService {
         'updatedAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      throw Exception('그룹 설정 업데이트 실패: $e');
+      throw ('그룹 설정 업데이트 실패: $e');
     }
   }
 
@@ -198,7 +198,7 @@ class GroupService {
         'status': GroupStatus.matching.toString().split('.').last,
       });
     } catch (e) {
-      throw Exception('매칭 시작에 실패했습니다: $e');
+      throw ('매칭 시작에 실패했습니다: $e');
     }
   }
 
@@ -208,7 +208,7 @@ class GroupService {
         'status': GroupStatus.waiting.toString().split('.').last,
       });
     } catch (e) {
-      throw Exception('매칭 취소에 실패했습니다: $e');
+      throw ('매칭 취소에 실패했습니다: $e');
     }
   }
 
