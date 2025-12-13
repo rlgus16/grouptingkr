@@ -7,7 +7,6 @@ import '../controllers/auth_controller.dart';
 import '../controllers/group_controller.dart';
 import '../utils/app_theme.dart';
 import '../widgets/member_avatar.dart';
-import '../models/invitation_model.dart';
 import 'invite_friend_view.dart';
 import 'invitation_list_view.dart';
 import 'profile_detail_view.dart';
@@ -538,35 +537,6 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
               ),
 
               ListTile(
-                leading: const Icon(Icons.send_outlined),
-                title: const Text('보낸 초대'),
-                trailing: groupController.sentInvitations.isNotEmpty
-                    ? Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.orange,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '${groupController.sentInvitations.length}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      )
-                    : null,
-                onTap: () {
-                  Navigator.pop(context);
-                  _showSentInvitationsDialog();
-                },
-              ),
-
-              ListTile(
                 leading: const Icon(Icons.person_outline),
                 title: const Text('마이페이지'),
                 onTap: () {
@@ -720,89 +690,10 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
         false;
   }
 
-  void _showSentInvitationsDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => Consumer<GroupController>(
-        builder: (context, groupController, _) => AlertDialog(
-          title: const Text('보낸 초대'),
-          content: SizedBox(
-            width: double.maxFinite,
-            height: 300,
-            child: groupController.sentInvitations.isEmpty
-                ? const Center(child: Text('보낸 초대가 없습니다.'))
-                : ListView.builder(
-                    itemCount: groupController.sentInvitations.length,
-                    itemBuilder: (context, index) {
-                      final invitation = groupController.sentInvitations[index];
-                      return Card(
-                        child: ListTile(
-                          title: Text(invitation.toUserNickname),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('상태: ${_getStatusText(invitation.status)}'),
-                              Text(
-                                '보낸 시간: ${_formatDate(invitation.createdAt)}',
-                              ),
-                              if (invitation.message != null)
-                                Text('메시지: ${invitation.message}'),
-                            ],
-                          ),
-                          trailing:
-                              invitation.status == InvitationStatus.pending
-                              ? IconButton(
-                                  icon: const Icon(
-                                    Icons.cancel,
-                                    color: AppTheme.errorColor,
-                                  ),
-                                  onPressed: () async {
-                                    final success = await groupController
-                                        .cancelSentInvitation(invitation.id);
-                                    if (success && mounted) {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text('초대를 취소했습니다.'),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                )
-                              : null,
-                        ),
-                      );
-                    },
-                  ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('닫기'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  String _getStatusText(InvitationStatus status) {
-    switch (status) {
-      case InvitationStatus.pending:
-        return '대기 중';
-      case InvitationStatus.accepted:
-        return '수락됨';
-      case InvitationStatus.rejected:
-        return '거절됨';
-      case InvitationStatus.expired:
-        return '만료됨';
-    }
-  }
 
-  String _formatDate(DateTime date) {
-    return '${date.month}/${date.day} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
-  }
+
+
 
   // 프로필 카드 표시 여부 결정 (새로운 로직)
   bool _shouldShowProfileCard(AuthController authController) {
