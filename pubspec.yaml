@@ -75,7 +75,7 @@ flutter_native_splash:
   color: "#FFFFFF" # 배경색 (흰색)
   image: "assets/icon/icon.png" # 스플래시 중앙에 들어갈 로고 이미지
   branding: "assets/icon/icon.png" # (선택사항) 브랜드 로고
-  color_dark: "#212121" # 다크모드 배경색
+  color_dark: "#FFFFFF" # 다크모드 배경색
   image_dark: "assets/icon/icon.png" # 다크모드 이미지
 
   # Android 12 이상 (스플래시 API 대응)
