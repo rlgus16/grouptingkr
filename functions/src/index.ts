@@ -5,6 +5,24 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 
 admin.initializeApp();
 
+// 거리 계산 헬퍼 함수 (Haversine Formula)
+function getDistanceFromLatLonInKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  return d;
+}
+
+function deg2rad(deg: number): number {
+  return deg * (Math.PI / 180);
+}
+
 const db = admin.firestore();
 
 interface GroupData {
@@ -21,9 +39,12 @@ interface GroupData {
   maxHeight?: number;
   averageHeight?: number;
   matchedGroupId?: string;
+  maxDistance?: number;
+  latitude?: number;
+  longitude?: number;
 }
 
-// 1. [MATCHING LOGIC]
+// 매칭 로직
 // Finds a match and updates statuses safely. No notifications are sent here.
 export const handleGroupUpdate = onDocumentUpdated("groups/{groupId}", async (event) => {
     if (!event.data) return;
@@ -38,7 +59,7 @@ export const handleGroupUpdate = onDocumentUpdated("groups/{groupId}", async (ev
     if (beforeData.status !== "matching" && afterData.status === "matching") {
       console.log(`Group ${groupId} started matching with filters.`);
 
-      // 1. 현재 그룹의 정보 및 필터 가져오기
+      // 현재 그룹의 정보 및 필터 가져오기
       const myGender = afterData.groupGender || "혼성";
       const myPrefGender = afterData.preferredGender || "상관없음";
       const myAvgAge = afterData.averageAge || 0;
@@ -47,8 +68,11 @@ export const handleGroupUpdate = onDocumentUpdated("groups/{groupId}", async (ev
       const myAvgHeight = afterData.averageHeight || 0;
       const myMinHeight = afterData.minHeight || 0;
       const myMaxHeight = afterData.maxHeight || 200;
+      const myLat = afterData.latitude || 0;
+      const myLon = afterData.longitude || 0;
+      const myMaxDist = afterData.maxDistance || 100; // 기본 100km
 
-      // 2. 매칭 중인 다른 그룹들 조회
+      // 매칭 중인 다른 그룹들 조회
       const matchingGroupsQuery = db.collection("groups")
         .where("status", "==", "matching")
         .where(admin.firestore.FieldPath.documentId(), "!=", groupId);
@@ -60,7 +84,7 @@ export const handleGroupUpdate = onDocumentUpdated("groups/{groupId}", async (ev
         return;
       }
 
-      // 3. 조건에 맞는 그룹 찾기
+      // 조건에 맞는 그룹 찾기
       let matchedCandidate: GroupData | null = null;
 
       for (const doc of querySnapshot.docs) {
@@ -69,9 +93,8 @@ export const handleGroupUpdate = onDocumentUpdated("groups/{groupId}", async (ev
           // [기본 조건] 멤버 수가 같아야 함
           if (targetData.memberIds.length !== afterData.memberIds.length) continue;
 
-          // ---------------------------------------------------------
+
           // [필터 조건 1] 성별 매칭 (양방향 확인)
-          // ---------------------------------------------------------
           const targetGender = targetData.groupGender || "혼성";
           const targetPrefGender = targetData.preferredGender || "상관없음";
 
@@ -82,9 +105,8 @@ export const handleGroupUpdate = onDocumentUpdated("groups/{groupId}", async (ev
 
           if (!isTargetGenderValid || !isMyGenderValid) continue;
 
-          // ---------------------------------------------------------
+
           // [필터 조건 2] 나이 매칭 (평균 나이 기준, 양방향 확인)
-          // ---------------------------------------------------------
           const targetAvgAge = targetData.averageAge || 0;
           const targetMinAge = targetData.minAge || 0;
           const targetMaxAge = targetData.maxAge || 100;
@@ -100,20 +122,37 @@ export const handleGroupUpdate = onDocumentUpdated("groups/{groupId}", async (ev
           const targetMinHeight = targetData.minHeight || 0;
           const targetMaxHeight = targetData.maxHeight || 200;
 
-          // 1. 상대방의 평균 키가 내 선호 범위 안에 있는지 확인
+          // 상대방의 평균 키가 내 선호 범위 안에 있는지 확인
           const isTargetHeightValid = (targetAvgHeight >= myMinHeight) && (targetAvgHeight <= myMaxHeight);
 
-          // 2. 내 평균 키가 상대방의 선호 범위 안에 있는지 확인
+          // 내 평균 키가 상대방의 선호 범위 안에 있는지 확인
           const isMyHeightValid = (myAvgHeight >= targetMinHeight) && (myAvgHeight <= targetMaxHeight);
 
           if (!isTargetHeightValid || !isMyHeightValid) continue;
+
+          //  거리 매칭 (양방향 확인) - 여기서 거리 계산 및 필터링 수행
+          const targetLat = targetData.latitude || 0;
+          const targetLon = targetData.longitude || 0;
+          const targetMaxDist = targetData.maxDistance || 100;
+
+          // 두 그룹 모두 좌표 정보가 유효할 때만 거리 계산 (0인 경우 위치 정보 없음으로 간주)
+                    if (myLat !== 0 && myLon !== 0 && targetLat !== 0 && targetLon !== 0) {
+                       const distance = getDistanceFromLatLonInKm(myLat, myLon, targetLat, targetLon);
+
+                       console.log(`Distance between ${groupId} and ${targetData.id}: ${distance.toFixed(2)} km`);
+
+                       // 내 거리 조건 확인 (상대가 내 설정 거리보다 멀면 패스)
+                       if (distance > myMaxDist) continue;
+                       // 상대방 거리 조건 확인 (내가 상대 설정 거리보다 멀면 패스)
+                       if (distance > targetMaxDist) continue;
+                    }
 
           // 모든 조건을 만족하면 매칭 대상으로 선정 (순서 변경)
           matchedCandidate = { ...targetData, id: doc.id } as GroupData;
           break;
       }
 
-      // 4. 매칭 성사 처리 (기존 로직과 동일)
+      // 매칭 성사 처리
       if (matchedCandidate) {
         console.log(`Matched! ${groupId} (${myGender}, avg:${myAvgAge}) <-> ${matchedCandidate.id} (${matchedCandidate.groupGender}, avg:${matchedCandidate.averageAge})`);
 

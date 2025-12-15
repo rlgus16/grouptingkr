@@ -66,8 +66,12 @@ class GroupService {
 
   Future<GroupModel> createGroup(String ownerId) async {
     try {
+      final owner = await _userService.getUserById(ownerId);
+      if (owner == null) throw '사용자 정보를 찾을 수 없습니다.';
+
       final now = DateTime.now();
       final docRef = _groupsCollection.doc();
+
       final group = GroupModel(
         id: docRef.id,
         name: '새 그룹',
@@ -77,6 +81,8 @@ class GroupService {
         createdAt: now,
         updatedAt: now,
         maxMembers: 5,
+        latitude: owner.latitude,
+        longitude: owner.longitude,
       );
       await docRef.set(group.toFirestore());
       await _userService.updateCurrentGroupId(ownerId, docRef.id);

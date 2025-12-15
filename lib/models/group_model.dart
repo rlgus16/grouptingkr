@@ -26,8 +26,13 @@ class GroupModel {
   final int averageHeight;  // 우리 그룹 평균 키
 
   final String groupGender;
+
   // 거리 필드 선언
   final int maxDistance;
+
+  // 그룹 위치 좌표 (방장 기준)
+  final double latitude;
+  final double longitude;
 
 
   GroupModel({
@@ -50,6 +55,8 @@ class GroupModel {
     this.averageHeight = 170,
     this.groupGender = '혼성',
     this.maxDistance = 100,
+    this.latitude = 0.0,
+    this.longitude = 0.0,
   });
 
   factory GroupModel.fromFirestore(DocumentSnapshot doc) {
@@ -82,6 +89,8 @@ class GroupModel {
       averageHeight: data['averageHeight'] ?? 170,
       groupGender: data['groupGender'] ?? '혼성',
       maxDistance: data['maxDistance'] ?? 100,
+      latitude: (data['latitude'] ?? 0.0).toDouble(),
+      longitude: (data['longitude'] ?? 0.0).toDouble(),
     );
   }
 
@@ -105,6 +114,8 @@ class GroupModel {
       'averageHeight': averageHeight,
       'groupGender': groupGender,
       'maxDistance': maxDistance,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 
@@ -128,6 +139,8 @@ class GroupModel {
     int? averageHeight,
     String? groupGender,
     int? maxDistance,
+    double? latitude,
+    double? longitude,
   }) {
     return GroupModel(
       id: id ?? this.id,
@@ -149,6 +162,8 @@ class GroupModel {
       averageHeight: averageHeight ?? this.averageHeight,
       groupGender: groupGender ?? this.groupGender,
       maxDistance: maxDistance ?? this.maxDistance,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
     );
   }
 

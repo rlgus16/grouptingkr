@@ -16,6 +16,8 @@ class UserModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isProfileComplete;
+  final double latitude;
+  final double longitude;
 
   // 알림 설정 필드
   final bool matchingNotification;
@@ -41,6 +43,8 @@ class UserModel {
     this.matchingNotification = true,
     this.invitationNotification = true,
     this.chatNotification = true,
+    this.latitude = 0.0,
+    this.longitude = 0.0,
   });
 
   // 나이 계산
@@ -98,6 +102,8 @@ class UserModel {
       matchingNotification: dataMap['matchingNotification'] ?? true,
       invitationNotification: dataMap['invitationNotification'] ?? true,
       chatNotification: dataMap['chatNotification'] ?? true,
+      latitude: (data['latitude'] ?? 0.0).toDouble(),
+      longitude: (data['longitude'] ?? 0.0).toDouble(),
     );
   }
 
@@ -122,6 +128,8 @@ class UserModel {
       'matchingNotification': matchingNotification,
       'invitationNotification': invitationNotification,
       'chatNotification': chatNotification,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 
@@ -145,6 +153,8 @@ class UserModel {
     bool? matchingNotification,
     bool? invitationNotification,
     bool? chatNotification,
+    double? latitude,
+    double? longitude,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -165,6 +175,8 @@ class UserModel {
       matchingNotification: matchingNotification ?? this.matchingNotification,
       invitationNotification: invitationNotification ?? this.invitationNotification,
       chatNotification: chatNotification ?? this.chatNotification,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
     );
   }
 }
