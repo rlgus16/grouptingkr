@@ -396,7 +396,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('거리 범위 (방장 활동 지역 기준)',
+                      const Text('거리 범위 (방장 기준)',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                       Text(
                         currentDistance >= 100 ? "100km+" : "${currentDistance.round()}km 이내",

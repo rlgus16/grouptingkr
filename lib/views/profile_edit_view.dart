@@ -25,6 +25,10 @@ class _ProfileEditViewState extends State<ProfileEditView> {
   final _introductionController = TextEditingController();
   final _heightController = TextEditingController();
   final _activityAreaController = TextEditingController();
+
+  // 좌표 저장 변수
+  double _latitude = 0.0;
+  double _longitude = 0.0;
   
   // 이미지 관리 관련
   List<dynamic> _imageSlots = List.filled(6, null); // 통합 이미지 슬롯
@@ -54,6 +58,10 @@ class _ProfileEditViewState extends State<ProfileEditView> {
       _introductionController.text = user.introduction;
       _heightController.text = user.height.toString();
       _activityAreaController.text = user.activityArea;
+
+      // 기존 좌표 정보 로드
+      _latitude = user.latitude;
+      _longitude = user.longitude;
       
       // 기존 이미지들 로드 (유효한 URL만 필터링)
       List<String> _originalImages = user.profileImages.where((imageUrl) {
@@ -410,10 +418,12 @@ class _ProfileEditViewState extends State<ProfileEditView> {
                         ),
                       );
 
-                      // 받아온 주소가 있다면 컨트롤러에 입력
-                      if (result != null && result is String) {
+                      // 반환된 결과가 Map인 경우 처리
+                      if (result != null && result is Map<String, dynamic>) {
                         setState(() {
-                          _activityAreaController.text = result;
+                          _activityAreaController.text = result['address'];
+                          _latitude = result['latitude'];
+                          _longitude = result['longitude'];
                         });
                       }
                     },
@@ -660,16 +670,18 @@ class _ProfileEditViewState extends State<ProfileEditView> {
       }
     }
 
-    // 6. 컨트롤러를 통해 프로필 정보 업데이트 요청
+    // 컨트롤러를 통해 프로필 정보 업데이트 요청
     final success = await profileController.updateProfile(
       nickname: _nicknameController.text.trim(),
       introduction: _introductionController.text.trim(),
       height: int.parse(_heightController.text.trim()),
       activityArea: _activityAreaController.text.trim(),
+      latitude: _latitude,
+      longitude: _longitude,
       profileImages: finalImages,
     );
 
-    // 7. 성공 시 처리
+    // 성공 시 처리
     if (success && mounted) {
       await authController.refreshCurrentUser(); // 현재 사용자 정보 새로고침
       ScaffoldMessenger.of(context).showSnackBar(

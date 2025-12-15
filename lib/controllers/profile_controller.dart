@@ -193,6 +193,8 @@ class ProfileController extends ChangeNotifier {
     required String introduction,
     required int height,
     required String activityArea,
+    double latitude = 0.0,
+    double longitude = 0.0,
     List<String>? profileImages,
   }) async {
     _setLoading(true);
@@ -226,12 +228,14 @@ class ProfileController extends ChangeNotifier {
         }
       }
 
-      // [핵심 변경사항] isProfileComplete를 true로 설정
+      // isProfileComplete를 true로 설정 및 좌표 업데이트
       final updatedUser = currentUserModel.copyWith(
         nickname: nickname,
         introduction: introduction,
         height: height,
         activityArea: activityArea,
+        latitude: latitude,
+        longitude: longitude,
         profileImages: profileImages ?? currentUserModel.profileImages,
         updatedAt: DateTime.now(),
         isProfileComplete: true, // 여기가 중요합니다!

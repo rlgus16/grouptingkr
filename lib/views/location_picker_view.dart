@@ -165,7 +165,7 @@ class _LocationPickerViewState extends State<LocationPickerView> {
           const Center(
             child: Padding(
               padding: EdgeInsets.only(bottom: 40), // 핀 끝이 중앙에 오도록 살짝 올림
-              child: Icon(Icons.location_on, size: 50, color: AppTheme.primaryColor),
+              child: Icon(Icons.location_on, size: 50, color: AppTheme.errorColor),
             ),
           ),
 
@@ -205,7 +205,11 @@ class _LocationPickerViewState extends State<LocationPickerView> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.pop(context, _selectedAddress);
+                          Navigator.pop(context, {
+                            'address': _selectedAddress,
+                            'latitude': _currentPosition.latitude,
+                            'longitude': _currentPosition.longitude,
+                          });
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primaryColor,
