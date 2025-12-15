@@ -243,6 +243,7 @@ class GroupController extends ChangeNotifier {
     required int maxAge,
     required int minHeight,
     required int maxHeight,
+    required int maxDistance,
   }) async {
     if (_currentGroup == null) return false;
 
@@ -283,6 +284,7 @@ class GroupController extends ChangeNotifier {
         'maxAge': maxAge,
         'minHeight': minHeight,
         'maxHeight': maxHeight,
+        'maxDistance': maxDistance,
         'averageHeight': averageHeight,
         'groupGender': groupGender,
         'averageAge': averageAge,

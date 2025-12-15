@@ -26,6 +26,9 @@ class GroupModel {
   final int averageHeight;  // 우리 그룹 평균 키
 
   final String groupGender;
+  // 거리 필드 선언
+  final int maxDistance;
+
 
   GroupModel({
     required this.id,
@@ -46,6 +49,7 @@ class GroupModel {
     this.maxHeight = 190,
     this.averageHeight = 170,
     this.groupGender = '혼성',
+    this.maxDistance = 100,
   });
 
   factory GroupModel.fromFirestore(DocumentSnapshot doc) {
@@ -70,13 +74,14 @@ class GroupModel {
           : DateTime.now(),
       maxMembers: data['maxMembers'] ?? 5,
       preferredGender: data['preferredGender'] ?? '상관없음',
-      minAge: data['minAge'] ?? 20,
+      minAge: data['minAge'] ?? 19,
       maxAge: data['maxAge'] ?? 40,
       averageAge: data['averageAge'] ?? 20,
       minHeight: data['minHeight'] ?? 150,
       maxHeight: data['maxHeight'] ?? 190,
       averageHeight: data['averageHeight'] ?? 170,
       groupGender: data['groupGender'] ?? '혼성',
+      maxDistance: data['maxDistance'] ?? 100,
     );
   }
 
@@ -99,6 +104,7 @@ class GroupModel {
       'maxHeight': maxHeight,
       'averageHeight': averageHeight,
       'groupGender': groupGender,
+      'maxDistance': maxDistance,
     };
   }
 
@@ -121,6 +127,7 @@ class GroupModel {
     int? maxHeight,
     int? averageHeight,
     String? groupGender,
+    int? maxDistance,
   }) {
     return GroupModel(
       id: id ?? this.id,
@@ -141,10 +148,11 @@ class GroupModel {
       maxHeight: maxHeight ?? this.maxHeight,
       averageHeight: averageHeight ?? this.averageHeight,
       groupGender: groupGender ?? this.groupGender,
+      maxDistance: maxDistance ?? this.maxDistance,
     );
   }
 
-  // 헬퍼 메서드들 (기존 유지)
+  // 헬퍼 메서드들
   String get groupId => id;
   int get memberCount => memberIds.length;
   bool get isFull => memberIds.length >= maxMembers;

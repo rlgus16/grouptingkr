@@ -267,6 +267,10 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     if (initMinHeight > initMaxHeight) initMinHeight = initMaxHeight;
     RangeValues currentHeightRange = RangeValues(initMinHeight, initMaxHeight);
 
+    // 거리 설정 초기값 추가 (2km ~ 100km)
+    double initMaxDistance = (group?.maxDistance.toDouble() ?? 100.0).clamp(2.0, 100.0);
+    double currentDistance = initMaxDistance;
+
     String selectedGender = group?.preferredGender ?? '상관없음';
 
     showModalBottomSheet(
@@ -301,7 +305,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                   ),
                   const SizedBox(height: 24),
 
-                  // 1. 성별 설정
+                  // 성별 설정
                   const Text('상대 그룹 성별',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 12),
@@ -326,7 +330,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
 
                   const SizedBox(height: 24),
 
-                  // 2. 나이대 설정
+                  // 나이대 설정
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -357,7 +361,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
 
                   const SizedBox(height: 24),
 
-                  // 3. 키 설정
+                  // 키 설정
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -386,6 +390,34 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                     },
                   ),
 
+                  const SizedBox(height: 24),
+
+                  // 거리 설정
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('거리 범위 (방장 활동 지역 기준)',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      Text(
+                        currentDistance >= 100 ? "100km+" : "${currentDistance.round()}km 이내",
+                        style: const TextStyle(
+                            color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                  Slider(
+                    value: currentDistance,
+                    min: 2,
+                    max: 100,
+                    divisions: 49, // 1km 단위
+                    activeColor: AppTheme.primaryColor,
+                    inactiveColor: AppTheme.gray200,
+                    label: currentDistance >= 100 ? "100+" : currentDistance.round().toString(),
+                    onChanged: (double value) {
+                      setModalState(() => currentDistance = value);
+                    },
+                  ),
+
                   const SizedBox(height: 30),
 
                   // 적용 버튼
@@ -409,6 +441,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                             maxHeight: currentHeightRange.end.round() >= 190
                                 ? 200 // 190 이상은 넉넉하게 200으로 저장
                                 : currentHeightRange.end.round(),
+                            maxDistance: currentDistance.round(),
                           );
 
                           if (!mounted) return;
