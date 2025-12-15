@@ -13,7 +13,6 @@ class LocationPickerView extends StatefulWidget {
 
 class _LocationPickerViewState extends State<LocationPickerView> {
   GoogleMapController? _mapController;
-  // 기본값: 서울시청
   LatLng _currentPosition = const LatLng(37.5665, 126.9780);
   String _selectedAddress = '위치를 탐색 중입니다...';
   bool _isLoading = true;
@@ -111,6 +110,7 @@ class _LocationPickerViewState extends State<LocationPickerView> {
 
         setState(() {
           _selectedAddress = address;
+          _currentPosition = position;
         });
       }
     } catch (e) {
@@ -118,6 +118,7 @@ class _LocationPickerViewState extends State<LocationPickerView> {
         debugPrint("주소 변환 오류: $e");
         setState(() {
           _selectedAddress = '주소를 찾을 수 없습니다.';
+          _currentPosition = position;
         });
       }
     }
