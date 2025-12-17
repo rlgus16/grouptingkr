@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyCHgXnkh3FYEqy9LOwnt6mdBclDhX7zOLc</string>
+	<string>AIzaSyB89nToUM6JSdf7t8soknGCCNKS_fkjiu4</string>
 	<key>GCM_SENDER_ID</key>
 	<string>826622552589</string>
 	<key>PLIST_VERSION</key>
@@ -25,7 +25,7 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:826622552589:ios:8edb281a853c4f31eb4344</string>
+	<string>1:826622552589:ios:f72b09a326d54eaceb4344</string>
 	<key>DATABASE_URL</key>
 	<string>https://groupting-aebab-default-rtdb.firebaseio.com</string>
 </dict>

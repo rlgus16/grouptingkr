@@ -73,7 +73,7 @@ class DefaultFirebaseOptions {
     projectId: 'groupting-aebab',
     databaseURL: 'https://groupting-aebab-default-rtdb.firebaseio.com',
     storageBucket: 'groupting-aebab.firebasestorage.app',
-    iosBundleId: 'com.example.groupting',
+    iosBundleId: 'com.rlgus16.groupting',
   );
 
 }
