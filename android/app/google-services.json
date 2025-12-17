@@ -8,31 +8,25 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:826622552589:android:b8cd6195c9eca66aeb4344",
-        "android_client_info": {
-          "package_name": "com.rlgus16.groupting"
-        }
-      },
-      "oauth_client": [],
-      "api_key": [
-        {
-          "current_key": "AIzaSyDGzgBkOmqsh3Su_lHarO3yufDpJXCSdQQ"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": []
-        }
-      }
-    },
-    {
-      "client_info": {
         "mobilesdk_app_id": "1:826622552589:android:70f419b00e9bc3a3eb4344",
         "android_client_info": {
           "package_name": "com.rlgus16.groupting"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "826622552589-7i7m4k1b00t8r62qtjcpusk38cn24uet.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rlgus16.groupting",
+            "certificate_hash": "a5a52a8c4daed07289976c2d23c262687cc5c182"
+          }
+        },
+        {
+          "client_id": "826622552589-elbojtv7f2tq0sljdp8j0r52rmg4mi3e.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDGzgBkOmqsh3Su_lHarO3yufDpJXCSdQQ"
@@ -40,7 +34,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "826622552589-elbojtv7f2tq0sljdp8j0r52rmg4mi3e.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "826622552589-320m8mfr1vg913ivqnk6giboivnejkd1.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.rlgus16.groupting"
+              }
+            }
+          ]
         }
       }
     }
