@@ -79,7 +79,7 @@ class _LocationPickerViewState extends State<LocationPickerView> {
       List<Placemark> placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
-        localeIdentifier: 'ko_KR', // 한국어 설정 확인
+        localeIdentifier: 'ko_KR',
       );
 
       if (!mounted) return;

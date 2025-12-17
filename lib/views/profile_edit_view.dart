@@ -128,47 +128,43 @@ class _ProfileEditViewState extends State<ProfileEditView> {
   Future<void> _selectSingleImage(int index) async {
     if (_isPickerActive) return;
 
-    // 갤러리/저장소 권한 확인 로직
-    if (!kIsWeb) { // 웹이 아닐 때만 권한 체크
+    // Android의 경우에만 권한을 수동으로 체크합니다.
+    // iOS는 image_picker가 내부적으로 처리(iOS 14+ PHPicker 등)하므로 수동 체크를 제거합니다.
+    if (!kIsWeb && Platform.isAndroid) {
       PermissionStatus status;
 
-      if (Platform.isAndroid) {
-        // Android 버전에 따라 권한 분기
-        // (단순화를 위해 photos로 통합 요청, permission_handler가 버전에 맞춰 처리)
-        status = await Permission.photos.request();
+      // Android 버전에 따라 권한 분기
+      status = await Permission.photos.request();
 
-        // Android 12 이하 대응 (photos가 거부되면 storage 요청)
-        if (status.isDenied || status.isPermanentlyDenied) {
-          status = await Permission.storage.request();
-        }
-      } else {
-        // iOS
-        status = await Permission.photos.request();
+      // Android 12 이하 대응 (photos가 거부되면 storage 요청)
+      if (status.isDenied || status.isPermanentlyDenied) {
+        status = await Permission.storage.request();
       }
 
-      // 권한이 거부되었거나 영구적으로 거부된 경우
+      // 권한이 거부되었거나 영구적으로 거부된 경우 (Android만 해당)
       if (status.isDenied || status.isPermanentlyDenied) {
-        if (mounted) _showPermissionDialog(); // 다이얼로그 띄우기
+        if (mounted) _showPermissionDialog();
         return;
       }
     }
 
     try {
       _isPickerActive = true;
+      // iOS에서는 권한 체크 없이 바로 피커를 실행하면 됩니다.
       final image = await _picker.pickImage(source: ImageSource.gallery);
 
       if (image != null) {
         setState(() {
-          // 기존 이미지가 URL(String)이었다면 삭제 목록에 추가
           if (_imageSlots[index] is String) {
             _imagesToDelete.add(_imageSlots[index] as String);
           }
-          // 새 이미지로 슬롯 교체
           _imageSlots[index] = image;
         });
       }
     } catch (e) {
       if (mounted) {
+        // iOS에서 사용자가 권한을 명시적으로 거부하여 피커 실행이 실패할 경우를 대비할 수 있습니다.
+        // 다만 PHPicker(iOS 14+)는 권한 거부 예외가 거의 발생하지 않습니다.
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('이미지 선택 중 오류가 발생했습니다.')),
         );
