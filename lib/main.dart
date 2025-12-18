@@ -17,6 +17,8 @@ import 'services/fcm_service.dart';
 import 'firebase_options.dart';
 import 'services/version_service.dart';
 import 'views/update_view.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 // 전역 네비게이터 키
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -86,16 +88,25 @@ class MyApp extends StatelessWidget {
         navigatorKey: navigatorKey,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
+
+        // 델리게이트 설정
         localizationsDelegates: const [
+          AppLocalizations.delegate, // <-- 가장 위에 추가해주세요
           GlobalMaterialLocalizations.delegate,
           GlobalWidgetsLocalizations.delegate,
           GlobalCupertinoLocalizations.delegate,
         ],
+
+        // 지원 언어 목록
         supportedLocales: const [
-          Locale('ko', 'KR'),
-          Locale('en', 'US'),
+          Locale('en', 'US'), // 영어
+          Locale('ko', 'KR'), // 한국어
+          Locale('ja', 'JP'), // 일본어
+          Locale('zh', 'CN'), // 중국어
+          Locale('th', 'TH'), // 태국어
+          Locale('vi', 'VN'), // 베트남어
         ],
-        locale: const Locale('ko', 'KR'),
+
         initialRoute: '/',
         routes: {
           '/': (context) => const VersionCheckWrapper(child: AuthWrapper()),
