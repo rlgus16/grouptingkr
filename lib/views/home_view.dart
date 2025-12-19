@@ -1415,7 +1415,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                 );
               },
               icon: Icon(groupController.isMatched ? Icons.chat : Icons.group_outlined),
-              label: Text(groupController.isMatched ? '매칭 채팅' : '그룹 채팅'),
+              label: Text(groupController.isMatched ? '매칭 채팅방' : '대기 채팅방'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: groupController.isMatched 
                     ? AppTheme.successColor 
@@ -1555,13 +1555,9 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
               groupController.isMatching ? Icons.close : Icons.favorite,
             ),
             label: Text(
-              groupController.currentGroup!.memberIds.length < 1
-                  ? '최소 1명 필요'
-                  : groupController.isMatching
+              groupController.isMatching
                   ? '매칭 취소'
-                  : groupController.currentGroup!.memberIds.length == 1
-                  ? '1:1 매칭 시작'
-                  : '그룹 매칭 시작 (${groupController.currentGroup!.memberIds.length}명)',
+                  : '매칭 시작',
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: groupController.isMatching

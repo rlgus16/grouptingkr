@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 class AppTheme {
   // 앱 메인 컬러
   static const Color primaryColor = Color(0xFFA6C8FF); // 연한 블루
-  static const Color secondaryColor = Color(0xFFFFD1DC); // 연한 핑크
+  static const Color secondaryColor = Color(0xFFFFA3BA); // 연한 핑크
   static const Color backgroundColor = Colors.white;
   static const Color surfaceColor = Color(0xFFF8F9FA);
-  static const Color errorColor = Color(0xFFE57373);
+  static const Color errorColor = Color(0xFFFF5252);
   static const Color successColor = Color(0xFF81C784);
 
   // 텍스트 컬러
