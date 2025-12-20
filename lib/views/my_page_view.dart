@@ -21,7 +21,6 @@ class _MyPageViewState extends State<MyPageView> {
   @override
   void initState() {
     super.initState();
-    // 페이지 로드 후 즉시 로그인 상태 확인
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAuthenticationStatus();
     });
@@ -29,13 +28,10 @@ class _MyPageViewState extends State<MyPageView> {
 
   void _checkAuthenticationStatus() {
     final authController = context.read<AuthController>();
-    
-    // 로그인되지 않은 상태면 즉시 로그인 페이지로 이동
     if (!authController.isLoggedIn) {
-      debugPrint('마이페이지 - 로그인되지 않은 상태 감지, 로그인 페이지로 이동');
       Navigator.of(context).pushNamedAndRemoveUntil(
         '/login',
-        (route) => false,
+            (route) => false,
       );
     }
   }
@@ -43,309 +39,66 @@ class _MyPageViewState extends State<MyPageView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.gray50, // 전체 배경을 아주 연한 회색으로 변경
       appBar: AppBar(
         title: const Text('마이페이지'),
+        centerTitle: false,
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: AppTheme.gray50, // 앱바도 배경색과 통일
         foregroundColor: AppTheme.textPrimary,
       ),
       body: Consumer2<AuthController, ProfileController>(
         builder: (context, authController, profileController, _) {
-          // 로그인 상태 변경 감지 및 즉시 처리
           if (!authController.isLoggedIn) {
-            debugPrint('마이페이지 - Consumer에서 로그아웃 상태 감지');
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted) {
                 Navigator.of(context).pushNamedAndRemoveUntil(
                   '/login',
-                  (route) => false,
+                      (route) => false,
                 );
               }
             });
-            // 로그인 페이지로 이동하는 동안 로딩 표시
             return const Center(child: CircularProgressIndicator());
           }
 
           final user = authController.currentUserModel;
 
-          // 사용자 문서가 없는 경우 (완전히 프로필이 없음)
           if (user == null) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.person_outline,
-                      size: 80,
-                      color: AppTheme.gray400,
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      '프로필이 없습니다',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        color: AppTheme.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      '프로필을 만들어 그룹에 참여해보세요!',
-                      style: TextStyle(color: AppTheme.textSecondary),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 32),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => ProfileEditView()));
-                      },
-                      icon: const Icon(Icons.add),
-                      label: const Text('프로필 만들기'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 32,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    // 로그아웃 버튼 추가
-                    OutlinedButton.icon(
-                      onPressed: () => _showLogoutDialog(context, authController),
-                      icon: const Icon(Icons.logout, size: 18),
-                      label: const Text('로그아웃'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppTheme.errorColor,
-                        side: BorderSide(color: AppTheme.errorColor),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
+            return _buildEmptyState(context, authController);
           }
 
-
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 40),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // 프로필 섹션
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      // 프로필 이미지
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: AppTheme.gray200,
-                        ),
-                        child: ClipOval(
-                          child: user.mainProfileImage != null
-                              ? _buildProfileImage(user.mainProfileImage!, 100)
-                              : const Icon(
-                                  Icons.person,
-                                  size: 50,
-                                  color: AppTheme.textSecondary,
-                                ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // 닉네임
-                      Text(
-                        user.nickname,
-                        style: Theme.of(context).textTheme.headlineSmall
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.textPrimary,
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // 나이
-                      Text(
-                        '${user.age}세',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: AppTheme.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // 프로필 편집 버튼
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const ProfileEditView(),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.edit_outlined, size: 18),
-                          label: const Text('프로필 편집'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                // 1. 프로필 헤더 섹션 (중앙 정렬 디자인)
+                _buildProfileHeader(context, user),
 
                 const SizedBox(height: 24),
 
-                // 내 정보 섹션
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '내 정보',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.textPrimary,
-                            ),
-                      ),
-                      const SizedBox(height: 16),
+                // 2. 내 정보 카드
+                _buildInfoCard(context, user),
 
-                      _buildInfoRow('전화번호', user.phoneNumber),
-                      _buildInfoRow('성별', user.gender == '남' ? '남성' : '여성'),
-                      _buildInfoRow('키', '${user.height}cm'),
-                      _buildInfoRow('활동지역', user.activityArea),
+                const SizedBox(height: 20),
 
-                      if (user.introduction.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          '소개',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.textPrimary,
-                              ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          user.introduction,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(color: AppTheme.textSecondary),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
+                // 3. 메뉴 카드
+                _buildMenuCard(context),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 30),
 
-                // 설정 섹션
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      _buildMenuTile(
-                        icon: Icons.settings_outlined,
-                        title: '설정',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const SettingsView(),
-                            ),
-                          );
-                        },
-                      ),
-                      const Divider(height: 1),
-                      _buildMenuTile(
-                        icon: Icons.help_outline,
-                        title: '도움말',
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const HelpView(),
-                            ),
-                          );
-                        },
-                      ),
-                      const Divider(height: 1),
-                      _buildMenuTile(
-                        icon: Icons.info_outline,
-                        title: '앱 정보',
-                        onTap: () {
-                          _showAppInfo(context);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // 로그아웃 버튼
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _showLogoutDialog(context, authController),
-                    icon: const Icon(Icons.logout, size: 18),
-                    label: const Text('로그아웃'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.errorColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                // 4. 로그아웃 버튼 (텍스트 형태)
+                TextButton(
+                  onPressed: () => _showLogoutDialog(context, authController),
+                  child: Text(
+                    '로그아웃',
+                    style: TextStyle(
+                      color: AppTheme.textSecondary,
+                      fontSize: 14,
+                      decoration: TextDecoration.underline,
                     ),
                   ),
                 ),
-
-                const SizedBox(height: 40),
               ],
             ),
           );
@@ -354,29 +107,242 @@ class _MyPageViewState extends State<MyPageView> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
+  // 프로필 없음 상태
+  Widget _buildEmptyState(BuildContext context, AuthController authController) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            width: 80,
-            child: Text(
-              label,
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
-                fontSize: 14,
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: AppTheme.gray100,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.person_outline, size: 60, color: AppTheme.gray400),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            '프로필을 만들어주세요',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            '새로운 인연을 만날 준비가 되셨나요?',
+            style: TextStyle(color: AppTheme.textSecondary),
+          ),
+          const SizedBox(height: 32),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileEditView()));
+            },
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            ),
+            child: const Text('프로필 만들기'),
+          ),
+          const SizedBox(height: 16),
+          TextButton(
+            onPressed: () => _showLogoutDialog(context, authController),
+            child: const Text('로그아웃', style: TextStyle(color: AppTheme.errorColor)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // 1. 프로필 헤더 위젯
+  Widget _buildProfileHeader(BuildContext context, dynamic user) {
+    return Column(
+      children: [
+        Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            // 프로필 이미지
+            Container(
+              width: 110,
+              height: 110,
+              padding: const EdgeInsets.all(3), // 테두리 두께
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.3), width: 1),
+                color: Colors.white,
+              ),
+              child: ClipOval(
+                child: user.mainProfileImage != null
+                    ? _buildProfileImage(user.mainProfileImage!, 110)
+                    : Container(
+                  color: AppTheme.gray100,
+                  child: const Icon(Icons.person, size: 50, color: AppTheme.gray400),
+                ),
               ),
             ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 14,
+            // 편집 버튼 (Floating Style)
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ProfileEditView()),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+                child: const Icon(Icons.edit, size: 16, color: Colors.white),
               ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(
+          user.nickname,
+          style: const TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.textPrimary,
+            fontFamily: 'Pretendard',
+          ),
+        ),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildTag('${user.age}세'),
+            const SizedBox(width: 6),
+            _buildTag(user.gender == '남' ? '남성' : '여성'),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // 작은 태그 위젯
+  Widget _buildTag(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.gray300),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 12,
+          color: AppTheme.textSecondary,
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  // 2. 내 정보 카드 위젯
+  Widget _buildInfoCard(BuildContext context, dynamic user) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "기본 정보",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppTheme.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 20),
+          _buildDetailRow(Icons.phone_iphone, '전화번호', user.phoneNumber),
+          _buildDetailRow(Icons.height, '키', '${user.height}cm'),
+          _buildDetailRow(Icons.location_on_outlined, '위치', '${user.activityArea}'),
+          if (user.introduction.isNotEmpty) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Divider(color: AppTheme.gray100, thickness: 1),
+            ),
+            const Text(
+              "자기소개",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppTheme.gray50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                user.introduction,
+                style: const TextStyle(
+                  color: AppTheme.textPrimary,
+                  height: 1.5,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 18, color: AppTheme.primaryColor),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppTheme.textSecondary,
+              fontSize: 14,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppTheme.textPrimary,
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
             ),
           ),
         ],
@@ -384,60 +350,110 @@ class _MyPageViewState extends State<MyPageView> {
     );
   }
 
-  Widget _buildMenuTile({
+  // 3. 메뉴 카드 위젯
+  Widget _buildMenuCard(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildMenuItem(
+            icon: Icons.settings_outlined,
+            title: '설정',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsView())),
+          ),
+          _buildMenuItem(
+            icon: Icons.help_outline_rounded,
+            title: '도움말',
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const HelpView())),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(height: 1, color: AppTheme.gray100),
+          ),
+          _buildMenuItem(
+            icon: Icons.info_outline_rounded,
+            title: '앱 정보',
+            onTap: () => _showAppInfo(context),
+            isLast: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItem({
     required IconData icon,
     required String title,
     required VoidCallback onTap,
+    bool isLast = false,
   }) {
-    return ListTile(
-      leading: Icon(icon, color: AppTheme.textSecondary, size: 24),
-      title: Text(
-        title,
-        style: const TextStyle(color: AppTheme.textPrimary, fontSize: 16),
-      ),
-      trailing: const Icon(
-        Icons.chevron_right,
-        color: AppTheme.textSecondary,
-        size: 20,
-      ),
+    return InkWell(
       onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      borderRadius: isLast
+          ? const BorderRadius.vertical(bottom: Radius.circular(20))
+          : const BorderRadius.vertical(top: Radius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: Row(
+          children: [
+            Icon(icon, color: AppTheme.gray500, size: 22),
+            const SizedBox(width: 16),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                color: AppTheme.textPrimary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const Spacer(),
+            Icon(Icons.chevron_right_rounded, color: AppTheme.gray400, size: 20),
+          ],
+        ),
+      ),
     );
   }
+
+  // ... (나머지 헬퍼 메서드들은 기존과 동일하거나 약간 수정)
 
   void _showLogoutDialog(BuildContext context, AuthController authController) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('로그아웃'),
-          content: const Text('정말 로그아웃 하시겠습니까?'),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          backgroundColor: Colors.white,
+          title: const Text('로그아웃', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          content: const Text('정말 로그아웃 하시겠습니까?', style: TextStyle(color: AppTheme.textSecondary)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('취소'),
+              child: Text('취소', style: TextStyle(color: AppTheme.gray600)),
             ),
-            ElevatedButton(
+            TextButton(
               onPressed: () async {
                 Navigator.of(context).pop();
                 try {
                   await authController.signOut();
-                  // AuthWrapper가 자동으로 LoginView로 전환하므로 수동 네비게이션 제거
                 } catch (e) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('로그아웃 중 오류가 발생했습니다: $e')),
+                      SnackBar(content: Text('로그아웃 중 오류: $e')),
                     );
                   }
                 }
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.errorColor,
-              ),
-              child: const Text('로그아웃'),
+              child: const Text('로그아웃', style: TextStyle(color: AppTheme.errorColor, fontWeight: FontWeight.bold)),
             ),
           ],
         );
@@ -450,25 +466,34 @@ class _MyPageViewState extends State<MyPageView> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('앱 정보'),
-          content: const Column(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          content: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('그룹팅 앱'),
-              SizedBox(height: 8),
-              Text('버전: 1.0.0'),
-              SizedBox(height: 8),
-              Text('친구들과 함께하는 소개팅 플랫폼'),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.favorite, color: AppTheme.primaryColor, size: 32),
+              ),
+              const SizedBox(height: 16),
+              const Text('Groupting', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              const Text('Version 1.0.0', style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+              const SizedBox(height: 24),
+              const Text('친구들과 함께하는 소개팅 플랫폼', textAlign: TextAlign.center, style: TextStyle(color: AppTheme.textPrimary)),
             ],
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('확인'),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('닫기', style: TextStyle(color: AppTheme.primaryColor)),
+              ),
             ),
           ],
         );
@@ -477,43 +502,25 @@ class _MyPageViewState extends State<MyPageView> {
   }
 
   Widget _buildProfileImage(String imageUrl, double size) {
-    // 로컬 이미지인지 확인 (local:// 또는 temp://)
     if (imageUrl.startsWith('local://') || imageUrl.startsWith('temp://')) {
       if (kIsWeb) {
-        // 웹에서는 로컬 이미지 표시 불가
-        return Icon(
-          Icons.person,
-          size: size * 0.5,
-          color: AppTheme.textSecondary,
-        );
+        return Icon(Icons.person, size: size * 0.5, color: AppTheme.textSecondary);
       } else {
-        // 모바일에서만 로컬 파일 접근
-        String localPath;
-        if (imageUrl.startsWith('local://')) {
-          localPath = imageUrl.substring(8); // 'local://' 제거
-        } else {
-          localPath = imageUrl.substring(7); // 'temp://' 제거
-        }
-        
+        String localPath = imageUrl.startsWith('local://')
+            ? imageUrl.substring(8)
+            : imageUrl.substring(7);
         return Image.file(
           File(localPath),
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) => Icon(
-            Icons.person,
-            size: size * 0.5,
-            color: AppTheme.textSecondary,
-          ),
+          errorBuilder: (_, __, ___) => Icon(Icons.person, size: size * 0.5, color: AppTheme.textSecondary),
         );
       }
     } else {
-      // 네트워크 이미지
       return CachedNetworkImage(
         imageUrl: imageUrl,
         fit: BoxFit.cover,
-        placeholder: (context, url) =>
-            const Center(child: CircularProgressIndicator()),
-        errorWidget: (context, url, error) =>
-            Icon(Icons.person, size: size * 0.5, color: AppTheme.textSecondary),
+        placeholder: (_, __) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        errorWidget: (_, __, ___) => Icon(Icons.person, size: size * 0.5, color: AppTheme.textSecondary),
       );
     }
   }

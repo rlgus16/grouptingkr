@@ -403,7 +403,7 @@ class _ChatViewState extends State<ChatView> with WidgetsBindingObserver {
                 isMatched
                     ? '설레는 대화를 시작해보세요.\n서로에 대해 알아가는 시간이 되길 바래요!'
                     : memberCount > 1
-                    ? '친구들과 그룹 채팅방이 만들어졌어요.\n자유롭게 대화를 나눠보세요!'
+                    ? '친구들과 자유롭게 대화를 나눠보세요!'
                     : '아직 그룹에 혼자 있어요.\n친구들을 초대 해보세요!',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
