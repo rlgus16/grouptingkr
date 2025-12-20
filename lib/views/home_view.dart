@@ -19,7 +19,7 @@ import 'package:google_fonts/google_fonts.dart';
 class ProfileValidationResult {
   final bool isValid;
   final List<String> missingFields;
-  
+
   ProfileValidationResult({
     required this.isValid,
     required this.missingFields,
@@ -33,21 +33,29 @@ class HomeView extends StatefulWidget {
   State<HomeView> createState() => _HomeViewState();
 }
 
-class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
+// SingleTickerProviderStateMixin 추가 (애니메이션 사용을 위해 필요)
+class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   bool _isProfileCardHidden = false;
   GroupController? _groupController; // 컨트롤러 인스턴스 저장
-  
+  late AnimationController _animationController; // 애니메이션 컨트롤러 정의
+
   @override
   void initState() {
     super.initState();
     // 앱 생명주기 감지 시작
     WidgetsBinding.instance.addObserver(this);
-    
+
+    // 애니메이션 컨트롤러 초기화 (2초마다 반복 회전)
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(); // 반복 실행
+
     // 로그인 상태 체크
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkLoginStatus();
     });
-    
+
     // 프로필 카드 숨김 상태 로드
     _loadProfileCardVisibility();
 
@@ -65,13 +73,16 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    // 애니메이션 컨트롤러 해제
+    _animationController.dispose();
+
     // 매칭 완료 콜백 제거 (안전하게 처리)
     try {
       _groupController?.onMatchingCompleted = null;
     } catch (e) {
       debugPrint('GroupController 콜백 제거 중 에러 (무시됨): $e');
     }
-    
+
     // 앱 생명주기 감지 해제
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -86,7 +97,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
         if (mounted) {
           Navigator.of(context).pushNamedAndRemoveUntil(
             '/login',
-            (route) => false,
+                (route) => false,
           );
         }
       });
@@ -98,9 +109,9 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     try {
       final prefs = await SharedPreferences.getInstance();
       final authController = context.read<AuthController>();
-      final userId = authController.currentUserModel?.uid ?? 
-                     authController.firebaseService.currentUser?.uid;
-      
+      final userId = authController.currentUserModel?.uid ??
+          authController.firebaseService.currentUser?.uid;
+
       if (userId != null) {
         final isHidden = prefs.getBool('profile_card_hidden_$userId') ?? false;
         if (mounted) {
@@ -119,16 +130,16 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     try {
       final prefs = await SharedPreferences.getInstance();
       final authController = context.read<AuthController>();
-      final userId = authController.currentUserModel?.uid ?? 
-                     authController.firebaseService.currentUser?.uid;
-      
+      final userId = authController.currentUserModel?.uid ??
+          authController.firebaseService.currentUser?.uid;
+
       if (userId != null) {
         await prefs.setBool('profile_card_hidden_$userId', true);
         if (mounted) {
           setState(() {
             _isProfileCardHidden = true;
           });
-          
+
           try {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -164,13 +175,13 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
   // 매칭 완료 시 처리 - 개선된 버전
   void _onMatchingCompleted() {
     if (!mounted) return;
-    
+
     // 상대방 그룹 정보 가져오기
     final groupController = _groupController ?? context.read<GroupController>();
     final currentGroup = groupController.currentGroup;
-    
+
     String dialogContent = '매칭되었습니다!\n채팅방에서 인사해보세요 👋';
-    
+
     if (currentGroup != null) {
       dialogContent = '매칭되었습니다!\n채팅방에서 인사해보세요 👋';
     }
@@ -216,7 +227,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
   // 채팅방으로 이동
   void _navigateToChat() {
     if (!mounted) return;
-    
+
     try {
       final groupController = _groupController ?? context.read<GroupController>();
 
@@ -539,23 +550,23 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                 title: const Text('받은 초대'),
                 trailing: groupController.receivedInvitations.isNotEmpty
                     ? Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '${groupController.receivedInvitations.length}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      )
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    '${groupController.receivedInvitations.length}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                )
                     : null,
                 onTap: () {
                   Navigator.pop(context);
@@ -583,43 +594,43 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
               const Divider(height: 1),
 
               if (groupController.currentGroup != null)
-              ListTile(
-                leading: const Icon(
-                  Icons.exit_to_app,
-                  color: AppTheme.errorColor,
-                ),
-                title: const Text(
-                  '그룹 나가기',
-                  style: TextStyle(color: AppTheme.errorColor),
-                ),
-                onTap: () async {
-                  Navigator.pop(context);
-                  final confirmed = await _showLeaveGroupDialog();
-                                  if (confirmed) {
-                  final success = await groupController.leaveGroup();
-                  if (success && mounted) {
-                    try {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('그룹에서 나왔습니다.')),
-                      );
-                      // UI 새로고침을 위해 setState 호출
-                      setState(() {});
-                    } catch (e) {
-                      // 위젯이 이미 dispose된 경우 무시
+                ListTile(
+                  leading: const Icon(
+                    Icons.exit_to_app,
+                    color: AppTheme.errorColor,
+                  ),
+                  title: const Text(
+                    '그룹 나가기',
+                    style: TextStyle(color: AppTheme.errorColor),
+                  ),
+                  onTap: () async {
+                    Navigator.pop(context);
+                    final confirmed = await _showLeaveGroupDialog();
+                    if (confirmed) {
+                      final success = await groupController.leaveGroup();
+                      if (success && mounted) {
+                        try {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('그룹에서 나왔습니다.')),
+                          );
+                          // UI 새로고침을 위해 setState 호출
+                          setState(() {});
+                        } catch (e) {
+                          // 위젯이 이미 dispose된 경우 무시
+                        }
+                      } else if (mounted &&
+                          groupController.errorMessage != null) {
+                        try {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(groupController.errorMessage!)),
+                          );
+                        } catch (e) {
+                          // 위젯이 이미 dispose된 경우 무시
+                        }
+                      }
                     }
-                  } else if (mounted &&
-                      groupController.errorMessage != null) {
-                    try {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(groupController.errorMessage!)),
-                      );
-                    } catch (e) {
-                      // 위젯이 이미 dispose된 경우 무시
-                    }
-                  }
-                }
-                },
-              ),
+                  },
+                ),
 
               ListTile(
                 leading: const Icon(Icons.logout, color: AppTheme.errorColor),
@@ -635,8 +646,8 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                       debugPrint('홈 화면에서 로그아웃 시작');
                       await authController.signOut();
                       debugPrint('홈 화면에서 로그아웃 완료');
-                      
-                      // AuthWrapper가 자동으로 LoginView로 전환되지만, 
+
+                      // AuthWrapper가 자동으로 LoginView로 전환되지만,
                       // 혹시 모를 경우를 대비해 수동 네비게이션도 추가
                       if (context.mounted) {
                         // 잠시 대기 후 상태 확인
@@ -647,8 +658,8 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                         } else {
                           debugPrint('⚠️ 로그아웃 후에도 로그인 상태가 남아있음 - 강제 네비게이션');
                           Navigator.of(context).pushNamedAndRemoveUntil(
-                            '/login', 
-                            (route) => false,
+                            '/login',
+                                (route) => false,
                           );
                         }
                       }
@@ -676,49 +687,49 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
 
   Future<bool> _showLeaveGroupDialog() async {
     return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('그룹 나가기'),
-            content: const Text('정말로 그룹을 나가시겠습니까?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('취소'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.errorColor,
-                ),
-                child: const Text('나가기'),
-              ),
-            ],
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('그룹 나가기'),
+        content: const Text('정말로 그룹을 나가시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
           ),
-        ) ??
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.errorColor,
+            ),
+            child: const Text('나가기'),
+          ),
+        ],
+      ),
+    ) ??
         false;
   }
 
   Future<bool> _showLogoutDialog() async {
     return await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('로그아웃'),
-            content: const Text('정말로 로그아웃 하시겠습니까?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('취소'),
-              ),
-              TextButton(
-                onPressed: () => Navigator.pop(context, true),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppTheme.errorColor,
-                ),
-                child: const Text('로그아웃'),
-              ),
-            ],
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('로그아웃'),
+        content: const Text('정말로 로그아웃 하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
           ),
-        ) ??
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: AppTheme.errorColor,
+            ),
+            child: const Text('로그아웃'),
+          ),
+        ],
+      ),
+    ) ??
         false;
   }
 
@@ -731,31 +742,31 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
   bool _shouldShowProfileCard(AuthController authController) {
     final user = authController.currentUserModel;
     final firebaseUser = authController.firebaseService.currentUser;
-    
+
     // 1. 사용자 데이터가 없는 경우 - 계정 자체에 문제가 있음
     if (user == null || firebaseUser?.email == null) {
       return true; // 회원가입 유도
     }
-    
+
     // 2. 기본 정보 부족 여부 체크
-    final hasBasicInfo = user.phoneNumber.isNotEmpty && 
-        user.birthDate.isNotEmpty && 
+    final hasBasicInfo = user.phoneNumber.isNotEmpty &&
+        user.birthDate.isNotEmpty &&
         user.gender.isNotEmpty;
-    
+
     if (!hasBasicInfo) {
       return true; // 기본 정보 입력 유도
     }
-    
-    // 3. 프로필 완성 여부 체크 
+
+    // 3. 프로필 완성 여부 체크
     final hasCompleteProfile = user.nickname.isNotEmpty &&
         user.height > 0 &&
         user.activityArea.isNotEmpty &&
         user.introduction.isNotEmpty;
-    
+
     if (!hasCompleteProfile) {
       return true; // 프로필 완성 유도
     }
-    
+
     // 4. 모든 정보가 완성된 경우
     return false;
   }
@@ -765,31 +776,31 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     if (user == null || firebaseUser?.email == null) {
       return '회원가입하기';
     }
-    
-    final hasBasicInfo = user.phoneNumber.isNotEmpty && 
-        user.birthDate.isNotEmpty && 
+
+    final hasBasicInfo = user.phoneNumber.isNotEmpty &&
+        user.birthDate.isNotEmpty &&
         user.gender.isNotEmpty;
-    
+
     if (!hasBasicInfo) {
       return '기본 정보 입력하기';
     }
-    
+
     return '프로필 완성하기';
   }
 
   String _getProfileCardSubtitle(UserModel? user, User? firebaseUser) {
     if (user == null || firebaseUser?.email == null) {
-      return '그룹팅을 시작해보세요!';
+      return '그룹팅 서비스를 이용하시려면\n먼저 회원가입을 완료해주세요!';
     }
-    
-    final hasBasicInfo = user.phoneNumber.isNotEmpty && 
-        user.birthDate.isNotEmpty && 
+
+    final hasBasicInfo = user.phoneNumber.isNotEmpty &&
+        user.birthDate.isNotEmpty &&
         user.gender.isNotEmpty;
-    
+
     if (!hasBasicInfo) {
       return '전화번호, 생년월일, 성별 정보가 필요해요!';
     }
-    
+
     return '닉네임, 키, 활동지역 등을 입력해주세요!';
   }
 
@@ -797,15 +808,15 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     if (user == null || firebaseUser?.email == null) {
       return '그룹팅 서비스를 이용하시려면\n먼저 회원가입을 완료해주세요!';
     }
-    
-    final hasBasicInfo = user.phoneNumber.isNotEmpty && 
-        user.birthDate.isNotEmpty && 
+
+    final hasBasicInfo = user.phoneNumber.isNotEmpty &&
+        user.birthDate.isNotEmpty &&
         user.gender.isNotEmpty;
-    
+
     if (!hasBasicInfo) {
       return '회원가입 중 누락된 필수 정보가 있어요.\n기본 정보를 입력하고 프로필을 완성해주세요!';
     }
-    
+
     return '닉네임, 키, 소개글, 활동지역을 추가하면\n그룹 생성과 매칭 기능을 사용할 수 있어요!';
   }
 
@@ -813,15 +824,15 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     if (user == null || firebaseUser?.email == null) {
       return '회원가입하기';
     }
-    
-    final hasBasicInfo = user.phoneNumber.isNotEmpty && 
-        user.birthDate.isNotEmpty && 
+
+    final hasBasicInfo = user.phoneNumber.isNotEmpty &&
+        user.birthDate.isNotEmpty &&
         user.gender.isNotEmpty;
-    
+
     if (!hasBasicInfo) {
       return '기본 정보 입력하기';
     }
-    
+
     return '지금 완성하기';
   }
 
@@ -831,11 +842,11 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
       Navigator.pushNamed(context, '/register');
       return;
     }
-    
-    final hasBasicInfo = user.phoneNumber.isNotEmpty && 
-        user.birthDate.isNotEmpty && 
+
+    final hasBasicInfo = user.phoneNumber.isNotEmpty &&
+        user.birthDate.isNotEmpty &&
         user.gender.isNotEmpty;
-    
+
     if (!hasBasicInfo) {
       // 기본 정보가 부족한 경우 회원가입 페이지로 이동 (기본 정보 입력용)
       Navigator.pushNamed(context, '/register');
@@ -858,10 +869,10 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
         onTap: (index) {
           switch (index) {
             case 0:
-              // 이미 홈 화면이므로 아무것도 하지 않음
+            // 이미 홈 화면이므로 아무것도 하지 않음
               break;
             case 1:
-              // 받은 초대
+            // 받은 초대
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -870,14 +881,14 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
               );
               break;
             case 2:
-              // 마이페이지
+            // 마이페이지
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const MyPageView()),
               );
               break;
             case 3:
-              // 더보기 (로그아웃 등)
+            // 더보기 (로그아웃 등)
               _showMoreOptions();
               break;
           }
@@ -928,7 +939,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
             children: [
               // 커스텀 헤더
               _buildCustomHeader(),
-              
+
               Expanded(
                 child: Consumer2<GroupController, AuthController>(
                   builder: (context, groupController, authController, _) {
@@ -945,7 +956,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                         if (mounted) {
                           Navigator.of(context).pushNamedAndRemoveUntil(
                             '/login',
-                            (route) => false,
+                                (route) => false,
                           );
                         }
                       });
@@ -963,7 +974,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                             _buildProfileIncompleteCard(),
                             const SizedBox(height: 24),
                           ],
-                          
+
                           // 현재 그룹 상태 처리
                           if (groupController.isLoading) ...[
                             _buildLoadingCard(),
@@ -973,7 +984,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                             // 그룹 상태 카드 (그라디언트 적용)
                             _buildGroupStatusCard(groupController),
                             const SizedBox(height: 24),
-                            
+
                             // 멤버 섹션
                             _buildGroupMembersSection(groupController, authController),
                             const SizedBox(height: 100), // 하단 여백 확보
@@ -999,7 +1010,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
       builder: (context, authController, _) {
         final user = authController.currentUserModel;
         final firebaseUser = authController.firebaseService.currentUser;
-        
+
         // 디버깅용 로그
         if (user != null) {
           debugPrint('홈 화면 - 사용자 정보: uid=${user.uid}, email=${firebaseUser?.email ?? ""}, phone=${user.phoneNumber}, isComplete=${user.isProfileComplete}');
@@ -1007,112 +1018,112 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
           debugPrint('홈 화면 - 사용자 정보 없음 (currentUserModel이 null)');
           debugPrint('홈 화면 - Firebase Auth 상태: ${authController.isLoggedIn}');
         }
-        
+
         return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.orange.shade50, Colors.orange.shade100],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.orange.shade200),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.orange.shade50, Colors.orange.shade100],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.orange.shade200),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade600,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.edit_outlined,
-                    color: Colors.white,
-                    size: 20,
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade600,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(
+                        Icons.edit_outlined,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _getProfileCardTitle(user, firebaseUser),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.orange.shade800,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _getProfileCardSubtitle(user, firebaseUser),
+                            style: TextStyle(
+                              color: Colors.orange.shade600,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  _getProfileCardDescription(user, firebaseUser),
+                  style: TextStyle(
+                    color: Colors.orange.shade700,
+                    fontSize: 14,
+                    height: 1.4,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _getProfileCardTitle(user, firebaseUser),
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: Colors.orange.shade800,
-                          fontSize: 16,
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: OutlinedButton(
+                        onPressed: _hideProfileCard,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.orange.shade600,
+                          side: BorderSide(color: Colors.orange.shade300),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text('나중에'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton.icon(
+                        onPressed: () => _handleProfileCardAction(user, firebaseUser),
+                        icon: const Icon(Icons.arrow_forward, size: 18),
+                        label: Text(_getProfileCardButtonText(user, firebaseUser)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange.shade600,
+                          foregroundColor: Colors.white,
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _getProfileCardSubtitle(user, firebaseUser),
-                        style: TextStyle(
-                          color: Colors.orange.shade600,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              _getProfileCardDescription(user, firebaseUser),
-              style: TextStyle(
-                color: Colors.orange.shade700,
-                fontSize: 14,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  flex: 1,
-                  child: OutlinedButton(
-                    onPressed: _hideProfileCard,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.orange.shade600,
-                      side: BorderSide(color: Colors.orange.shade300),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('나중에'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _handleProfileCardAction(user, firebaseUser),
-                    icon: const Icon(Icons.arrow_forward, size: 18),
-                    label: Text(_getProfileCardButtonText(user, firebaseUser)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange.shade600,
-                      foregroundColor: Colors.white,
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+          ),
         );
       },
     );
@@ -1149,9 +1160,9 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
   // 에러 상태 카드
   Widget _buildErrorCard(GroupController groupController) {
     final isNetworkError = groupController.errorMessage?.contains('firestore') == true ||
-                          groupController.errorMessage?.contains('network') == true ||
-                          groupController.errorMessage?.contains('connection') == true ||
-                          groupController.errorMessage?.contains('resolve host') == true;
+        groupController.errorMessage?.contains('network') == true ||
+        groupController.errorMessage?.contains('connection') == true ||
+        groupController.errorMessage?.contains('resolve host') == true;
 
     return Center(
       child: Card(
@@ -1236,7 +1247,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
+                color: AppTheme.primaryColor.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.group_add_rounded, size: 48, color: AppTheme.primaryColor),
@@ -1263,7 +1274,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
               child: ElevatedButton(
                 onPressed: () async {
                   if (!mounted) return;
-                  
+
                   try {
                     // === 프로필 완성도 종합 검증 ===
                     final authController = context.read<AuthController>();
@@ -1296,7 +1307,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                         );
                       }
                     }
-                    
+
                     // 프로필이 완성된 경우에만 그룹 생성 진행 가능하도록 구현하기
                     final groupController = _groupController ?? context.read<GroupController>();
                     await groupController.createGroup();
@@ -1340,23 +1351,23 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
           ),
           Row(
             children: [
-               // 매칭 필터 버튼 (조건에 따라 표시)
+              // 매칭 필터 버튼 (조건에 따라 표시)
               Consumer<GroupController>(
                 builder: (context, groupController, _) {
-              // 조건:
-              if (groupController.isOwner && // 방장이어야 함 (isOwner)
-                  !groupController.isMatched && // 매칭 완료 상태가 아니어야 함 (!isMatched)
-                  !groupController.isMatching) { // 매칭 진행 중 상태가 아니어야 함 (!isMatching)
-                return IconButton(
-                  icon: const Icon(Icons.tune),
-                  iconSize: 30,
-                  tooltip: '매칭 필터',
-                  onPressed: _showMatchFilterDialog,
-                );
-              }
-              // 조건에 맞지 않으면 숨김
-              return const SizedBox.shrink();
-            },
+                  // 조건:
+                  if (groupController.isOwner && // 방장이어야 함 (isOwner)
+                      !groupController.isMatched && // 매칭 완료 상태가 아니어야 함 (!isMatched)
+                      !groupController.isMatching) { // 매칭 진행 중 상태가 아니어야 함 (!isMatching)
+                    return IconButton(
+                      icon: const Icon(Icons.tune),
+                      iconSize: 30,
+                      tooltip: '매칭 필터',
+                      onPressed: _showMatchFilterDialog,
+                    );
+                  }
+                  // 조건에 맞지 않으면 숨김
+                  return const SizedBox.shrink();
+                },
               ),
               // 더보기 메뉴
               GestureDetector(
@@ -1384,21 +1395,21 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     // 카드 스타일링
     final BoxDecoration cardDecoration = isMatched
         ? BoxDecoration(
-            gradient: AppTheme.matchedGradient,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.secondaryColor.withOpacity(0.3),
-                blurRadius: 15,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          )
+      gradient: AppTheme.matchedGradient,
+      borderRadius: BorderRadius.circular(24),
+      boxShadow: [
+        BoxShadow(
+          color: AppTheme.secondaryColor.withValues(alpha: 0.3),
+          blurRadius: 15,
+          offset: const Offset(0, 8),
+        ),
+      ],
+    )
         : BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: AppTheme.softShadow,
-          );
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(24),
+      boxShadow: AppTheme.softShadow,
+    );
 
     return Container(
       decoration: cardDecoration,
@@ -1422,11 +1433,11 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    isMatched 
-                      ? '새로운 인연과 대화를 시작해보세요'
-                      : (isMatching ? '매칭할 그룹을 찾고 있어요' : '친구들과 대화 해보세요'),
+                    isMatched
+                        ? '새로운 인연과 대화를 시작해보세요'
+                        : (isMatching ? '매칭할 그룹을 찾고 있어요' : '친구들과 대화 해보세요'),
                     style: TextStyle(
-                      color: isMatched ? Colors.white.withOpacity(0.9) : AppTheme.gray600,
+                      color: isMatched ? Colors.white.withValues(alpha: 0.9) : AppTheme.gray600,
                       fontSize: 13,
                     ),
                   ),
@@ -1435,33 +1446,42 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isMatched ? Colors.white.withOpacity(0.2) : AppTheme.gray50,
+                  color: isMatched ? Colors.white.withValues(alpha: 0.2) : AppTheme.gray50,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  isMatched ? Icons.favorite : (isMatching ? Icons.hourglass_top_rounded : Icons.people_outline),
+                child: isMatching
+                    ? RotationTransition(
+                  turns: _animationController,
+                  child: const Icon(
+                    Icons.hourglass_top_rounded,
+                    color: AppTheme.primaryColor,
+                    size: 24,
+                  ),
+                )
+                    : Icon(
+                  isMatched ? Icons.favorite : Icons.people_outline,
                   color: isMatched ? Colors.white : AppTheme.primaryColor,
                   size: 24,
                 ),
               ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
+
           // 매칭 상태에 따른 액션 버튼 영역
           if (isMatched)
-             SizedBox(
+            SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () {
-                 // 기존 채팅방 이동 로직 그대로 사용
+                  // 기존 채팅방 이동 로직 그대로 사용
                   String chatRoomId;
                   if (groupController.isMatched &&
                       groupController.currentGroup!.matchedGroupId != null) {
                     final currentGroupId = groupController.currentGroup!.id;
                     final matchedGroupId =
-                        groupController.currentGroup!.matchedGroupId!;
+                    groupController.currentGroup!.matchedGroupId!;
                     chatRoomId = currentGroupId.compareTo(matchedGroupId) < 0
                         ? '${currentGroupId}_${matchedGroupId}'
                         : '${matchedGroupId}_${currentGroupId}';
@@ -1506,13 +1526,13 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                             foregroundColor: isMatching ? AppTheme.gray700 : Colors.white,
                             elevation: 0,
                             padding: const EdgeInsets.symmetric(vertical: 16),
-                             shape: RoundedRectangleBorder(
+                            shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
                           ),
                           child: Text(
-                            isMatching ? '매칭 취소' : '매칭 시작', 
-                            style: const TextStyle(fontWeight: FontWeight.bold)
+                              isMatching ? '매칭 취소' : '매칭 시작',
+                              style: const TextStyle(fontWeight: FontWeight.bold)
                           ),
                         ),
                       ),
@@ -1520,7 +1540,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                   ),
 
                 const SizedBox(height: 12),
-                
+
                 // 대기 채팅방 버튼 (방장/멤버 모두 표시)
                 SizedBox(
                   width: double.infinity,
@@ -1578,7 +1598,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -1593,7 +1613,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
             ],
           ),
           const SizedBox(height: 20),
-          
+
           // 멤버 리스트 (Wrap -> Row 또는 Grid로 변경하되, 가로 스크롤 등으로 세련되게)
           // 여기서는 심플하게 유지하되 디자인 폴리싱
           Wrap(
@@ -1626,7 +1646,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.05),
+                                  color: Colors.black.withValues(alpha: 0.05),
                                   blurRadius: 8,
                                   offset: const Offset(0, 4),
                                 ),
@@ -1725,25 +1745,19 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     );
   }
 
-  // 액션 버튼 섹션은 이제 StatusCard 내부로 통합되었으므로 빈 위젯 반환 (호환성 유지)
-  Widget _buildActionButtons(GroupController groupController) {
-    return const SizedBox.shrink();
-  }
-
-
   // 그룹 생성을 위한 프로필 완성도 검증
   ProfileValidationResult _validateProfileForGroupCreation(AuthController authController) {
     final user = authController.currentUserModel;
     final firebaseUser = authController.firebaseService.currentUser;
-    
+
     List<String> missingFields = [];
-    
+
     // 1. 기본 계정 정보 확인
     if (user == null || firebaseUser?.email == null) {
       missingFields.add('계정 정보');
       return ProfileValidationResult(isValid: false, missingFields: missingFields);
     }
-    
+
     // 2. 기본 회원 정보 확인 (회원가입 시 입력하는 필수 정보)
     if (user.phoneNumber.isEmpty) {
       missingFields.add('전화번호');
@@ -1754,7 +1768,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     if (user.gender.isEmpty) {
       missingFields.add('성별');
     }
-    
+
     // 3. 프로필 정보 확인 (그룹 생성을 위한 필수 정보)
     if (user.nickname.isEmpty) {
       missingFields.add('닉네임');
@@ -1771,7 +1785,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
     if (user.profileImages.isEmpty) {
       missingFields.add('프로필 사진');
     }
-    
+
     // 4. 프로필 완성 플래그 확인
     if (!user.isProfileComplete) {
       if (missingFields.isEmpty) {
@@ -1779,7 +1793,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
         missingFields.add('프로필 완성 처리');
       }
     }
-    
+
     return ProfileValidationResult(
       isValid: missingFields.isEmpty,
       missingFields: missingFields,
