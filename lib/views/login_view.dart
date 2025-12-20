@@ -42,195 +42,296 @@ class _LoginViewState extends State<LoginView> {
       // 로그인 성공 시 처리
       if (mounted && authController.isLoggedIn) {
         authController.clearError();
-        
+
         Navigator.pushNamedAndRemoveUntil(
-          context, 
-          '/home', 
-          (route) => false,
+          context,
+          '/home',
+              (route) => false,
         );
       } else if (mounted && authController.errorMessage == null) {
         await Future.delayed(const Duration(milliseconds: 500));
-        
+
         if (mounted && authController.isLoggedIn) {
           Navigator.pushNamedAndRemoveUntil(
-            context, 
-            '/home', 
-            (route) => false,
+            context,
+            '/home',
+                (route) => false,
           );
         }
       }
     } catch (e) {
-      // 로그인 중 예외 
+      // 로그인 중 예외
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
             child: Form(
               key: _formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // 로고/타이틀
-                  Text(
-                    '그룹팅',
-                    style: GoogleFonts.gugi( // 독특한 디자인 폰트
-                      textStyle: TextStyle(
-                        fontSize: 40, // 이 폰트는 조금 커야 멋있습니다
-                        color: AppTheme.primaryColor,
-                        letterSpacing: 2.0, // 자간을 넓혀서 로고 같은 느낌 강조
-                      ),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    '친구들과 함께 즐기는 소개팅',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: AppTheme.textSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+                  const SizedBox(height: 20),
+                  // 1. 로고 및 타이틀 섹션
+                  _buildHeaderSection(),
                   const SizedBox(height: 48),
 
-                  // 이메일 입력
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
-                      labelText: '이메일',
-                      prefixIcon: Icon(Icons.email),
-                      hintText: 'example@email.com',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '이메일을 입력해주세요.';
-                      }
-                      if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
-                        return '올바른 이메일 형식을 입력해주세요.';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
+                  // 2. 입력 폼 섹션
+                  _buildInputSection(),
+                  const SizedBox(height: 24),
 
-                  // 비밀번호 입력
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: '비밀번호',
-                      prefixIcon: const Icon(Icons.lock),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
-                      ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return '비밀번호를 입력해주세요.';
-                      }
-                      if (value.length < 6) {
-                        return '비밀번호는 6자 이상이어야 합니다.';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 32),
+                  // 3. 에러 메시지
+                  _buildErrorMessage(),
+                  const SizedBox(height: 24),
 
-                  // 로그인 버튼
-                  Consumer<AuthController>(
-                    builder: (context, authController, _) {
-                      if (authController.isLoading) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      return ElevatedButton(
-                        onPressed: _login,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primaryColor,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          minimumSize: const Size(double.infinity, 50),
-                        ),
-                        child: const Text(
-                          '로그인',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      );
-                    },
-                  ),
-
-                  // 에러 메시지 표시
-                  Consumer<AuthController>(
-                    builder: (context, authController, _) {
-                      if (authController.errorMessage != null) {
-                        return Container(
-                          margin: const EdgeInsets.only(top: 16),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.red.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                color: Colors.red,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  authController.errorMessage!,
-                                  style: const TextStyle(
-                                    color: Colors.red,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // 회원가입 버튼
-                  TextButton(
-                    onPressed: () {
-                      // 회원가입 페이지로 이동할 때 오류 메시지 클리어
-                      final authController = context.read<AuthController>();
-                      authController.clearError();
-                      Navigator.pushNamed(context, '/register');
-                    },
-                    child: const Text('회원가입'),
-                  ),
+                  // 4. 버튼 및 하단 링크 섹션
+                  _buildBottomSection(),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildHeaderSection() {
+    return Column(
+      children: [
+        const SizedBox(height: 24),
+        Text(
+          '그룹팅',
+          style: GoogleFonts.gugi(
+            textStyle: const TextStyle(
+              fontSize: 42,
+              color: AppTheme.primaryColor,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.0,
+            ),
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          '친구들과 함께 즐기는\n새로운 만남의 시작',
+          style: TextStyle(
+            fontSize: 16,
+            color: AppTheme.textSecondary,
+            height: 1.5,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInputSection() {
+    return Column(
+      children: [
+        TextFormField(
+          controller: _emailController,
+          keyboardType: TextInputType.emailAddress,
+          style: const TextStyle(fontWeight: FontWeight.w500),
+          decoration: InputDecoration(
+            labelText: '이메일',
+            hintText: 'example@email.com',
+            prefixIcon: const Icon(Icons.email_outlined),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            filled: true,
+            fillColor: AppTheme.gray50,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: AppTheme.gray200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: AppTheme.primaryColor),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: AppTheme.errorColor),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return '이메일을 입력해주세요.';
+            }
+            if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
+              return '올바른 이메일 형식을 입력해주세요.';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _passwordController,
+          obscureText: _obscurePassword,
+          style: const TextStyle(fontWeight: FontWeight.w500),
+          decoration: InputDecoration(
+            labelText: '비밀번호',
+            hintText: '비밀번호를 입력해주세요',
+            prefixIcon: const Icon(Icons.lock_outline),
+            suffixIcon: IconButton(
+              icon: Icon(
+                _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                color: AppTheme.gray500,
+              ),
+              onPressed: () {
+                setState(() {
+                  _obscurePassword = !_obscurePassword;
+                });
+              },
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            filled: true,
+            fillColor: AppTheme.gray50,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: AppTheme.gray200),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: AppTheme.primaryColor),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: AppTheme.errorColor),
+            ),
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return '비밀번호를 입력해주세요.';
+            }
+            if (value.length < 6) {
+              return '비밀번호는 6자 이상이어야 합니다.';
+            }
+            return null;
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildErrorMessage() {
+    return Consumer<AuthController>(
+      builder: (context, authController, _) {
+        if (authController.errorMessage != null) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppTheme.errorColor.withValues(alpha:0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.errorColor.withValues(alpha:0.2)),
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.info_outline_rounded,
+                  color: AppTheme.errorColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    authController.errorMessage!,
+                    style: const TextStyle(
+                      color: AppTheme.errorColor,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  Widget _buildBottomSection() {
+    return Column(
+      children: [
+        Consumer<AuthController>(
+          builder: (context, authController, _) {
+            if (authController.isLoading) {
+              return const SizedBox(
+                height: 56,
+                child: Center(
+                  child: CircularProgressIndicator(
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              );
+            }
+
+            return SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _login,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text(
+                  '로그인',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              '계정이 없으신가요?',
+              style: TextStyle(
+                color: AppTheme.gray600,
+                fontSize: 14,
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                final authController = context.read<AuthController>();
+                authController.clearError();
+                Navigator.pushNamed(context, '/register');
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: AppTheme.primaryColor,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
+              child: const Text(
+                '회원가입',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
