@@ -13,7 +13,6 @@ import 'profile_detail_view.dart';
 import 'my_page_view.dart';
 import 'chat_view.dart';
 import 'profile_edit_view.dart';
-import 'package:shimmer/shimmer.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // 프로필 검증 결과 클래스
@@ -849,46 +848,13 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          '그룹팅',
-          style: GoogleFonts.gugi(
-            fontSize: 24,
-            color: AppTheme.primaryColor,
-          ),
-        ),
-        actions: [
-          // 매칭 필터 버튼 표시 조건 강화
-          Consumer<GroupController>(
-            builder: (context, groupController, _) {
-              // 조건:
-              if (groupController.isOwner && // 1. 방장이어야 함 (isOwner)
-                  !groupController.isMatched && // 2. 매칭 완료 상태가 아니어야 함 (!isMatched)
-                  !groupController.isMatching) { // 3. 매칭 진행 중 상태가 아니어야 함 (!isMatching)
-                return IconButton(
-                  icon: const Icon(Icons.tune),
-                  iconSize: 30,
-                  tooltip: '매칭 필터',
-                  onPressed: _showMatchFilterDialog,
-                );
-              }
-              // 조건에 맞지 않으면 숨김
-              return const SizedBox.shrink();
-            },
-          ),
-
-          // 더보기 메뉴
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            iconSize: 30,
-            onPressed: _showMoreOptions,
-          ),
-        ],
-      ),
-
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: 0, // 홈 화면이므로 0
+        selectedItemColor: AppTheme.primaryColor,
+        unselectedItemColor: AppTheme.gray400,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
         onTap: (index) {
           switch (index) {
             case 0:
@@ -911,20 +877,20 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
               );
               break;
             case 3:
-              // 로그아웃
+              // 더보기 (로그아웃 등)
               _showMoreOptions();
               break;
           }
         },
         items: [
-          const BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
+          const BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: '홈'),
           BottomNavigationBarItem(
             icon: Consumer<GroupController>(
               builder: (context, groupController, _) {
                 if (groupController.receivedInvitations.isNotEmpty) {
                   return Stack(
                     children: [
-                      const Icon(Icons.mail),
+                      const Icon(Icons.mail_outline),
                       Positioned(
                         right: 0,
                         top: 0,
@@ -946,7 +912,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
             label: '초대',
           ),
           const BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: Icon(Icons.person_outline),
             label: '마이페이지',
           ),
           const BottomNavigationBarItem(
@@ -955,69 +921,76 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
           ),
         ],
       ),
-      body: Consumer2<GroupController, AuthController>(
-        builder: (context, groupController, authController, _) {
-          if (authController.isLoggedIn) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              groupController.updateBlockedUsers(authController.blockedUserIds);
-            });
-          }
+      body: Container(
+        color: AppTheme.surfaceColor, // 전체 배경색 변경
+        child: SafeArea(
+          child: Column(
+            children: [
+              // 커스텀 헤더
+              _buildCustomHeader(),
+              
+              Expanded(
+                child: Consumer2<GroupController, AuthController>(
+                  builder: (context, groupController, authController, _) {
+                    if (authController.isLoggedIn) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        groupController.updateBlockedUsers(authController.blockedUserIds);
+                      });
+                    }
 
-          // 로그인 상태 실시간 체크 (회원탈퇴 후 즉시 리다이렉트)
-          if (!authController.isLoggedIn) {
-            debugPrint('홈 화면 - 로그인 상태 해제 감지, 로그인 화면으로 이동');
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  '/login',
-                  (route) => false,
-                );
-              }
-            });
-            // 로그인 화면 이동 중 빈 화면 표시
-            return const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('로그인 화면으로 이동 중...'),
-                ],
+                    // 로그인 상태 실시간 체크
+                    if (!authController.isLoggedIn) {
+                      // ... (기존 로직 유지)
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) {
+                          Navigator.of(context).pushNamedAndRemoveUntil(
+                            '/login',
+                            (route) => false,
+                          );
+                        }
+                      });
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    return SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // 프로필 미완성 카드
+                          if (!_isProfileCardHidden && _shouldShowProfileCard(authController)) ...[
+                            _buildProfileIncompleteCard(),
+                            const SizedBox(height: 24),
+                          ],
+                          
+                          // 현재 그룹 상태 처리
+                          if (groupController.isLoading) ...[
+                            _buildLoadingCard(),
+                          ] else if (groupController.errorMessage != null) ...[
+                            _buildErrorCard(groupController),
+                          ] else if (groupController.currentGroup != null) ...[
+                            // 그룹 상태 카드 (그라디언트 적용)
+                            _buildGroupStatusCard(groupController),
+                            const SizedBox(height: 24),
+                            
+                            // 멤버 섹션
+                            _buildGroupMembersSection(groupController, authController),
+                            const SizedBox(height: 100), // 하단 여백 확보
+                          ] else ...[
+                            _buildNoGroupCard(),
+                          ],
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
-            );
-          }
-
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                
-                // === 새로운 조건문: 더 정확한 프로필 완성 상태 체크 ===
-                if (!_isProfileCardHidden && _shouldShowProfileCard(authController)) ...[
-                  _buildProfileIncompleteCard(),
-                  const SizedBox(height: 16),
-                ],
-                
-                // 현재 그룹 상태 처리 (로딩/에러/정상 상태 구분)
-                if (groupController.isLoading) ...[
-                  _buildLoadingCard(),
-                ] else if (groupController.errorMessage != null) ...[
-                  _buildErrorCard(groupController),
-                ] else if (groupController.currentGroup != null) ...[
-                  _buildGroupStatusCard(groupController),
-                  const SizedBox(height: 16),
-                  _buildGroupMembersSection(groupController, authController),
-                  const SizedBox(height: 16),
-                  _buildActionButtons(groupController),
-                ] else ...[
-                  _buildNoGroupCard(),
-                ],
-              ],
-            ),
-          );
-        },
+            ],
+          ),
+        ),
       ),
+
     );
   }
 
@@ -1250,26 +1223,44 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
 
   Widget _buildNoGroupCard() {
     return Center(
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.group_add, size: 64, color: AppTheme.gray400),
-              const SizedBox(height: 16),
-              Text(
-                '그룹이 없습니다',
-                style: Theme.of(context).textTheme.headlineSmall,
+      child: Container(
+        padding: const EdgeInsets.all(32),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: AppTheme.softShadow,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.1),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: 8),
-              const Text(
-                '새로운 그룹을 만들어 친구들과 함께하세요!',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: AppTheme.textSecondary),
+              child: const Icon(Icons.group_add_rounded, size: 48, color: AppTheme.primaryColor),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              '그룹이 없습니다',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.bold,
               ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              '새로운 그룹을 만들어\n친구들과 함께하세요!',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppTheme.textSecondary,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
                 onPressed: () async {
                   if (!mounted) return;
                   
@@ -1313,262 +1304,432 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver {
                     // 그룹 생성 단계에서 에러
                   }
                 },
-                icon: const Icon(Icons.add),
-                label: const Text('그룹 만들기'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text('새 그룹 만들기', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 커스텀 헤더 위젯
+  Widget _buildCustomHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 16, 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Text(
+                '그룹팅',
+                style: GoogleFonts.gugi(
+                  fontSize: 28,
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
-        ),
+          Row(
+            children: [
+               // 매칭 필터 버튼 (조건에 따라 표시)
+              Consumer<GroupController>(
+                builder: (context, groupController, _) {
+              // 조건:
+              if (groupController.isOwner && // 방장이어야 함 (isOwner)
+                  !groupController.isMatched && // 매칭 완료 상태가 아니어야 함 (!isMatched)
+                  !groupController.isMatching) { // 매칭 진행 중 상태가 아니어야 함 (!isMatching)
+                return IconButton(
+                  icon: const Icon(Icons.tune),
+                  iconSize: 30,
+                  tooltip: '매칭 필터',
+                  onPressed: _showMatchFilterDialog,
+                );
+              }
+              // 조건에 맞지 않으면 숨김
+              return const SizedBox.shrink();
+            },
+              ),
+              // 더보기 메뉴
+              GestureDetector(
+                onTap: _showMoreOptions, // _showMoreOptions 메서드는 그대로 활용
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.gray100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.more_vert, color: AppTheme.gray800, size: 30),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildGroupStatusCard(GroupController groupController) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                // 1. 아이콘 부분 (기존과 동일)
-                Icon(
-                  groupController.isMatched
-                      ? Icons.favorite
-                      : groupController.isMatching
-                      ? Icons.hourglass_empty
-                      : Icons.group,
-                  color: groupController.isMatched
-                      ? AppTheme.successColor
-                      : groupController.isMatching
-                      ? Colors.orange
-                      : AppTheme.primaryColor,
-                ),
-                const SizedBox(width: 8),
+    final bool isMatched = groupController.isMatched;
+    final bool isMatching = groupController.isMatching;
 
-                groupController.isMatched
-                    ? Text(
-                  '매칭 완료!',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.successColor,
-                  ),
-                )
-                    : groupController.isMatching
-                    ? Shimmer.fromColors(
-                  // 매칭 중일 때만 이 코드가 실행됩니다 (반짝이는 효과)
-                  baseColor: Colors.orange, // 기존 텍스트 색상
-                  highlightColor: Colors.white, // 빛나는 색상
-                  period: const Duration(seconds: 2), // 2초 간격
-                  child: Text(
-                    '매칭 중...',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.orange,
+    // 카드 스타일링
+    final BoxDecoration cardDecoration = isMatched
+        ? BoxDecoration(
+            gradient: AppTheme.matchedGradient,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.secondaryColor.withOpacity(0.3),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          )
+        : BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: AppTheme.softShadow,
+          );
+
+    return Container(
+      decoration: cardDecoration,
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isMatched ? '매칭 성공! 🎉' : (isMatching ? '매칭 진행중...' : '매칭 대기중'),
+                    style: TextStyle(
+                      color: isMatched ? Colors.white : AppTheme.gray800,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                )
-                    : Text(
-                  '그룹 대기',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.textPrimary,
+                  const SizedBox(height: 4),
+                  Text(
+                    isMatched 
+                      ? '새로운 인연과 대화를 시작해보세요'
+                      : (isMatching ? '매칭할 그룹을 찾고 있어요' : '친구들과 대화 해보세요'),
+                    style: TextStyle(
+                      color: isMatched ? Colors.white.withOpacity(0.9) : AppTheme.gray600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isMatched ? Colors.white.withOpacity(0.2) : AppTheme.gray50,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isMatched ? Icons.favorite : (isMatching ? Icons.hourglass_top_rounded : Icons.people_outline),
+                  color: isMatched ? Colors.white : AppTheme.primaryColor,
+                  size: 24,
+                ),
+              ),
+            ],
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // 매칭 상태에 따른 액션 버튼 영역
+          if (isMatched)
+             SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                 // 기존 채팅방 이동 로직 그대로 사용
+                  String chatRoomId;
+                  if (groupController.isMatched &&
+                      groupController.currentGroup!.matchedGroupId != null) {
+                    final currentGroupId = groupController.currentGroup!.id;
+                    final matchedGroupId =
+                        groupController.currentGroup!.matchedGroupId!;
+                    chatRoomId = currentGroupId.compareTo(matchedGroupId) < 0
+                        ? '${currentGroupId}_${matchedGroupId}'
+                        : '${matchedGroupId}_${currentGroupId}';
+                  } else {
+                    chatRoomId = groupController.currentGroup!.id;
+                  }
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ChatView(groupId: chatRoomId),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: AppTheme.successColor,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text('채팅방 입장', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            )
+          else
+            Column(
+              children: [
+                if (groupController.isOwner)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: groupController.currentGroup!.memberIds.length < 1
+                              ? null
+                              : isMatching
+                              ? groupController.cancelMatching
+                              : groupController.startMatching,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isMatching ? AppTheme.gray200 : AppTheme.primaryColor,
+                            foregroundColor: isMatching ? AppTheme.gray700 : Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                             shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: Text(
+                            isMatching ? '매칭 취소' : '매칭 시작', 
+                            style: const TextStyle(fontWeight: FontWeight.bold)
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                const SizedBox(height: 12),
+                
+                // 대기 채팅방 버튼 (방장/멤버 모두 표시)
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      final chatRoomId = groupController.currentGroup!.id;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatView(groupId: chatRoomId),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.chat_bubble_outline, size: 20),
+                    label: const Text('채팅방 입장'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppTheme.gray700,
+                      side: const BorderSide(color: AppTheme.gray300),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              '총 멤버: ${groupController.groupMembers.length}명',
-              style: const TextStyle(color: AppTheme.textSecondary),
-            ),
-            // 채팅 버튼 (매칭 전/후 모두 표시) -> 요청 사항 반영
-            const SizedBox(height: 12),
-            ElevatedButton.icon(
-              onPressed: () {
-                String chatRoomId;
-
-                // 매칭된 경우 통합 채팅방 ID 사용
-                if (groupController.isMatched &&
-                    groupController.currentGroup!.matchedGroupId != null) {
-                  // 두 그룹 ID 중 작은 것을 채팅방 ID로 사용 (일관성 보장)
-                  final currentGroupId = groupController.currentGroup!.id;
-                  final matchedGroupId =
-                      groupController.currentGroup!.matchedGroupId!;
-                  chatRoomId = currentGroupId.compareTo(matchedGroupId) < 0
-                      ? '${currentGroupId}_${matchedGroupId}'
-                      : '${matchedGroupId}_${currentGroupId}';
-                } else {
-                  // 매칭되지 않은 경우 그룹 ID 사용
-                  chatRoomId = groupController.currentGroup!.id;
-                }
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ChatView(groupId: chatRoomId),
-                  ),
-                );
-              },
-              icon: Icon(groupController.isMatched ? Icons.chat : Icons.group_outlined),
-              label: Text(groupController.isMatched ? '매칭 채팅방' : '대기 채팅방'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: groupController.isMatched 
-                    ? AppTheme.successColor 
-                    : AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildGroupMembersSection(GroupController groupController, AuthController authController) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '현재 그룹 멤버',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: AppTheme.softShadow,
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '현재 그룹 멤버',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.gray800,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '${groupController.groupMembers.length}명',
+                  style: const TextStyle(
+                    color: AppTheme.primaryColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 12.0,
-              runSpacing: 16.0,
-              children: [
-                ...groupController.groupMembers.map((member) {
-                  // 차단 여부 확인
-                  final isBlocked = authController.blockedUserIds.contains(member.uid);
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          
+          // 멤버 리스트 (Wrap -> Row 또는 Grid로 변경하되, 가로 스크롤 등으로 세련되게)
+          // 여기서는 심플하게 유지하되 디자인 폴리싱
+          Wrap(
+            spacing: 20.0,
+            runSpacing: 20.0,
+            children: [
+              ...groupController.groupMembers.map((member) {
+                final isBlocked = authController.blockedUserIds.contains(member.uid);
+                final isOwner = groupController.currentGroup!.isOwner(member.uid);
 
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ProfileDetailView(user: member),
-                        ),
-                      );
-                    },
-                    child: Column(
-                      children: [
-                        MemberAvatar(
-                          // 차단된 경우 이미지를 null로 설정
-                          imageUrl: isBlocked ? null : member.mainProfileImage,
-                          name: member.nickname,
-                          isOwner: groupController.currentGroup!.isOwner(member.uid),
-                          size: 50,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          member.nickname,
-                          style: const TextStyle(fontSize: 12),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-
-                // 친구 초대 버튼
-                if (groupController.isOwner &&
-                    !groupController.isMatched &&
-                    groupController.groupMembers.length < 5)
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const InviteFriendView(),
-                        ),
-                      );
-                    },
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: AppTheme.gray100,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppTheme.primaryColor,
-                              width: 2,
-                              style: BorderStyle.solid,
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProfileDetailView(user: member),
+                      ),
+                    );
+                  },
+                  child: Column(
+                    children: [
+                      Stack(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isOwner ? AppTheme.primaryColor : Colors.transparent,
+                                width: 2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: MemberAvatar(
+                              imageUrl: isBlocked ? null : member.mainProfileImage,
+                              name: member.nickname,
+                              isOwner: false, // 아래 뱃지로 대체
+                              size: 56, // 사이즈 키움
                             ),
                           ),
-                          child: const Icon(
-                            Icons.add,
-                            color: AppTheme.primaryColor,
-                            size: 24,
-                          ),
+                          if (isOwner)
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  color: AppTheme.primaryColor,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
+                                  Icons.star,
+                                  size: 10,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        member.nickname,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.gray800,
                         ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          '친구 초대',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: AppTheme.primaryColor,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-              ],
-            )
-          ],
-        ),
+                );
+              }),
+
+              // 친구 초대 버튼
+              if (groupController.isOwner &&
+                  !groupController.isMatched &&
+                  groupController.groupMembers.length < 5)
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const InviteFriendView(),
+                      ),
+                    );
+                  },
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: AppTheme.gray50,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppTheme.gray200,
+                            width: 1,
+                            style: BorderStyle.solid,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.add,
+                          color: AppTheme.gray500,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '초대하기',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.gray500,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          )
+        ],
       ),
     );
   }
 
+  // 액션 버튼 섹션은 이제 StatusCard 내부로 통합되었으므로 빈 위젯 반환 (호환성 유지)
   Widget _buildActionButtons(GroupController groupController) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // 매칭 버튼 (방장만, 매칭 전)
-        if (groupController.isOwner && !groupController.isMatched)
-          ElevatedButton.icon(
-            onPressed: groupController.currentGroup!.memberIds.length < 1
-                ? null
-                : groupController.isMatching
-                ? groupController.cancelMatching
-                : groupController.startMatching,
-            icon: Icon(
-              groupController.isMatching ? Icons.close : Icons.favorite,
-            ),
-            label: Text(
-              groupController.isMatching
-                  ? '매칭 취소'
-                  : '매칭 시작',
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: groupController.isMatching
-                  ? AppTheme.errorColor
-                  : AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-            ),
-          ),
-      ],
-    );
+    return const SizedBox.shrink();
   }
+
 
   // 그룹 생성을 위한 프로필 완성도 검증
   ProfileValidationResult _validateProfileForGroupCreation(AuthController authController) {

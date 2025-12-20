@@ -8,6 +8,28 @@ class AppTheme {
   static const Color surfaceColor = Color(0xFFF8F9FA);
   static const Color errorColor = Color(0xFFFF5252);
   static const Color successColor = Color(0xFF81C784);
+  
+  // 그라디언트
+  static const LinearGradient primaryGradient = LinearGradient(
+    colors: [Color(0xFFA6C8FF), Color(0xFF8EBBFF)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient matchedGradient = LinearGradient(
+    colors: [Color(0xFF81C784), Color(0xFF8EE83C)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  // 그림자
+  static List<BoxShadow> get softShadow => [
+    BoxShadow(
+      color: Colors.black.withOpacity(0.05),
+      blurRadius: 10,
+      offset: const Offset(0, 4),
+    ),
+  ];
 
   // 텍스트 컬러
   static const Color textPrimary = Color(0xFF212121);
@@ -224,6 +246,7 @@ class AppTheme {
         side: const BorderSide(color: gray200),
       ),
       color: backgroundColor,
+      shadowColor: Colors.black.withOpacity(0.05),
     ),
 
     // Chip 테마
