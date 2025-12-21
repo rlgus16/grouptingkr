@@ -2,12 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 	<dict>
-	    <key>NSLocationWhenInUseUsageDescription</key>
-    	<string>사용자의 현재 위치를 기반으로 가까운 그룹을 매칭하고, 활동 지역을 설정하기 위해 위치 권한이 필요합니다.</string>
-    	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    	<string>사용자의 현재 위치를 기반으로 가까운 그룹을 매칭하고, 활동 지역을 설정하기 위해 위치 권한이 필요합니다.</string>
-    	<key>NSLocationAlwaysUsageDescription</key>
-    	<string>사용자의 현재 위치를 기반으로 가까운 그룹을 매칭하고, 활동 지역을 설정하기 위해 위치 권한이 필요합니다.</string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>사용자의 현재 위치를 기반으로 가까운 그룹을 매칭하고, 활동 지역을 설정하기 위해 위치 권한이 필요합니다.</string>
+		<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+		<string>사용자의 현재 위치를 기반으로 가까운 그룹을 매칭하고, 활동 지역을 설정하기 위해 위치 권한이 필요합니다.</string>
+		<key>NSLocationAlwaysUsageDescription</key>
+		<string>사용자의 현재 위치를 기반으로 가까운 그룹을 매칭하고, 활동 지역을 설정하기 위해 위치 권한이 필요합니다.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>프로필 사진 등록 및 신고를 위해 갤러리 접근 권한이 필요합니다.</string>
 		<key>CFBundleDevelopmentRegion</key>
@@ -58,17 +58,17 @@
 		<key>UIViewControllerBasedStatusBarAppearance</key>
 		<false/>
 		<key>ITSAppUsesNonExemptEncryption</key>
-        <false/>
-        <key>CFBundleURLTypes</key>
-                <array>
-                    <dict>
-                        <key>CFBundleTypeRole</key>
-                        <string>Editor</string>
-                        <key>CFBundleURLSchemes</key>
-                        <array>
-                            <string>com.googleusercontent.apps.826622552589-320m8mfr1vg913ivqnk6giboivnejkd1</string>
-                        </array>
-                    </dict>
-                </array>
+		<false/>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeRole</key>
+				<string>Editor</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>com.googleusercontent.apps.826622552589-320m8mfr1vg913ivqnk6giboivnejkd1</string>
+				</array>
+			</dict>
+		</array>
 	</dict>
 </plist>

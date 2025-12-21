@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/profile_controller.dart';
 import 'controllers/group_controller.dart';
@@ -23,7 +24,11 @@ import 'l10n/generated/app_localizations.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // WidgetsBinding 인스턴스 캡처
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+
+  // 스플래시 화면 유지 (앱 초기화 및 버전 체크가 끝날 때까지)
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   try {
     // Firebase 초기화
@@ -132,7 +137,7 @@ class _VersionCheckWrapperState extends State<VersionCheckWrapper> {
 
   Future<void> _checkVersion() async {
     final versionService = VersionService();
-    // 최소한의 로딩 시간을 주어 스플래시 효과를 낼 수도 있음
+    // 버전 체크 수행
     final result = await versionService.checkVersion();
 
     if (mounted) {
@@ -140,16 +145,17 @@ class _VersionCheckWrapperState extends State<VersionCheckWrapper> {
         _result = result;
         _isLoading = false;
       });
+      // 로딩이 완료되면(버전 체크 끝) 스플래시 화면 제거
+      FlutterNativeSplash.remove();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      // 로딩 중에는 스플래시 화면이나 로딩 인디케이터 표시
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      // 로딩 중에는 스플래시 화면이 네이티브 단에서 유지되므로
+      // Flutter 화면에는 빈 공간을 둡니다. (사용자에게는 보이지 않음)
+      return const SizedBox();
     }
 
     if (_result != null && _result!.needsUpdate) {

@@ -51,14 +51,13 @@ dependencies:
   path_provider: ^2.1.1
   firebase_app_check: ^0.3.2+10
   permission_handler: ^12.0.1
-  shimmer: ^3.0.0
+  flutter_native_splash: ^2.4.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.14.4
-  flutter_native_splash: ^2.4.0
 
 
 flutter:
@@ -74,14 +73,13 @@ flutter_launcher_icons:
 # 스플래시 화면 설정
 flutter_native_splash:
   color: "#FFFFFF" # 배경색 (흰색)
-  image: "assets/icon/icon.png" # 스플래시 중앙에 들어갈 로고 이미지
-  branding: "assets/icon/icon.png" # (선택사항) 브랜드 로고
+  image: "assets/splash_logo.png" # 스플래시 중앙에 들어갈 로고 이미지
   color_dark: "#FFFFFF" # 다크모드 배경색
-  image_dark: "assets/icon/icon.png" # 다크모드 이미지
+  image_dark: "assets/splash_logo.png" # 다크모드 이미지
 
   # Android 12 이상 (스플래시 API 대응)
   android_12:
-    image: "assets/icon/icon.png"
+    image: "assets/splash_logo.png"
     color: "#FFFFFF"
 
   # 전체 화면 여부
