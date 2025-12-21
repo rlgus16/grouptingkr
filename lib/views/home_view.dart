@@ -14,6 +14,8 @@ import 'my_page_view.dart';
 import 'chat_view.dart';
 import 'profile_edit_view.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/chatroom_service.dart';
+import '../models/chatroom_model.dart';
 
 // 프로필 검증 결과 클래스
 class ProfileValidationResult {
@@ -35,6 +37,7 @@ class HomeView extends StatefulWidget {
 
 // SingleTickerProviderStateMixin 추가 (애니메이션 사용을 위해 필요)
 class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, SingleTickerProviderStateMixin {
+  final ChatroomService _chatroomService = ChatroomService();
   bool _isProfileCardHidden = false;
   GroupController? _groupController; // 컨트롤러 인스턴스 저장
   late AnimationController _animationController; // 애니메이션 컨트롤러 정의
@@ -222,6 +225,21 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
         ],
       ),
     );
+  }
+
+  String _getChatRoomId(GroupController groupController) {
+    if (groupController.currentGroup == null) return '';
+
+    if (groupController.isMatched &&
+        groupController.currentGroup!.matchedGroupId != null) {
+      final currentGroupId = groupController.currentGroup!.id;
+      final matchedGroupId = groupController.currentGroup!.matchedGroupId!;
+      return currentGroupId.compareTo(matchedGroupId) < 0
+          ? '${currentGroupId}_${matchedGroupId}'
+          : '${matchedGroupId}_${currentGroupId}';
+    } else {
+      return groupController.currentGroup!.id;
+    }
   }
 
   // 채팅방으로 이동
@@ -1458,7 +1476,10 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
     final bool isMatched = groupController.isMatched;
     final bool isMatching = groupController.isMatching;
 
-    // 카드 스타일링
+    // [추가됨] 현재 채팅방 ID 가져오기
+    final chatRoomId = _getChatRoomId(groupController);
+    final currentUserId = context.read<AuthController>().firebaseService.currentUserId;
+
     final BoxDecoration cardDecoration = isMatched
         ? BoxDecoration(
       gradient: AppTheme.matchedGradient,
@@ -1535,43 +1556,40 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
 
           const SizedBox(height: 24),
 
-          // 매칭 상태에 따른 액션 버튼 영역
+          // [수정됨] 매칭 상태에 따른 버튼 영역 (StreamBuilder 적용)
           if (isMatched)
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  // 기존 채팅방 이동 로직 그대로 사용
-                  String chatRoomId;
-                  if (groupController.isMatched &&
-                      groupController.currentGroup!.matchedGroupId != null) {
-                    final currentGroupId = groupController.currentGroup!.id;
-                    final matchedGroupId =
-                    groupController.currentGroup!.matchedGroupId!;
-                    chatRoomId = currentGroupId.compareTo(matchedGroupId) < 0
-                        ? '${currentGroupId}_${matchedGroupId}'
-                        : '${matchedGroupId}_${currentGroupId}';
-                  } else {
-                    chatRoomId = groupController.currentGroup!.id;
+              child: StreamBuilder<ChatroomModel?>(
+                stream: _chatroomService.getChatroomStream(chatRoomId),
+                builder: (context, snapshot) {
+                  bool hasUnread = false;
+                  // 데이터가 있고, 마지막 메시지를 내가 보낸 게 아니라면 '새 메시지'로 간주
+                  if (snapshot.hasData && snapshot.data != null && currentUserId != null) {
+                    final chatroom = snapshot.data!;
+                    if (chatroom.lastMessage != null &&
+                        chatroom.lastMessage!.senderId != currentUserId) {
+                      hasUnread = true;
+                    }
                   }
 
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatView(groupId: chatRoomId),
+                  return ElevatedButton(
+                    onPressed: _navigateToChat,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: hasUnread ? Colors.orange : Colors.white, // 오렌지색 적용
+                      foregroundColor: hasUnread ? Colors.white : AppTheme.successColor,
+                      elevation: hasUnread ? 4 : 0,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: Text(
+                      hasUnread ? '새로운 메시지 도착 💬' : '채팅방 입장',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   );
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: AppTheme.successColor,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: const Text('채팅방 입장', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             )
           else
@@ -1607,29 +1625,47 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
 
                 const SizedBox(height: 12),
 
-                // 대기 채팅방 버튼 (방장/멤버 모두 표시)
+                // [수정됨] 대기 채팅방 버튼 (StreamBuilder 적용)
                 SizedBox(
                   width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      final chatRoomId = groupController.currentGroup!.id;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatView(groupId: chatRoomId),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.chat_bubble_outline, size: 20),
-                    label: const Text('채팅방 입장'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.gray700,
-                      side: const BorderSide(color: AppTheme.gray300),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    ),
+                  child: StreamBuilder<ChatroomModel?>(
+                      stream: _chatroomService.getChatroomStream(chatRoomId),
+                      builder: (context, snapshot) {
+                        bool hasUnread = false;
+                        if (snapshot.hasData && snapshot.data != null && currentUserId != null) {
+                          final chatroom = snapshot.data!;
+                          if (chatroom.lastMessage != null &&
+                              chatroom.lastMessage!.senderId != currentUserId) {
+                            hasUnread = true;
+                          }
+                        }
+
+                        return OutlinedButton.icon(
+                          onPressed: _navigateToChat,
+                          icon: Icon(
+                            Icons.chat_bubble_outline,
+                            size: 20,
+                            color: hasUnread ? Colors.white : AppTheme.gray700,
+                          ),
+                          label: Text(
+                            '채팅방 입장',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: hasUnread ? Colors.orange : null, // 오렌지색 적용
+                            foregroundColor: hasUnread ? Colors.white : AppTheme.gray700,
+                            side: BorderSide(
+                              color: hasUnread ? Colors.orange : AppTheme.gray300,
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                        );
+                      }
                   ),
                 ),
               ],
