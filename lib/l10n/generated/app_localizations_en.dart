@@ -12,519 +12,512 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Groupting';
 
   @override
-  String get confirm => 'Confirm';
+  String get appSubtitle => 'Start of new encounters\nenjoyed with friends';
 
   @override
-  String get cancel => 'Cancel';
+  String get commonConfirm => 'Confirm';
 
   @override
-  String get close => 'Close';
+  String get commonCancel => 'Cancel';
 
   @override
-  String get save => 'Save';
+  String get commonClose => 'Close';
 
   @override
-  String get delete => 'Delete';
+  String get commonComplete => 'Done';
 
   @override
-  String get later => 'Later';
+  String get commonSave => 'Save';
 
   @override
-  String get loading => 'Loading...';
+  String get commonDelete => 'Delete';
 
   @override
-  String get error => 'Error';
+  String get commonEdit => 'Edit';
 
   @override
-  String get retry => 'Retry';
+  String get commonNext => 'Next';
 
   @override
-  String get settings => 'Settings';
+  String get commonLater => 'Later';
 
   @override
-  String get male => 'Male';
+  String get commonYes => 'Yes';
 
   @override
-  String get female => 'Female';
+  String get commonNo => 'No';
 
   @override
-  String get gender => 'Gender';
+  String get commonLoading => 'Loading...';
 
   @override
-  String get view => 'View';
+  String get commonError => 'Error';
+
+  @override
+  String get commonRetry => 'Retry';
+
+  @override
+  String get loginTitle => 'Login';
+
+  @override
+  String get loginEmailLabel => 'Email';
+
+  @override
+  String get loginEmailHint => 'example@email.com';
+
+  @override
+  String get loginPasswordLabel => 'Password';
+
+  @override
+  String get loginPasswordHint => 'Enter your password';
 
   @override
   String get loginButton => 'Login';
 
   @override
+  String get loginNoAccount => 'Don\'t have an account?';
+
+  @override
+  String get loginRegister => 'Sign Up';
+
+  @override
+  String get loginErrorEmailEmpty => 'Please enter your email.';
+
+  @override
+  String get loginErrorEmailInvalid => 'Please enter a valid email address.';
+
+  @override
+  String get loginErrorPasswordEmpty => 'Please enter your password.';
+
+  @override
+  String get loginErrorPasswordShort =>
+      'Password must be at least 6 characters.';
+
+  @override
+  String get registerTitle => 'Sign Up';
+
+  @override
+  String get registerWelcome => 'Welcome!';
+
+  @override
+  String get registerWelcomeDesc =>
+      'Ready to meet new people?\nStart by entering some simple info.';
+
+  @override
+  String get registerAccountInfo => 'Account Info';
+
+  @override
+  String get registerPasswordHint8Chars => '8+ characters';
+
+  @override
+  String get registerPasswordConfirm => 'Confirm Password';
+
+  @override
+  String get registerPasswordConfirmHint => 'Re-enter password';
+
+  @override
+  String get registerPersonalInfo => 'Personal Info';
+
+  @override
+  String get registerPhone => 'Phone Number';
+
+  @override
+  String get registerPhoneVerify => 'Verify';
+
+  @override
+  String get registerPhoneComplete => 'Verified';
+
+  @override
+  String get registerVerificationCode => '6-digit code';
+
+  @override
+  String get registerBirthDate => 'Birth Date';
+
+  @override
+  String get registerBirthDateHint => '19950315';
+
+  @override
+  String get registerBirthDateHelper => 'Format: YYYYMMDD';
+
+  @override
+  String get registerGender => 'Gender';
+
+  @override
+  String get registerMale => 'Male';
+
+  @override
+  String get registerFemale => 'Female';
+
+  @override
+  String get registerTerms => 'Terms & Conditions';
+
+  @override
+  String get registerTermsService => '[Required] Agree to Terms of Service';
+
+  @override
+  String get registerTermsPrivacy => '[Required] Agree to Privacy Policy';
+
+  @override
   String get registerButton => 'Sign Up';
 
   @override
-  String get emailLabel => 'Email';
+  String get registerHaveAccount => 'Already have an account?';
 
   @override
-  String get emailHint => 'example@email.com';
+  String get registerLoginLink => 'Login';
 
   @override
-  String get emailHelper => 'Email for login and password recovery';
+  String get registerErrorPasswordMismatch => 'Passwords do not match.';
 
   @override
-  String get passwordLabel => 'Password';
+  String get registerErrorGender => 'Please select your gender.';
 
   @override
-  String get passwordHint => 'At least 8 characters';
+  String get registerErrorTerms =>
+      'Please agree to the Terms of Service and Privacy Policy.';
 
   @override
-  String get passwordConfirmLabel => 'Confirm Password';
+  String get homeTabHome => 'Home';
 
   @override
-  String get phoneLabel => 'Phone Number';
+  String get homeTabInvite => 'Invites';
 
   @override
-  String get birthDateLabel => 'Birth Date';
+  String get homeTabMyPage => 'My Page';
 
   @override
-  String get birthDateHelper => '8 digits (e.g., 19950315)';
+  String get homeTabMore => 'More';
 
   @override
-  String get registerWelcome =>
-      'Welcome to Groupting!\nSign up easily with your email.';
+  String get homeProfileCardTitle => 'Complete Your Profile';
 
   @override
-  String get lockedInfo => 'Locked fields cannot be changed after sign up';
+  String get homeProfileCardDesc =>
+      'Add your nickname, height, bio, and location\nto start creating groups and matching!';
 
   @override
-  String get emailDuplicate => 'This email is already in use.';
+  String get homeProfileCardButton => 'Complete Now';
 
   @override
-  String get emailAvailable => 'This email is available.';
+  String get homeNoGroupTitle => 'No Group Yet';
 
   @override
-  String get emailCheckError => 'Error checking email.';
+  String get homeNoGroupDesc => 'Create a new group\nand join with friends!';
 
   @override
-  String get emailDuplicateError =>
-      'This email is already in use. Use another one.';
+  String get homeCreateGroupButton => 'Create New Group';
 
   @override
-  String get phoneDuplicate => 'This phone number is already in use.';
+  String get homeGroupStatusMatching => 'Matching in progress...';
 
   @override
-  String get phoneAvailable => 'This phone number is available.';
+  String get homeGroupStatusMatched => 'Matched! 🎉';
 
   @override
-  String get phoneCheckError => 'Error checking phone number.';
+  String get homeGroupStatusWaiting => 'Waiting for match';
 
   @override
-  String get phoneDuplicateError =>
-      'This number is already in use. Use another one.';
+  String get homeGroupDescMatching => 'Looking for a match partner...';
 
   @override
-  String get verifyButton => 'Verify';
+  String get homeGroupDescMatched => 'Start a conversation with new people';
 
   @override
-  String get verified => 'Verified';
+  String get homeGroupDescWaiting => 'Chat with your friends';
 
   @override
-  String get verifyCodeSent => 'Verification code sent.';
+  String get homeStartMatching => 'Start Matching';
 
   @override
-  String get verifyCodeLabel => '6-digit Code';
+  String get homeCancelMatching => 'Cancel Matching';
 
   @override
-  String get verifyCodeHint => '000000';
+  String get homeEnterChat => 'Enter Chat';
 
   @override
-  String get verifyComplete => 'Phone verification completed.';
+  String get homeGroupMembers => 'Current Members';
 
   @override
-  String get verifyPhoneFirst => 'Complete phone verification.';
+  String get homeInviteFriend => 'Invite';
 
   @override
-  String get checkPhoneDuplicateFirst =>
-      'Enter a valid number and check for duplicates.';
+  String get homeDialogMatchedTitle => 'Match Success! 🎉';
 
   @override
-  String get termsAgreement => '[Required] Agree to Terms of Service';
+  String get homeDialogMatchedContent =>
+      'You are matched!\nSay hello in the chat room 👋';
 
   @override
-  String get privacyAgreement => '[Required] Agree to Privacy Policy';
+  String get homeDialogGoToChat => 'Go to Chat';
 
   @override
-  String get termsTitle => 'Terms of Service (EULA)';
+  String get homeMenuLeaveGroup => 'Leave Group';
 
   @override
-  String get privacyTitle => 'Privacy Policy';
+  String get homeMenuLogout => 'Logout';
 
   @override
-  String get alreadyHaveAccount => 'Already have an account? Login';
+  String get dialogLeaveGroupTitle => 'Leave Group';
 
   @override
-  String get registerSuccess => 'Signed up! Complete your profile first.';
+  String get dialogLeaveGroupContent =>
+      'Are you sure you want to leave the group?';
 
   @override
-  String get emailRequired => 'Enter your email.';
+  String get dialogLogoutTitle => 'Logout';
 
   @override
-  String get emailInvalid => 'Enter a valid email format.';
+  String get dialogLogoutContent => 'Are you sure you want to logout?';
 
   @override
-  String get passwordRequired => 'Enter your password.';
+  String get dialogLeaveGroupAction => 'Leave';
 
   @override
-  String get passwordLength => 'Password must be at least 8 characters.';
+  String get myPageTitle => 'My Page';
 
   @override
-  String get passwordMismatch => 'Passwords do not match.';
+  String get myPageEmptyProfile => 'Create your profile';
 
   @override
-  String get passwordReEnter => 'Re-enter your password.';
+  String get myPageEmptyDesc => 'Ready to meet new people?';
 
   @override
-  String get phoneRequired => 'Enter your phone number.';
+  String get myPageCreateProfile => 'Create Profile';
 
   @override
-  String get birthDateRequired => 'Enter your birth date.';
+  String get myPageBasicInfo => 'Basic Info';
 
   @override
-  String get birthDateInvalid => 'Birth date must be 8 digits.';
+  String get myPagePhone => 'Phone';
 
   @override
-  String get birthDateYearInvalid => 'Enter a valid year.';
+  String get myPageHeight => 'Height';
 
   @override
-  String get birthDateDateInvalid => 'Enter a valid date.';
+  String get myPageLocation => 'Location';
 
   @override
-  String get underageError => 'You must be at least 18 years old.';
+  String get myPageIntro => 'Bio';
 
   @override
-  String get genderRequired => 'Select your gender.';
+  String get myPageMenuSettings => 'Settings';
 
   @override
-  String get termsRequired =>
-      'Agree to the Terms of Service and Privacy Policy.';
+  String get myPageMenuHelp => 'Help';
 
   @override
-  String get fillAllRequired => 'Fill in all the required fields.';
+  String get myPageMenuAppInfo => 'App Info';
 
   @override
-  String get tabHome => 'Home';
+  String get profileEditTitle => 'Edit Profile';
 
   @override
-  String get tabInvite => 'Invite';
+  String get profileEditImage => 'Profile Photos';
 
   @override
-  String get tabMyPage => 'My Page';
+  String get profileEditImageGuide => 'Long press to set main photo';
 
   @override
-  String get tabMore => 'More';
+  String get profileEditImageAdd => 'Add Photo';
 
   @override
-  String get profileCardTitleRegister => 'Sign Up';
+  String get profileEditImageMain => 'Main';
 
   @override
-  String get profileCardTitleBasic => 'Enter Basic Info';
+  String get profileEditNickname => 'Nickname';
 
   @override
-  String get profileCardTitleComplete => 'Complete Profile';
+  String get profileEditNicknameHint => 'Enter nickname (2~10 chars)';
 
   @override
-  String get profileCardDescRegister =>
-      'To use Groupting services,\nSign up first!';
+  String get profileEditHeight => 'Height (cm)';
 
   @override
-  String get profileCardDescBasic =>
-      'Missing required info from sign up.\nComplete your profile!';
+  String get profileEditLocation => 'Location';
 
   @override
-  String get profileCardDescComplete =>
-      'Add nickname, height, bio, and location\nto use group creation and matching!';
+  String get profileEditLocationHint => 'Tap to select location';
 
   @override
-  String get profileCardSubtitleRegister => 'Start Groupting!';
+  String get profileEditIntro => 'Bio';
 
   @override
-  String get profileCardSubtitleBasic =>
-      'Phone, birth date, and gender are required!';
+  String get profileEditIntroHint =>
+      'Write a cool intro about yourself.\n(Hobbies, interests, personality, etc.)';
 
   @override
-  String get profileCardSubtitleComplete =>
-      'Enter nickname, height, location, etc.!';
+  String get profileEditAccountInfo => 'Account Info';
 
   @override
-  String get profileCardButtonComplete => 'Complete Now';
+  String get profileEditErrorImages => 'Please upload at least 1 photo.';
 
   @override
-  String get profileCardHideMsg =>
-      'Profile completion alert hidden. You can complete it anytime in My Page.';
+  String get settingsTitle => 'Settings';
 
   @override
-  String get groupLoading => 'Loading group info...';
+  String get settingsNotification => 'Notifications';
 
   @override
-  String get waitPlease => 'Wait a moment.';
+  String get settingsNotiMatch => 'Match Alerts';
 
   @override
-  String get networkError => 'Network Error';
+  String get settingsNotiInvite => 'Invite Alerts';
 
   @override
-  String get networkErrorMsg => 'Check your internet connection and try again.';
+  String get settingsNotiChat => 'Message Alerts';
 
   @override
-  String get networkCheckMsg => 'Check your Wi-Fi or mobile data connection.';
+  String get settingsAccount => 'Account';
 
   @override
-  String get checkConnection => 'Check Connection';
+  String get settingsChangePw => 'Change Password';
 
   @override
-  String get dataLoadFail => 'Failed to load data';
+  String get settingsBlock => 'Blocked Users';
 
   @override
-  String get unknownError => 'An unknown error occurred.';
+  String get settingsDeleteAccount => 'Delete Account';
 
   @override
-  String get noGroup => 'No Group';
+  String get settingsInfo => 'Info & Support';
 
   @override
-  String get createGroup => 'Create Group';
+  String get settingsPrivacy => 'Privacy Policy';
 
   @override
-  String get createGroupDesc => 'Create a new group and join with friends!';
+  String get settingsTerms => 'Terms of Service';
 
   @override
-  String get profileCompleteNeeded => 'Profile Completion Needed';
+  String get settingsAppVersion => 'App Version';
 
   @override
-  String get profileCompleteNeededMsg =>
-      'You must complete your profile to use the service.';
+  String get settingsDeleteAccountConfirm => 'Permanently delete account.';
 
   @override
-  String get matched => 'Matched!';
+  String get chatTitle => 'Chat';
 
   @override
-  String get matching => 'Matching...';
+  String get chatMatchingTitle => 'Match Chat';
 
   @override
-  String get groupWaiting => 'Waiting';
+  String get chatGroupTitle => 'Group Chat';
 
   @override
-  String totalMembers(Object count) {
-    return 'Total Members: $count';
+  String get chatInputHint => 'Send a message';
+
+  @override
+  String get chatEmptyMatched => 'Matched! 🎉';
+
+  @override
+  String get chatEmptyGroup => 'Group Chat Started 👋';
+
+  @override
+  String get inviteTitle => 'Invite Friends';
+
+  @override
+  String get inviteGuide => 'Invitation Guide';
+
+  @override
+  String get inviteGuideDesc =>
+      'Please enter the friend\'s nickname correctly\nYou can form a group of up to 5 people';
+
+  @override
+  String get inviteCurrentMember => 'Current Members';
+
+  @override
+  String get inviteNicknameLabel => 'Friend Nickname';
+
+  @override
+  String get inviteNicknameHint => 'Enter friend\'s nickname';
+
+  @override
+  String get inviteMessageLabel => 'Message (Optional)';
+
+  @override
+  String get inviteMessageHint => 'Enter a message for your friend';
+
+  @override
+  String get inviteButton => 'Invite';
+
+  @override
+  String get inviteSentList => 'Sent Invites';
+
+  @override
+  String get inviteStatusPending => 'Pending';
+
+  @override
+  String get inviteStatusAccepted => 'Accepted';
+
+  @override
+  String get inviteStatusRejected => 'Rejected';
+
+  @override
+  String get inviteStatusExpired => 'Expired';
+
+  @override
+  String get invitationListTitle => 'Received Invites';
+
+  @override
+  String get invitationEmpty => 'No invitations received';
+
+  @override
+  String invitationFrom(Object name) {
+    return 'Invite from $name';
   }
 
   @override
-  String get matchChat => 'Match Chat';
+  String get invitationExpired => 'Invitation expired';
 
   @override
-  String get groupChat => 'Group Chat';
+  String get invitationAccept => 'Accept';
 
   @override
-  String get currentMembers => 'Current Members';
+  String get invitationReject => 'Reject';
 
   @override
-  String get inviteFriend => 'Invite Friend';
+  String get invitationMoveGroupTitle => 'Move Group';
 
   @override
-  String startMatching(Object count) {
-    return 'Start Group Match ($count)';
-  }
+  String get invitationMoveGroupContent =>
+      'Do you want to leave your current group and join the new one?';
 
   @override
-  String get startMatching1on1 => 'Start 1:1 Match';
+  String get locationPickerTitle => 'Select Location';
 
   @override
-  String get cancelMatching => 'Cancel Matching';
+  String get locationPickerSearching => 'Searching location...';
 
   @override
-  String get minMemberRequired => 'Min 1 member required';
+  String get locationPickerSelect => 'Set this location';
 
   @override
-  String get matchSuccessTitle => 'Match Successful! 🎉';
+  String get helpTitle => 'Help';
 
   @override
-  String get matchSuccessContent =>
-      'You are matched!\nSay hello in the chatroom 👋';
+  String get helpFAQ => 'FAQ';
 
   @override
-  String get moveToChat => 'Go to Chatroom';
+  String get helpGuide => 'User Guide';
 
   @override
-  String get receivedInvites => 'Received Invites';
+  String get helpContact => 'Contact Us';
 
   @override
-  String get leaveGroup => 'Leave Group';
+  String get helpEmail => 'Email Inquiry';
 
   @override
-  String get leaveGroupConfirm => 'Are you sure you want to leave the group?';
+  String get helpBugReport => 'Report Bug';
 
   @override
-  String get leaveGroupSuccess => 'You have left the group.';
+  String get helpServiceInfo => 'Service Info';
 
   @override
-  String get logout => 'Logout';
+  String get profileDetailReport => 'Report';
 
   @override
-  String get logoutConfirm => 'Are you sure you want to logout?';
+  String get profileDetailBlock => 'Block';
 
   @override
-  String logoutError(Object error) {
-    return 'Error during logout: $error';
-  }
-
-  @override
-  String get filterTitle => 'Match Filter Settings';
-
-  @override
-  String get targetGender => 'Target Group Gender';
-
-  @override
-  String get genderAny => 'Any';
-
-  @override
-  String get genderMixed => 'Mixed';
-
-  @override
-  String get targetAge => 'Target Group Avg Age';
-
-  @override
-  String get ageUnit => '';
-
-  @override
-  String get ageOver60 => '60+';
-
-  @override
-  String get targetHeight => 'Target Group Avg Height';
-
-  @override
-  String get heightUnit => 'cm';
-
-  @override
-  String get heightOver190 => '190cm+';
-
-  @override
-  String get distanceRange => 'Distance Range (from Leader)';
-
-  @override
-  String get distanceUnit => 'km';
-
-  @override
-  String get distanceOver100 => '100km+';
-
-  @override
-  String get applyFilter => 'Apply';
-
-  @override
-  String get filterApplied => 'Filter applied.';
-
-  @override
-  String get filterApplyFail => 'Failed to apply filter';
-
-  @override
-  String get editProfileTitle => 'Edit Profile';
-
-  @override
-  String get photoRegisterInfo => 'Upload up to 6 photos.';
-
-  @override
-  String get mainPhotoInfo => 'Long press an image to set as main profile.';
-
-  @override
-  String get nicknameLabel => 'Nickname';
-
-  @override
-  String get nicknamePlaceholder => 'Enter nickname';
-
-  @override
-  String get nicknameDuplicate => 'Nickname already in use.';
-
-  @override
-  String get nicknameAvailable => 'Nickname available.';
-
-  @override
-  String get nicknameCheckError => 'Error checking nickname.';
-
-  @override
-  String get nicknameRequired => 'Enter a nickname.';
-
-  @override
-  String get nicknameLengthError => 'Nickname must be at least 2 characters.';
-
-  @override
-  String get heightLabel => 'Height (cm)';
-
-  @override
-  String get heightPlaceholder => 'Enter height';
-
-  @override
-  String get heightRequired => 'Enter your height.';
-
-  @override
-  String get heightRangeError => 'Enter a valid height (140-220cm).';
-
-  @override
-  String get locationLabel => 'Location';
-
-  @override
-  String get locationPlaceholder => 'Tap to select location on map';
-
-  @override
-  String get locationRequired => 'Select a location.';
-
-  @override
-  String get introLabel => 'Bio';
-
-  @override
-  String get introHelper => 'Max 200 chars';
-
-  @override
-  String get introRequired => 'Enter a bio.';
-
-  @override
-  String get introLengthError => 'Bio must be at least 5 characters.';
-
-  @override
-  String get immutableInfo => 'Immutable Info';
-
-  @override
-  String get idLabel => 'ID';
-
-  @override
-  String get permissionRequiredTitle => 'Permission Required';
-
-  @override
-  String get permissionRequiredContent =>
-      'Gallery access is required to upload profile photos.\nEnable it in settings.';
-
-  @override
-  String get goToSettings => 'Go to Settings';
-
-  @override
-  String get imageSelectError => 'Error selecting image.';
-
-  @override
-  String mainProfileSet(Object index) {
-    return 'Image $index set as main profile.';
-  }
-
-  @override
-  String get mainLabel => 'Main';
-
-  @override
-  String get imageUploadFail => 'Failed to upload image.';
-
-  @override
-  String get profileUpdateSuccess => 'Profile updated successfully.';
-
-  @override
-  String get photoRequired => 'Upload at least 1 photo.';
-
-  @override
-  String get updateTitle => 'Update Notice';
-
-  @override
-  String get updateButton => 'Update Now';
-
-  @override
-  String get updateMessageDefault => 'Update required.';
+  String get profileDetailBlockConfirm =>
+      'Blocking will hide profiles from each other,\nand prevent chats or invites.\nAre you sure you want to block?';
 }

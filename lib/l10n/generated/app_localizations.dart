@@ -6,11 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
-import 'app_localizations_ja.dart';
 import 'app_localizations_ko.dart';
-import 'app_localizations_th.dart';
-import 'app_localizations_vi.dart';
-import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
 
@@ -99,11 +95,7 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
-    Locale('ja'),
     Locale('ko'),
-    Locale('th'),
-    Locale('vi'),
-    Locale('zh'),
   ];
 
   /// No description provided for @appTitle.
@@ -112,89 +104,125 @@ abstract class AppLocalizations {
   /// **'그룹팅'**
   String get appTitle;
 
-  /// No description provided for @confirm.
+  /// No description provided for @appSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'친구들과 함께 즐기는\n새로운 만남의 시작'**
+  String get appSubtitle;
+
+  /// No description provided for @commonConfirm.
   ///
   /// In ko, this message translates to:
   /// **'확인'**
-  String get confirm;
+  String get commonConfirm;
 
-  /// No description provided for @cancel.
+  /// No description provided for @commonCancel.
   ///
   /// In ko, this message translates to:
   /// **'취소'**
-  String get cancel;
+  String get commonCancel;
 
-  /// No description provided for @close.
+  /// No description provided for @commonClose.
   ///
   /// In ko, this message translates to:
   /// **'닫기'**
-  String get close;
+  String get commonClose;
 
-  /// No description provided for @save.
+  /// No description provided for @commonComplete.
+  ///
+  /// In ko, this message translates to:
+  /// **'완료'**
+  String get commonComplete;
+
+  /// No description provided for @commonSave.
   ///
   /// In ko, this message translates to:
   /// **'저장'**
-  String get save;
+  String get commonSave;
 
-  /// No description provided for @delete.
+  /// No description provided for @commonDelete.
   ///
   /// In ko, this message translates to:
   /// **'삭제'**
-  String get delete;
+  String get commonDelete;
 
-  /// No description provided for @later.
+  /// No description provided for @commonEdit.
+  ///
+  /// In ko, this message translates to:
+  /// **'편집'**
+  String get commonEdit;
+
+  /// No description provided for @commonNext.
+  ///
+  /// In ko, this message translates to:
+  /// **'다음'**
+  String get commonNext;
+
+  /// No description provided for @commonLater.
   ///
   /// In ko, this message translates to:
   /// **'나중에'**
-  String get later;
+  String get commonLater;
 
-  /// No description provided for @loading.
+  /// No description provided for @commonYes.
+  ///
+  /// In ko, this message translates to:
+  /// **'예'**
+  String get commonYes;
+
+  /// No description provided for @commonNo.
+  ///
+  /// In ko, this message translates to:
+  /// **'아니요'**
+  String get commonNo;
+
+  /// No description provided for @commonLoading.
   ///
   /// In ko, this message translates to:
   /// **'로딩 중...'**
-  String get loading;
+  String get commonLoading;
 
-  /// No description provided for @error.
+  /// No description provided for @commonError.
   ///
   /// In ko, this message translates to:
   /// **'오류'**
-  String get error;
+  String get commonError;
 
-  /// No description provided for @retry.
+  /// No description provided for @commonRetry.
   ///
   /// In ko, this message translates to:
   /// **'다시 시도'**
-  String get retry;
+  String get commonRetry;
 
-  /// No description provided for @settings.
+  /// No description provided for @loginTitle.
   ///
   /// In ko, this message translates to:
-  /// **'설정'**
-  String get settings;
+  /// **'로그인'**
+  String get loginTitle;
 
-  /// No description provided for @male.
+  /// No description provided for @loginEmailLabel.
   ///
   /// In ko, this message translates to:
-  /// **'남성'**
-  String get male;
+  /// **'이메일'**
+  String get loginEmailLabel;
 
-  /// No description provided for @female.
+  /// No description provided for @loginEmailHint.
   ///
   /// In ko, this message translates to:
-  /// **'여성'**
-  String get female;
+  /// **'example@email.com'**
+  String get loginEmailHint;
 
-  /// No description provided for @gender.
+  /// No description provided for @loginPasswordLabel.
   ///
   /// In ko, this message translates to:
-  /// **'성별'**
-  String get gender;
+  /// **'비밀번호'**
+  String get loginPasswordLabel;
 
-  /// No description provided for @view.
+  /// No description provided for @loginPasswordHint.
   ///
   /// In ko, this message translates to:
-  /// **'보기'**
-  String get view;
+  /// **'비밀번호를 입력해주세요'**
+  String get loginPasswordHint;
 
   /// No description provided for @loginButton.
   ///
@@ -202,905 +230,875 @@ abstract class AppLocalizations {
   /// **'로그인'**
   String get loginButton;
 
+  /// No description provided for @loginNoAccount.
+  ///
+  /// In ko, this message translates to:
+  /// **'계정이 없으신가요?'**
+  String get loginNoAccount;
+
+  /// No description provided for @loginRegister.
+  ///
+  /// In ko, this message translates to:
+  /// **'회원가입'**
+  String get loginRegister;
+
+  /// No description provided for @loginErrorEmailEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'이메일을 입력해주세요.'**
+  String get loginErrorEmailEmpty;
+
+  /// No description provided for @loginErrorEmailInvalid.
+  ///
+  /// In ko, this message translates to:
+  /// **'올바른 이메일 형식을 입력해주세요.'**
+  String get loginErrorEmailInvalid;
+
+  /// No description provided for @loginErrorPasswordEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'비밀번호를 입력해주세요.'**
+  String get loginErrorPasswordEmpty;
+
+  /// No description provided for @loginErrorPasswordShort.
+  ///
+  /// In ko, this message translates to:
+  /// **'비밀번호는 6자 이상이어야 합니다.'**
+  String get loginErrorPasswordShort;
+
+  /// No description provided for @registerTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'회원가입'**
+  String get registerTitle;
+
+  /// No description provided for @registerWelcome.
+  ///
+  /// In ko, this message translates to:
+  /// **'환영합니다!'**
+  String get registerWelcome;
+
+  /// No description provided for @registerWelcomeDesc.
+  ///
+  /// In ko, this message translates to:
+  /// **'새로운 인연을 만날 준비가 되셨나요?\n간단한 정보 입력으로 시작해보세요.'**
+  String get registerWelcomeDesc;
+
+  /// No description provided for @registerAccountInfo.
+  ///
+  /// In ko, this message translates to:
+  /// **'계정 정보'**
+  String get registerAccountInfo;
+
+  /// No description provided for @registerPasswordHint8Chars.
+  ///
+  /// In ko, this message translates to:
+  /// **'8자 이상 입력'**
+  String get registerPasswordHint8Chars;
+
+  /// No description provided for @registerPasswordConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'비밀번호 확인'**
+  String get registerPasswordConfirm;
+
+  /// No description provided for @registerPasswordConfirmHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'비밀번호 재입력'**
+  String get registerPasswordConfirmHint;
+
+  /// No description provided for @registerPersonalInfo.
+  ///
+  /// In ko, this message translates to:
+  /// **'개인 정보'**
+  String get registerPersonalInfo;
+
+  /// No description provided for @registerPhone.
+  ///
+  /// In ko, this message translates to:
+  /// **'전화번호'**
+  String get registerPhone;
+
+  /// No description provided for @registerPhoneVerify.
+  ///
+  /// In ko, this message translates to:
+  /// **'인증'**
+  String get registerPhoneVerify;
+
+  /// No description provided for @registerPhoneComplete.
+  ///
+  /// In ko, this message translates to:
+  /// **'완료'**
+  String get registerPhoneComplete;
+
+  /// No description provided for @registerVerificationCode.
+  ///
+  /// In ko, this message translates to:
+  /// **'인증번호 6자리'**
+  String get registerVerificationCode;
+
+  /// No description provided for @registerBirthDate.
+  ///
+  /// In ko, this message translates to:
+  /// **'생년월일'**
+  String get registerBirthDate;
+
+  /// No description provided for @registerBirthDateHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'19950315'**
+  String get registerBirthDateHint;
+
+  /// No description provided for @registerBirthDateHelper.
+  ///
+  /// In ko, this message translates to:
+  /// **'YYYYMMDD 형태로 입력해주세요'**
+  String get registerBirthDateHelper;
+
+  /// No description provided for @registerGender.
+  ///
+  /// In ko, this message translates to:
+  /// **'성별'**
+  String get registerGender;
+
+  /// No description provided for @registerMale.
+  ///
+  /// In ko, this message translates to:
+  /// **'남성'**
+  String get registerMale;
+
+  /// No description provided for @registerFemale.
+  ///
+  /// In ko, this message translates to:
+  /// **'여성'**
+  String get registerFemale;
+
+  /// No description provided for @registerTerms.
+  ///
+  /// In ko, this message translates to:
+  /// **'약관 동의'**
+  String get registerTerms;
+
+  /// No description provided for @registerTermsService.
+  ///
+  /// In ko, this message translates to:
+  /// **'[필수] 서비스 이용약관 동의'**
+  String get registerTermsService;
+
+  /// No description provided for @registerTermsPrivacy.
+  ///
+  /// In ko, this message translates to:
+  /// **'[필수] 개인정보 처리방침 동의'**
+  String get registerTermsPrivacy;
+
   /// No description provided for @registerButton.
   ///
   /// In ko, this message translates to:
   /// **'회원가입'**
   String get registerButton;
 
-  /// No description provided for @emailLabel.
+  /// No description provided for @registerHaveAccount.
   ///
   /// In ko, this message translates to:
-  /// **'이메일'**
-  String get emailLabel;
+  /// **'이미 계정이 있으신가요?'**
+  String get registerHaveAccount;
 
-  /// No description provided for @emailHint.
+  /// No description provided for @registerLoginLink.
   ///
   /// In ko, this message translates to:
-  /// **'example@email.com'**
-  String get emailHint;
+  /// **'로그인하기'**
+  String get registerLoginLink;
 
-  /// No description provided for @emailHelper.
-  ///
-  /// In ko, this message translates to:
-  /// **'로그인 및 비밀번호 찾기에 사용할 이메일'**
-  String get emailHelper;
-
-  /// No description provided for @passwordLabel.
-  ///
-  /// In ko, this message translates to:
-  /// **'비밀번호'**
-  String get passwordLabel;
-
-  /// No description provided for @passwordHint.
-  ///
-  /// In ko, this message translates to:
-  /// **'8자 이상'**
-  String get passwordHint;
-
-  /// No description provided for @passwordConfirmLabel.
-  ///
-  /// In ko, this message translates to:
-  /// **'비밀번호 확인'**
-  String get passwordConfirmLabel;
-
-  /// No description provided for @phoneLabel.
-  ///
-  /// In ko, this message translates to:
-  /// **'전화번호'**
-  String get phoneLabel;
-
-  /// No description provided for @birthDateLabel.
-  ///
-  /// In ko, this message translates to:
-  /// **'생년월일'**
-  String get birthDateLabel;
-
-  /// No description provided for @birthDateHelper.
-  ///
-  /// In ko, this message translates to:
-  /// **'8자리 숫자 (예: 19950315)'**
-  String get birthDateHelper;
-
-  /// No description provided for @registerWelcome.
-  ///
-  /// In ko, this message translates to:
-  /// **'그룹팅에 오신 것을 환영합니다!\n이메일로 간편하게 가입해보세요.'**
-  String get registerWelcome;
-
-  /// No description provided for @lockedInfo.
-  ///
-  /// In ko, this message translates to:
-  /// **'자물쇠 표시된 정보는 가입 후 변경할 수 없습니다'**
-  String get lockedInfo;
-
-  /// No description provided for @emailDuplicate.
-  ///
-  /// In ko, this message translates to:
-  /// **'이미 사용 중인 이메일입니다.'**
-  String get emailDuplicate;
-
-  /// No description provided for @emailAvailable.
-  ///
-  /// In ko, this message translates to:
-  /// **'사용 가능한 이메일입니다.'**
-  String get emailAvailable;
-
-  /// No description provided for @emailCheckError.
-  ///
-  /// In ko, this message translates to:
-  /// **'이메일 확인 중 오류가 발생했습니다.'**
-  String get emailCheckError;
-
-  /// No description provided for @emailDuplicateError.
-  ///
-  /// In ko, this message translates to:
-  /// **'이미 사용 중인 이메일입니다. 다른 이메일을 사용해주세요.'**
-  String get emailDuplicateError;
-
-  /// No description provided for @phoneDuplicate.
-  ///
-  /// In ko, this message translates to:
-  /// **'이미 사용 중인 전화번호입니다.'**
-  String get phoneDuplicate;
-
-  /// No description provided for @phoneAvailable.
-  ///
-  /// In ko, this message translates to:
-  /// **'사용 가능한 전화번호입니다.'**
-  String get phoneAvailable;
-
-  /// No description provided for @phoneCheckError.
-  ///
-  /// In ko, this message translates to:
-  /// **'전화번호 확인 중 오류가 발생했습니다.'**
-  String get phoneCheckError;
-
-  /// No description provided for @phoneDuplicateError.
-  ///
-  /// In ko, this message translates to:
-  /// **'이미 사용 중인 전화번호입니다. 다른 번호를 사용해주세요.'**
-  String get phoneDuplicateError;
-
-  /// No description provided for @verifyButton.
-  ///
-  /// In ko, this message translates to:
-  /// **'인증'**
-  String get verifyButton;
-
-  /// No description provided for @verified.
-  ///
-  /// In ko, this message translates to:
-  /// **'인증됨'**
-  String get verified;
-
-  /// No description provided for @verifyCodeSent.
-  ///
-  /// In ko, this message translates to:
-  /// **'인증번호가 전송되었습니다.'**
-  String get verifyCodeSent;
-
-  /// No description provided for @verifyCodeLabel.
-  ///
-  /// In ko, this message translates to:
-  /// **'인증번호 6자리'**
-  String get verifyCodeLabel;
-
-  /// No description provided for @verifyCodeHint.
-  ///
-  /// In ko, this message translates to:
-  /// **'000000'**
-  String get verifyCodeHint;
-
-  /// No description provided for @verifyComplete.
-  ///
-  /// In ko, this message translates to:
-  /// **'전화번호 인증이 완료되었습니다.'**
-  String get verifyComplete;
-
-  /// No description provided for @verifyPhoneFirst.
-  ///
-  /// In ko, this message translates to:
-  /// **'전화번호 인증을 완료해주세요.'**
-  String get verifyPhoneFirst;
-
-  /// No description provided for @checkPhoneDuplicateFirst.
-  ///
-  /// In ko, this message translates to:
-  /// **'올바른 전화번호를 입력 후 중복 확인을 완료해주세요.'**
-  String get checkPhoneDuplicateFirst;
-
-  /// No description provided for @termsAgreement.
-  ///
-  /// In ko, this message translates to:
-  /// **'[필수] 서비스 이용약관 동의'**
-  String get termsAgreement;
-
-  /// No description provided for @privacyAgreement.
-  ///
-  /// In ko, this message translates to:
-  /// **'[필수] 개인정보 처리방침 동의'**
-  String get privacyAgreement;
-
-  /// No description provided for @termsTitle.
-  ///
-  /// In ko, this message translates to:
-  /// **'서비스 이용약관 (EULA)'**
-  String get termsTitle;
-
-  /// No description provided for @privacyTitle.
-  ///
-  /// In ko, this message translates to:
-  /// **'개인정보 처리방침'**
-  String get privacyTitle;
-
-  /// No description provided for @alreadyHaveAccount.
-  ///
-  /// In ko, this message translates to:
-  /// **'이미 계정이 있으신가요? 로그인하기'**
-  String get alreadyHaveAccount;
-
-  /// No description provided for @registerSuccess.
-  ///
-  /// In ko, this message translates to:
-  /// **'가입되었습니다! 우선 프로필을 완성해주세요.'**
-  String get registerSuccess;
-
-  /// No description provided for @emailRequired.
-  ///
-  /// In ko, this message translates to:
-  /// **'이메일을 입력해주세요.'**
-  String get emailRequired;
-
-  /// No description provided for @emailInvalid.
-  ///
-  /// In ko, this message translates to:
-  /// **'올바른 이메일 형식을 입력해주세요.'**
-  String get emailInvalid;
-
-  /// No description provided for @passwordRequired.
-  ///
-  /// In ko, this message translates to:
-  /// **'비밀번호를 입력해주세요.'**
-  String get passwordRequired;
-
-  /// No description provided for @passwordLength.
-  ///
-  /// In ko, this message translates to:
-  /// **'비밀번호는 8자 이상이어야 합니다.'**
-  String get passwordLength;
-
-  /// No description provided for @passwordMismatch.
+  /// No description provided for @registerErrorPasswordMismatch.
   ///
   /// In ko, this message translates to:
   /// **'비밀번호가 일치하지 않습니다.'**
-  String get passwordMismatch;
+  String get registerErrorPasswordMismatch;
 
-  /// No description provided for @passwordReEnter.
-  ///
-  /// In ko, this message translates to:
-  /// **'비밀번호를 다시 입력해주세요.'**
-  String get passwordReEnter;
-
-  /// No description provided for @phoneRequired.
-  ///
-  /// In ko, this message translates to:
-  /// **'전화번호를 입력해주세요.'**
-  String get phoneRequired;
-
-  /// No description provided for @birthDateRequired.
-  ///
-  /// In ko, this message translates to:
-  /// **'생년월일을 입력해주세요.'**
-  String get birthDateRequired;
-
-  /// No description provided for @birthDateInvalid.
-  ///
-  /// In ko, this message translates to:
-  /// **'생년월일은 8자리여야 합니다.'**
-  String get birthDateInvalid;
-
-  /// No description provided for @birthDateYearInvalid.
-  ///
-  /// In ko, this message translates to:
-  /// **'유효한 연도를 입력해주세요.'**
-  String get birthDateYearInvalid;
-
-  /// No description provided for @birthDateDateInvalid.
-  ///
-  /// In ko, this message translates to:
-  /// **'유효한 날짜를 입력해주세요.'**
-  String get birthDateDateInvalid;
-
-  /// No description provided for @underageError.
-  ///
-  /// In ko, this message translates to:
-  /// **'만 18세 미만은 이용할 수 없습니다.'**
-  String get underageError;
-
-  /// No description provided for @genderRequired.
+  /// No description provided for @registerErrorGender.
   ///
   /// In ko, this message translates to:
   /// **'성별을 선택해주세요.'**
-  String get genderRequired;
+  String get registerErrorGender;
 
-  /// No description provided for @termsRequired.
+  /// No description provided for @registerErrorTerms.
   ///
   /// In ko, this message translates to:
   /// **'서비스 이용약관 및 개인정보 처리방침에 동의해주세요.'**
-  String get termsRequired;
+  String get registerErrorTerms;
 
-  /// No description provided for @fillAllRequired.
-  ///
-  /// In ko, this message translates to:
-  /// **'모든 필수 정보를 입력해주세요.'**
-  String get fillAllRequired;
-
-  /// No description provided for @tabHome.
+  /// No description provided for @homeTabHome.
   ///
   /// In ko, this message translates to:
   /// **'홈'**
-  String get tabHome;
+  String get homeTabHome;
 
-  /// No description provided for @tabInvite.
+  /// No description provided for @homeTabInvite.
   ///
   /// In ko, this message translates to:
   /// **'초대'**
-  String get tabInvite;
+  String get homeTabInvite;
 
-  /// No description provided for @tabMyPage.
+  /// No description provided for @homeTabMyPage.
   ///
   /// In ko, this message translates to:
   /// **'마이페이지'**
-  String get tabMyPage;
+  String get homeTabMyPage;
 
-  /// No description provided for @tabMore.
+  /// No description provided for @homeTabMore.
   ///
   /// In ko, this message translates to:
   /// **'더보기'**
-  String get tabMore;
+  String get homeTabMore;
 
-  /// No description provided for @profileCardTitleRegister.
-  ///
-  /// In ko, this message translates to:
-  /// **'회원가입하기'**
-  String get profileCardTitleRegister;
-
-  /// No description provided for @profileCardTitleBasic.
-  ///
-  /// In ko, this message translates to:
-  /// **'기본 정보 입력하기'**
-  String get profileCardTitleBasic;
-
-  /// No description provided for @profileCardTitleComplete.
+  /// No description provided for @homeProfileCardTitle.
   ///
   /// In ko, this message translates to:
   /// **'프로필 완성하기'**
-  String get profileCardTitleComplete;
+  String get homeProfileCardTitle;
 
-  /// No description provided for @profileCardDescRegister.
-  ///
-  /// In ko, this message translates to:
-  /// **'그룹팅 서비스를 이용하시려면\n먼저 회원가입을 완료해주세요!'**
-  String get profileCardDescRegister;
-
-  /// No description provided for @profileCardDescBasic.
-  ///
-  /// In ko, this message translates to:
-  /// **'회원가입 중 누락된 필수 정보가 있어요.\n기본 정보를 입력하고 프로필을 완성해주세요!'**
-  String get profileCardDescBasic;
-
-  /// No description provided for @profileCardDescComplete.
+  /// No description provided for @homeProfileCardDesc.
   ///
   /// In ko, this message translates to:
   /// **'닉네임, 키, 소개글, 활동지역을 추가하면\n그룹 생성과 매칭 기능을 사용할 수 있어요!'**
-  String get profileCardDescComplete;
+  String get homeProfileCardDesc;
 
-  /// No description provided for @profileCardSubtitleRegister.
-  ///
-  /// In ko, this message translates to:
-  /// **'그룹팅을 시작해보세요!'**
-  String get profileCardSubtitleRegister;
-
-  /// No description provided for @profileCardSubtitleBasic.
-  ///
-  /// In ko, this message translates to:
-  /// **'전화번호, 생년월일, 성별 정보가 필요해요!'**
-  String get profileCardSubtitleBasic;
-
-  /// No description provided for @profileCardSubtitleComplete.
-  ///
-  /// In ko, this message translates to:
-  /// **'닉네임, 키, 활동지역 등을 입력해주세요!'**
-  String get profileCardSubtitleComplete;
-
-  /// No description provided for @profileCardButtonComplete.
+  /// No description provided for @homeProfileCardButton.
   ///
   /// In ko, this message translates to:
   /// **'지금 완성하기'**
-  String get profileCardButtonComplete;
+  String get homeProfileCardButton;
 
-  /// No description provided for @profileCardHideMsg.
-  ///
-  /// In ko, this message translates to:
-  /// **'프로필 완성하기 알림을 숨겼습니다. 마이페이지에서 언제든 프로필을 완성할 수 있습니다.'**
-  String get profileCardHideMsg;
-
-  /// No description provided for @groupLoading.
-  ///
-  /// In ko, this message translates to:
-  /// **'그룹 정보 로딩 중...'**
-  String get groupLoading;
-
-  /// No description provided for @waitPlease.
-  ///
-  /// In ko, this message translates to:
-  /// **'잠시만 기다려주세요.'**
-  String get waitPlease;
-
-  /// No description provided for @networkError.
-  ///
-  /// In ko, this message translates to:
-  /// **'네트워크 연결 오류'**
-  String get networkError;
-
-  /// No description provided for @networkErrorMsg.
-  ///
-  /// In ko, this message translates to:
-  /// **'인터넷 연결을 확인하고 다시 시도해주세요.'**
-  String get networkErrorMsg;
-
-  /// No description provided for @networkCheckMsg.
-  ///
-  /// In ko, this message translates to:
-  /// **'Wi-Fi나 모바일 데이터 연결을 확인해주세요.'**
-  String get networkCheckMsg;
-
-  /// No description provided for @checkConnection.
-  ///
-  /// In ko, this message translates to:
-  /// **'연결 확인'**
-  String get checkConnection;
-
-  /// No description provided for @dataLoadFail.
-  ///
-  /// In ko, this message translates to:
-  /// **'데이터 로드 실패'**
-  String get dataLoadFail;
-
-  /// No description provided for @unknownError.
-  ///
-  /// In ko, this message translates to:
-  /// **'알 수 없는 오류가 발생했습니다.'**
-  String get unknownError;
-
-  /// No description provided for @noGroup.
+  /// No description provided for @homeNoGroupTitle.
   ///
   /// In ko, this message translates to:
   /// **'그룹이 없습니다'**
-  String get noGroup;
+  String get homeNoGroupTitle;
 
-  /// No description provided for @createGroup.
+  /// No description provided for @homeNoGroupDesc.
   ///
   /// In ko, this message translates to:
-  /// **'그룹 만들기'**
-  String get createGroup;
+  /// **'새로운 그룹을 만들어\n친구들과 함께하세요!'**
+  String get homeNoGroupDesc;
 
-  /// No description provided for @createGroupDesc.
+  /// No description provided for @homeCreateGroupButton.
   ///
   /// In ko, this message translates to:
-  /// **'새로운 그룹을 만들어 친구들과 함께하세요!'**
-  String get createGroupDesc;
+  /// **'새 그룹 만들기'**
+  String get homeCreateGroupButton;
 
-  /// No description provided for @profileCompleteNeeded.
+  /// No description provided for @homeGroupStatusMatching.
   ///
   /// In ko, this message translates to:
-  /// **'프로필 완성 필요'**
-  String get profileCompleteNeeded;
+  /// **'매칭 진행중...'**
+  String get homeGroupStatusMatching;
 
-  /// No description provided for @profileCompleteNeededMsg.
-  ///
-  /// In ko, this message translates to:
-  /// **'프로필을 완성해야 서비스 이용이 가능합니다.'**
-  String get profileCompleteNeededMsg;
-
-  /// No description provided for @matched.
-  ///
-  /// In ko, this message translates to:
-  /// **'매칭 완료!'**
-  String get matched;
-
-  /// No description provided for @matching.
-  ///
-  /// In ko, this message translates to:
-  /// **'매칭 중...'**
-  String get matching;
-
-  /// No description provided for @groupWaiting.
-  ///
-  /// In ko, this message translates to:
-  /// **'그룹 대기'**
-  String get groupWaiting;
-
-  /// No description provided for @totalMembers.
-  ///
-  /// In ko, this message translates to:
-  /// **'총 멤버: {count}명'**
-  String totalMembers(Object count);
-
-  /// No description provided for @matchChat.
-  ///
-  /// In ko, this message translates to:
-  /// **'매칭 채팅'**
-  String get matchChat;
-
-  /// No description provided for @groupChat.
-  ///
-  /// In ko, this message translates to:
-  /// **'그룹 채팅'**
-  String get groupChat;
-
-  /// No description provided for @currentMembers.
-  ///
-  /// In ko, this message translates to:
-  /// **'현재 그룹 멤버'**
-  String get currentMembers;
-
-  /// No description provided for @inviteFriend.
-  ///
-  /// In ko, this message translates to:
-  /// **'친구 초대'**
-  String get inviteFriend;
-
-  /// No description provided for @startMatching.
-  ///
-  /// In ko, this message translates to:
-  /// **'그룹 매칭 시작 ({count}명)'**
-  String startMatching(Object count);
-
-  /// No description provided for @startMatching1on1.
-  ///
-  /// In ko, this message translates to:
-  /// **'1:1 매칭 시작'**
-  String get startMatching1on1;
-
-  /// No description provided for @cancelMatching.
-  ///
-  /// In ko, this message translates to:
-  /// **'매칭 취소'**
-  String get cancelMatching;
-
-  /// No description provided for @minMemberRequired.
-  ///
-  /// In ko, this message translates to:
-  /// **'최소 1명 필요'**
-  String get minMemberRequired;
-
-  /// No description provided for @matchSuccessTitle.
+  /// No description provided for @homeGroupStatusMatched.
   ///
   /// In ko, this message translates to:
   /// **'매칭 성공! 🎉'**
-  String get matchSuccessTitle;
+  String get homeGroupStatusMatched;
 
-  /// No description provided for @matchSuccessContent.
+  /// No description provided for @homeGroupStatusWaiting.
+  ///
+  /// In ko, this message translates to:
+  /// **'매칭 대기중'**
+  String get homeGroupStatusWaiting;
+
+  /// No description provided for @homeGroupDescMatching.
+  ///
+  /// In ko, this message translates to:
+  /// **'매칭 상대를 찾고 있어요...'**
+  String get homeGroupDescMatching;
+
+  /// No description provided for @homeGroupDescMatched.
+  ///
+  /// In ko, this message translates to:
+  /// **'새로운 인연과 대화를 시작해보세요'**
+  String get homeGroupDescMatched;
+
+  /// No description provided for @homeGroupDescWaiting.
+  ///
+  /// In ko, this message translates to:
+  /// **'친구들과 대화 해보세요'**
+  String get homeGroupDescWaiting;
+
+  /// No description provided for @homeStartMatching.
+  ///
+  /// In ko, this message translates to:
+  /// **'매칭 시작'**
+  String get homeStartMatching;
+
+  /// No description provided for @homeCancelMatching.
+  ///
+  /// In ko, this message translates to:
+  /// **'매칭 취소'**
+  String get homeCancelMatching;
+
+  /// No description provided for @homeEnterChat.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방 입장'**
+  String get homeEnterChat;
+
+  /// No description provided for @homeGroupMembers.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 그룹 멤버'**
+  String get homeGroupMembers;
+
+  /// No description provided for @homeInviteFriend.
+  ///
+  /// In ko, this message translates to:
+  /// **'초대하기'**
+  String get homeInviteFriend;
+
+  /// No description provided for @homeDialogMatchedTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'매칭 성공! 🎉'**
+  String get homeDialogMatchedTitle;
+
+  /// No description provided for @homeDialogMatchedContent.
   ///
   /// In ko, this message translates to:
   /// **'매칭되었습니다!\n채팅방에서 인사해보세요 👋'**
-  String get matchSuccessContent;
+  String get homeDialogMatchedContent;
 
-  /// No description provided for @moveToChat.
+  /// No description provided for @homeDialogGoToChat.
   ///
   /// In ko, this message translates to:
   /// **'채팅방으로 이동'**
-  String get moveToChat;
+  String get homeDialogGoToChat;
 
-  /// No description provided for @receivedInvites.
-  ///
-  /// In ko, this message translates to:
-  /// **'받은 초대'**
-  String get receivedInvites;
-
-  /// No description provided for @leaveGroup.
+  /// No description provided for @homeMenuLeaveGroup.
   ///
   /// In ko, this message translates to:
   /// **'그룹 나가기'**
-  String get leaveGroup;
+  String get homeMenuLeaveGroup;
 
-  /// No description provided for @leaveGroupConfirm.
-  ///
-  /// In ko, this message translates to:
-  /// **'정말로 그룹을 나가시겠습니까?'**
-  String get leaveGroupConfirm;
-
-  /// No description provided for @leaveGroupSuccess.
-  ///
-  /// In ko, this message translates to:
-  /// **'그룹에서 나왔습니다.'**
-  String get leaveGroupSuccess;
-
-  /// No description provided for @logout.
+  /// No description provided for @homeMenuLogout.
   ///
   /// In ko, this message translates to:
   /// **'로그아웃'**
-  String get logout;
+  String get homeMenuLogout;
 
-  /// No description provided for @logoutConfirm.
+  /// No description provided for @dialogLeaveGroupTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'그룹 나가기'**
+  String get dialogLeaveGroupTitle;
+
+  /// No description provided for @dialogLeaveGroupContent.
+  ///
+  /// In ko, this message translates to:
+  /// **'정말로 그룹을 나가시겠습니까?'**
+  String get dialogLeaveGroupContent;
+
+  /// No description provided for @dialogLogoutTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'로그아웃'**
+  String get dialogLogoutTitle;
+
+  /// No description provided for @dialogLogoutContent.
   ///
   /// In ko, this message translates to:
   /// **'정말로 로그아웃 하시겠습니까?'**
-  String get logoutConfirm;
+  String get dialogLogoutContent;
 
-  /// No description provided for @logoutError.
+  /// No description provided for @dialogLeaveGroupAction.
   ///
   /// In ko, this message translates to:
-  /// **'로그아웃 중 오류가 발생했습니다: {error}'**
-  String logoutError(Object error);
+  /// **'나가기'**
+  String get dialogLeaveGroupAction;
 
-  /// No description provided for @filterTitle.
+  /// No description provided for @myPageTitle.
   ///
   /// In ko, this message translates to:
-  /// **'매칭 필터 설정'**
-  String get filterTitle;
+  /// **'마이페이지'**
+  String get myPageTitle;
 
-  /// No description provided for @targetGender.
+  /// No description provided for @myPageEmptyProfile.
   ///
   /// In ko, this message translates to:
-  /// **'상대 그룹 성별'**
-  String get targetGender;
+  /// **'프로필을 만들어주세요'**
+  String get myPageEmptyProfile;
 
-  /// No description provided for @genderAny.
+  /// No description provided for @myPageEmptyDesc.
   ///
   /// In ko, this message translates to:
-  /// **'상관없음'**
-  String get genderAny;
+  /// **'새로운 인연을 만날 준비가 되셨나요?'**
+  String get myPageEmptyDesc;
 
-  /// No description provided for @genderMixed.
+  /// No description provided for @myPageCreateProfile.
   ///
   /// In ko, this message translates to:
-  /// **'혼성'**
-  String get genderMixed;
+  /// **'프로필 만들기'**
+  String get myPageCreateProfile;
 
-  /// No description provided for @targetAge.
+  /// No description provided for @myPageBasicInfo.
   ///
   /// In ko, this message translates to:
-  /// **'상대 그룹 평균 나이'**
-  String get targetAge;
+  /// **'기본 정보'**
+  String get myPageBasicInfo;
 
-  /// No description provided for @ageUnit.
+  /// No description provided for @myPagePhone.
   ///
   /// In ko, this message translates to:
-  /// **'세'**
-  String get ageUnit;
+  /// **'전화번호'**
+  String get myPagePhone;
 
-  /// No description provided for @ageOver60.
+  /// No description provided for @myPageHeight.
   ///
   /// In ko, this message translates to:
-  /// **'60세+'**
-  String get ageOver60;
+  /// **'키'**
+  String get myPageHeight;
 
-  /// No description provided for @targetHeight.
+  /// No description provided for @myPageLocation.
   ///
   /// In ko, this message translates to:
-  /// **'상대 그룹 평균 키'**
-  String get targetHeight;
+  /// **'위치'**
+  String get myPageLocation;
 
-  /// No description provided for @heightUnit.
+  /// No description provided for @myPageIntro.
   ///
   /// In ko, this message translates to:
-  /// **'cm'**
-  String get heightUnit;
+  /// **'자기소개'**
+  String get myPageIntro;
 
-  /// No description provided for @heightOver190.
+  /// No description provided for @myPageMenuSettings.
   ///
   /// In ko, this message translates to:
-  /// **'190cm+'**
-  String get heightOver190;
+  /// **'설정'**
+  String get myPageMenuSettings;
 
-  /// No description provided for @distanceRange.
+  /// No description provided for @myPageMenuHelp.
   ///
   /// In ko, this message translates to:
-  /// **'거리 범위 (방장 기준)'**
-  String get distanceRange;
+  /// **'도움말'**
+  String get myPageMenuHelp;
 
-  /// No description provided for @distanceUnit.
+  /// No description provided for @myPageMenuAppInfo.
   ///
   /// In ko, this message translates to:
-  /// **'km 이내'**
-  String get distanceUnit;
+  /// **'앱 정보'**
+  String get myPageMenuAppInfo;
 
-  /// No description provided for @distanceOver100.
-  ///
-  /// In ko, this message translates to:
-  /// **'100km+'**
-  String get distanceOver100;
-
-  /// No description provided for @applyFilter.
-  ///
-  /// In ko, this message translates to:
-  /// **'적용하기'**
-  String get applyFilter;
-
-  /// No description provided for @filterApplied.
-  ///
-  /// In ko, this message translates to:
-  /// **'필터가 적용되었습니다.'**
-  String get filterApplied;
-
-  /// No description provided for @filterApplyFail.
-  ///
-  /// In ko, this message translates to:
-  /// **'필터 적용 실패'**
-  String get filterApplyFail;
-
-  /// No description provided for @editProfileTitle.
+  /// No description provided for @profileEditTitle.
   ///
   /// In ko, this message translates to:
   /// **'프로필 편집'**
-  String get editProfileTitle;
+  String get profileEditTitle;
 
-  /// No description provided for @photoRegisterInfo.
+  /// No description provided for @profileEditImage.
   ///
   /// In ko, this message translates to:
-  /// **'최대 6장 사진을 등록해주세요.'**
-  String get photoRegisterInfo;
+  /// **'프로필 사진'**
+  String get profileEditImage;
 
-  /// No description provided for @mainPhotoInfo.
+  /// No description provided for @profileEditImageGuide.
   ///
   /// In ko, this message translates to:
-  /// **'이미지를 길게 눌러서 대표 프로필로 설정할 수 있습니다.'**
-  String get mainPhotoInfo;
+  /// **'대표 사진은 길게 눌러 설정하세요'**
+  String get profileEditImageGuide;
 
-  /// No description provided for @nicknameLabel.
+  /// No description provided for @profileEditImageAdd.
   ///
   /// In ko, this message translates to:
-  /// **'닉네임'**
-  String get nicknameLabel;
+  /// **'사진 추가'**
+  String get profileEditImageAdd;
 
-  /// No description provided for @nicknamePlaceholder.
-  ///
-  /// In ko, this message translates to:
-  /// **'닉네임을 입력하세요'**
-  String get nicknamePlaceholder;
-
-  /// No description provided for @nicknameDuplicate.
-  ///
-  /// In ko, this message translates to:
-  /// **'이미 사용 중인 닉네임입니다.'**
-  String get nicknameDuplicate;
-
-  /// No description provided for @nicknameAvailable.
-  ///
-  /// In ko, this message translates to:
-  /// **'사용 가능한 닉네임입니다.'**
-  String get nicknameAvailable;
-
-  /// No description provided for @nicknameCheckError.
-  ///
-  /// In ko, this message translates to:
-  /// **'닉네임 확인 중 오류가 발생했습니다.'**
-  String get nicknameCheckError;
-
-  /// No description provided for @nicknameRequired.
-  ///
-  /// In ko, this message translates to:
-  /// **'닉네임을 입력해주세요.'**
-  String get nicknameRequired;
-
-  /// No description provided for @nicknameLengthError.
-  ///
-  /// In ko, this message translates to:
-  /// **'닉네임은 2자 이상이어야 합니다.'**
-  String get nicknameLengthError;
-
-  /// No description provided for @heightLabel.
-  ///
-  /// In ko, this message translates to:
-  /// **'키 (cm)'**
-  String get heightLabel;
-
-  /// No description provided for @heightPlaceholder.
-  ///
-  /// In ko, this message translates to:
-  /// **'키를 입력하세요'**
-  String get heightPlaceholder;
-
-  /// No description provided for @heightRequired.
-  ///
-  /// In ko, this message translates to:
-  /// **'키를 입력해주세요.'**
-  String get heightRequired;
-
-  /// No description provided for @heightRangeError.
-  ///
-  /// In ko, this message translates to:
-  /// **'올바른 키를 입력해주세요. (140-220cm)'**
-  String get heightRangeError;
-
-  /// No description provided for @locationLabel.
-  ///
-  /// In ko, this message translates to:
-  /// **'활동지역'**
-  String get locationLabel;
-
-  /// No description provided for @locationPlaceholder.
-  ///
-  /// In ko, this message translates to:
-  /// **'지도를 눌러 위치를 선택하세요'**
-  String get locationPlaceholder;
-
-  /// No description provided for @locationRequired.
-  ///
-  /// In ko, this message translates to:
-  /// **'활동지역을 선택해주세요.'**
-  String get locationRequired;
-
-  /// No description provided for @introLabel.
-  ///
-  /// In ko, this message translates to:
-  /// **'소개글'**
-  String get introLabel;
-
-  /// No description provided for @introHelper.
-  ///
-  /// In ko, this message translates to:
-  /// **'200자 이내'**
-  String get introHelper;
-
-  /// No description provided for @introRequired.
-  ///
-  /// In ko, this message translates to:
-  /// **'소개글을 입력해주세요.'**
-  String get introRequired;
-
-  /// No description provided for @introLengthError.
-  ///
-  /// In ko, this message translates to:
-  /// **'소개글은 5자 이상 작성해주세요.'**
-  String get introLengthError;
-
-  /// No description provided for @immutableInfo.
-  ///
-  /// In ko, this message translates to:
-  /// **'수정 불가능한 정보'**
-  String get immutableInfo;
-
-  /// No description provided for @idLabel.
-  ///
-  /// In ko, this message translates to:
-  /// **'아이디'**
-  String get idLabel;
-
-  /// No description provided for @permissionRequiredTitle.
-  ///
-  /// In ko, this message translates to:
-  /// **'권한 설정 필요'**
-  String get permissionRequiredTitle;
-
-  /// No description provided for @permissionRequiredContent.
-  ///
-  /// In ko, this message translates to:
-  /// **'프로필 사진을 등록하려면 갤러리 접근 권한이 필요합니다.\n설정에서 권한을 허용해주세요.'**
-  String get permissionRequiredContent;
-
-  /// No description provided for @goToSettings.
-  ///
-  /// In ko, this message translates to:
-  /// **'설정으로 이동'**
-  String get goToSettings;
-
-  /// No description provided for @imageSelectError.
-  ///
-  /// In ko, this message translates to:
-  /// **'이미지 선택 중 오류가 발생했습니다.'**
-  String get imageSelectError;
-
-  /// No description provided for @mainProfileSet.
-  ///
-  /// In ko, this message translates to:
-  /// **'{index}번 이미지가 대표 프로필로 설정되었습니다.'**
-  String mainProfileSet(Object index);
-
-  /// No description provided for @mainLabel.
+  /// No description provided for @profileEditImageMain.
   ///
   /// In ko, this message translates to:
   /// **'대표'**
-  String get mainLabel;
+  String get profileEditImageMain;
 
-  /// No description provided for @imageUploadFail.
+  /// No description provided for @profileEditNickname.
   ///
   /// In ko, this message translates to:
-  /// **'이미지 업로드에 실패했습니다.'**
-  String get imageUploadFail;
+  /// **'닉네임'**
+  String get profileEditNickname;
 
-  /// No description provided for @profileUpdateSuccess.
+  /// No description provided for @profileEditNicknameHint.
   ///
   /// In ko, this message translates to:
-  /// **'프로필이 성공적으로 업데이트되었습니다.'**
-  String get profileUpdateSuccess;
+  /// **'닉네임을 입력하세요 (2~10자)'**
+  String get profileEditNicknameHint;
 
-  /// No description provided for @photoRequired.
+  /// No description provided for @profileEditHeight.
+  ///
+  /// In ko, this message translates to:
+  /// **'키 (cm)'**
+  String get profileEditHeight;
+
+  /// No description provided for @profileEditLocation.
+  ///
+  /// In ko, this message translates to:
+  /// **'활동지역'**
+  String get profileEditLocation;
+
+  /// No description provided for @profileEditLocationHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'지도를 눌러 위치를 선택하세요'**
+  String get profileEditLocationHint;
+
+  /// No description provided for @profileEditIntro.
+  ///
+  /// In ko, this message translates to:
+  /// **'자기소개'**
+  String get profileEditIntro;
+
+  /// No description provided for @profileEditIntroHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'나를 표현하는 멋진 소개글을 작성해보세요.\n(취미, 관심사, 성격 등)'**
+  String get profileEditIntroHint;
+
+  /// No description provided for @profileEditAccountInfo.
+  ///
+  /// In ko, this message translates to:
+  /// **'계정 정보'**
+  String get profileEditAccountInfo;
+
+  /// No description provided for @profileEditErrorImages.
   ///
   /// In ko, this message translates to:
   /// **'사진을 최소 1장 등록해주세요.'**
-  String get photoRequired;
+  String get profileEditErrorImages;
 
-  /// No description provided for @updateTitle.
+  /// No description provided for @settingsTitle.
   ///
   /// In ko, this message translates to:
-  /// **'업데이트 안내'**
-  String get updateTitle;
+  /// **'설정'**
+  String get settingsTitle;
 
-  /// No description provided for @updateButton.
+  /// No description provided for @settingsNotification.
   ///
   /// In ko, this message translates to:
-  /// **'지금 업데이트'**
-  String get updateButton;
+  /// **'알림'**
+  String get settingsNotification;
 
-  /// No description provided for @updateMessageDefault.
+  /// No description provided for @settingsNotiMatch.
   ///
   /// In ko, this message translates to:
-  /// **'업데이트가 필요합니다.'**
-  String get updateMessageDefault;
+  /// **'매칭 알림'**
+  String get settingsNotiMatch;
+
+  /// No description provided for @settingsNotiInvite.
+  ///
+  /// In ko, this message translates to:
+  /// **'초대 알림'**
+  String get settingsNotiInvite;
+
+  /// No description provided for @settingsNotiChat.
+  ///
+  /// In ko, this message translates to:
+  /// **'메세지 알림'**
+  String get settingsNotiChat;
+
+  /// No description provided for @settingsAccount.
+  ///
+  /// In ko, this message translates to:
+  /// **'계정'**
+  String get settingsAccount;
+
+  /// No description provided for @settingsChangePw.
+  ///
+  /// In ko, this message translates to:
+  /// **'비밀번호 변경'**
+  String get settingsChangePw;
+
+  /// No description provided for @settingsBlock.
+  ///
+  /// In ko, this message translates to:
+  /// **'차단 관리'**
+  String get settingsBlock;
+
+  /// No description provided for @settingsDeleteAccount.
+  ///
+  /// In ko, this message translates to:
+  /// **'계정 삭제'**
+  String get settingsDeleteAccount;
+
+  /// No description provided for @settingsInfo.
+  ///
+  /// In ko, this message translates to:
+  /// **'정보 및 지원'**
+  String get settingsInfo;
+
+  /// No description provided for @settingsPrivacy.
+  ///
+  /// In ko, this message translates to:
+  /// **'개인정보 처리방침'**
+  String get settingsPrivacy;
+
+  /// No description provided for @settingsTerms.
+  ///
+  /// In ko, this message translates to:
+  /// **'서비스 이용약관'**
+  String get settingsTerms;
+
+  /// No description provided for @settingsAppVersion.
+  ///
+  /// In ko, this message translates to:
+  /// **'앱 버전'**
+  String get settingsAppVersion;
+
+  /// No description provided for @settingsDeleteAccountConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'정말로 삭제합니다.'**
+  String get settingsDeleteAccountConfirm;
+
+  /// No description provided for @chatTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅'**
+  String get chatTitle;
+
+  /// No description provided for @chatMatchingTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'매칭 채팅'**
+  String get chatMatchingTitle;
+
+  /// No description provided for @chatGroupTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'그룹 채팅'**
+  String get chatGroupTitle;
+
+  /// No description provided for @chatInputHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지 보내기'**
+  String get chatInputHint;
+
+  /// No description provided for @chatEmptyMatched.
+  ///
+  /// In ko, this message translates to:
+  /// **'매칭 성공! 🎉'**
+  String get chatEmptyMatched;
+
+  /// No description provided for @chatEmptyGroup.
+  ///
+  /// In ko, this message translates to:
+  /// **'그룹 채팅 시작 👋'**
+  String get chatEmptyGroup;
+
+  /// No description provided for @inviteTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'친구 초대'**
+  String get inviteTitle;
+
+  /// No description provided for @inviteGuide.
+  ///
+  /// In ko, this message translates to:
+  /// **'초대 안내'**
+  String get inviteGuide;
+
+  /// No description provided for @inviteGuideDesc.
+  ///
+  /// In ko, this message translates to:
+  /// **'친구의 닉네임을 정확히 입력해주세요\n최대 5명까지 그룹을 구성할 수 있습니다'**
+  String get inviteGuideDesc;
+
+  /// No description provided for @inviteCurrentMember.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 그룹 인원'**
+  String get inviteCurrentMember;
+
+  /// No description provided for @inviteNicknameLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'친구 닉네임'**
+  String get inviteNicknameLabel;
+
+  /// No description provided for @inviteNicknameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'초대할 친구의 닉네임을 입력하세요'**
+  String get inviteNicknameHint;
+
+  /// No description provided for @inviteMessageLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'초대 메세지 (선택사항)'**
+  String get inviteMessageLabel;
+
+  /// No description provided for @inviteMessageHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'친구에게 전할 메세지를 입력하세요'**
+  String get inviteMessageHint;
+
+  /// No description provided for @inviteButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'초대하기'**
+  String get inviteButton;
+
+  /// No description provided for @inviteSentList.
+  ///
+  /// In ko, this message translates to:
+  /// **'보낸 초대'**
+  String get inviteSentList;
+
+  /// No description provided for @inviteStatusPending.
+  ///
+  /// In ko, this message translates to:
+  /// **'응답 대기 중'**
+  String get inviteStatusPending;
+
+  /// No description provided for @inviteStatusAccepted.
+  ///
+  /// In ko, this message translates to:
+  /// **'수락됨'**
+  String get inviteStatusAccepted;
+
+  /// No description provided for @inviteStatusRejected.
+  ///
+  /// In ko, this message translates to:
+  /// **'거절됨'**
+  String get inviteStatusRejected;
+
+  /// No description provided for @inviteStatusExpired.
+  ///
+  /// In ko, this message translates to:
+  /// **'만료됨'**
+  String get inviteStatusExpired;
+
+  /// No description provided for @invitationListTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'받은 초대'**
+  String get invitationListTitle;
+
+  /// No description provided for @invitationEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'받은 초대가 없습니다'**
+  String get invitationEmpty;
+
+  /// No description provided for @invitationFrom.
+  ///
+  /// In ko, this message translates to:
+  /// **'{name}님의 초대'**
+  String invitationFrom(Object name);
+
+  /// No description provided for @invitationExpired.
+  ///
+  /// In ko, this message translates to:
+  /// **'초대가 만료되었습니다'**
+  String get invitationExpired;
+
+  /// No description provided for @invitationAccept.
+  ///
+  /// In ko, this message translates to:
+  /// **'수락'**
+  String get invitationAccept;
+
+  /// No description provided for @invitationReject.
+  ///
+  /// In ko, this message translates to:
+  /// **'거절'**
+  String get invitationReject;
+
+  /// No description provided for @invitationMoveGroupTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'그룹 이동'**
+  String get invitationMoveGroupTitle;
+
+  /// No description provided for @invitationMoveGroupContent.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 그룹을 떠나고 새 그룹으로 이동하시겠습니까?'**
+  String get invitationMoveGroupContent;
+
+  /// No description provided for @locationPickerTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'활동지역 선택'**
+  String get locationPickerTitle;
+
+  /// No description provided for @locationPickerSearching.
+  ///
+  /// In ko, this message translates to:
+  /// **'위치를 탐색 중입니다...'**
+  String get locationPickerSearching;
+
+  /// No description provided for @locationPickerSelect.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 위치로 설정'**
+  String get locationPickerSelect;
+
+  /// No description provided for @helpTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'도움말'**
+  String get helpTitle;
+
+  /// No description provided for @helpFAQ.
+  ///
+  /// In ko, this message translates to:
+  /// **'자주 묻는 질문'**
+  String get helpFAQ;
+
+  /// No description provided for @helpGuide.
+  ///
+  /// In ko, this message translates to:
+  /// **'이용 가이드'**
+  String get helpGuide;
+
+  /// No description provided for @helpContact.
+  ///
+  /// In ko, this message translates to:
+  /// **'문의하기'**
+  String get helpContact;
+
+  /// No description provided for @helpEmail.
+  ///
+  /// In ko, this message translates to:
+  /// **'이메일 문의'**
+  String get helpEmail;
+
+  /// No description provided for @helpBugReport.
+  ///
+  /// In ko, this message translates to:
+  /// **'버그 신고'**
+  String get helpBugReport;
+
+  /// No description provided for @helpServiceInfo.
+  ///
+  /// In ko, this message translates to:
+  /// **'서비스 정보'**
+  String get helpServiceInfo;
+
+  /// No description provided for @profileDetailReport.
+  ///
+  /// In ko, this message translates to:
+  /// **'신고하기'**
+  String get profileDetailReport;
+
+  /// No description provided for @profileDetailBlock.
+  ///
+  /// In ko, this message translates to:
+  /// **'차단하기'**
+  String get profileDetailBlock;
+
+  /// No description provided for @profileDetailBlockConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'차단하면 서로의 프로필을 볼 수 없으며,\n채팅 및 초대를 받을 수 없습니다.\n정말 차단하시겠습니까?'**
+  String get profileDetailBlockConfirm;
 }
 
 class _AppLocalizationsDelegate
@@ -1113,14 +1111,8 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) => <String>[
-    'en',
-    'ja',
-    'ko',
-    'th',
-    'vi',
-    'zh',
-  ].contains(locale.languageCode);
+  bool isSupported(Locale locale) =>
+      <String>['en', 'ko'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -1131,16 +1123,8 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
     case 'en':
       return AppLocalizationsEn();
-    case 'ja':
-      return AppLocalizationsJa();
     case 'ko':
       return AppLocalizationsKo();
-    case 'th':
-      return AppLocalizationsTh();
-    case 'vi':
-      return AppLocalizationsVi();
-    case 'zh':
-      return AppLocalizationsZh();
   }
 
   throw FlutterError(
