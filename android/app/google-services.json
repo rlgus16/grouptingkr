@@ -15,11 +15,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "826622552589-7i7m4k1b00t8r62qtjcpusk38cn24uet.apps.googleusercontent.com",
+          "client_id": "826622552589-h7jd3q2klfbuursunr0eqcnbe62t18fp.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.rlgus16.groupting",
-            "certificate_hash": "a5a52a8c4daed07289976c2d23c262687cc5c182"
+            "certificate_hash": "764533baaafda2db91ac68df5ea3d4e840032cfd"
           }
         },
         {
