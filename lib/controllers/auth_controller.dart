@@ -230,9 +230,14 @@ class AuthController extends ChangeNotifier {
         },
         verificationFailed: (FirebaseAuthException e) {
           _setLoading(false);
-          String msg = '인증번호 전송 실패';
+          // 로그에 실제 에러 코드와 메시지 출력
+          print('Phone Auth Error Code: ${e.code}');
+          print('Phone Auth Error Message: ${e.message}');
+
+          String msg = '인증번호 전송 실패 (${e.code})'; // 에러 코드를 화면에 표시
           if (e.code == 'invalid-phone-number') msg = '잘못된 전화번호 형식입니다.';
           else if (e.code == 'too-many-requests') msg = '너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요.';
+          // SHA-1 문제일 경우 e.code는 보통 'invalid-app-credential' 등으로 나옵니다.
           onError(msg);
         },
         codeSent: (String verificationId, int? resendToken) {
