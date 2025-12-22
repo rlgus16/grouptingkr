@@ -336,42 +336,41 @@ class FCMService {
   // 포그라운드 메시지 처리 (상세 로그)
   void _handleForegroundMessage(RemoteMessage message) {
     debugPrint('=== 포그라운드 FCM 메시지 수신 ===');
-    debugPrint('제목: ${message.notification?.title}');
-    debugPrint('내용: ${message.notification?.body}');
-    debugPrint('전체 데이터: ${message.data}');
-    debugPrint('메시지 ID: ${message.messageId}');
-    debugPrint('전송 시간: ${message.sentTime}');
+    debugPrint('데이터: ${message.data}');
 
+    // 시스템 메시지는 무시
     if (message.data['senderId'] == 'system') {
-      debugPrint('시스템 메시지이므로 알림을 표시하지 않습니다.');
       return;
     }
-    
+
     final messageType = message.data['type'];
-    debugPrint('메시지 타입: $messageType');
-    
+    // 서버 키값 대응 (chatRoomId 또는 chatroomId)
+    final msgChatRoomId = message.data['chatRoomId'] ?? message.data['chatroomId'];
+
     // 초대 알림 특별 처리
     if (messageType == 'new_invitation') {
-      debugPrint('초대 알림 감지 - 특별 처리 시작');
       _handleInvitationForegroundMessage(message);
       return;
     }
-    
-    // 메시지 타입이 new_message인 경우에만 채팅방 확인
-    final messageChatRoomId = message.data['chatroomId'];
-    debugPrint('채팅방 ID: $messageChatRoomId (현재 활성: $_currentChatRoomId)');
-    
-    if (messageType == 'new_message' && messageChatRoomId != null) {
-      // 현재 활성 채팅방과 같은 채팅방의 메시지인지 확인
-      if (_currentChatRoomId == messageChatRoomId) {
-        debugPrint('현재 활성 채팅방($messageChatRoomId)의 메시지이므로 알림 표시하지 않음');
-        return; // 알림 표시하지 않음
-      } else {
-        debugPrint('다른 채팅방($messageChatRoomId)의 메시지 - 알림 표시 예정');
+
+    // 현재 보고 있는 채팅방 관련 알림 차단 로직
+    if (_currentChatRoomId != null && msgChatRoomId != null) {
+      // (1) 일반 채팅: 방 ID가 정확히 일치하면 알림 안 띄움
+      if (msgChatRoomId == _currentChatRoomId) {
+        debugPrint('현재 채팅방 메시지입니다. 알림 생략.');
+        return;
+      }
+
+      // (2) 매칭 성공: 알림의 방 ID(예: A_B)가 내 현재 방 ID(예: A)를 포함하면 알림 안 띄움
+      // 즉, 내가 대기방에 있는데 매칭되었다는 알림이 오면 팝업 띄우지 않음
+      if (messageType == 'matching_completed' &&
+          msgChatRoomId.toString().contains(_currentChatRoomId!)) {
+        debugPrint('현재 보고 있는 그룹의 매칭 알림입니다. 알림 생략.');
+        return;
       }
     }
-    
-    // 포그라운드에서 로컬 알림 표시
+
+    // 4. 위 조건에 걸리지 않으면 로컬 알림 표시
     debugPrint('로컬 알림 표시 시작...');
     _showLocalNotification(message);
   }
