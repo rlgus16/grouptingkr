@@ -1590,7 +1590,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
                       ),
                     ),
                     child: Text(
-                      hasUnread ? '새로운 메시지 도착 💬' : '채팅방 입장',
+                      hasUnread ? '새로운 메시지 💬' : '채팅방 입장',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                   );
@@ -1652,13 +1652,8 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
 
                         return OutlinedButton.icon(
                           onPressed: _navigateToChat,
-                          icon: Icon(
-                            Icons.chat_bubble_outline,
-                            size: 20,
-                            color: hasUnread ? Colors.white : AppTheme.gray700,
-                          ),
                           label: Text(
-                            '채팅방 입장',
+                            hasUnread ? '새로운 메시지 💬' : '채팅방 입장',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                             ),

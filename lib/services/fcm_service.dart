@@ -344,7 +344,7 @@ class FCMService {
     }
 
     final messageType = message.data['type'];
-    // 서버 키값 대응 (chatRoomId 또는 chatroomId)
+    // 서버 키값 대응 (chatRoomId 또는 chatroomId 둘 다 확인)
     final msgChatRoomId = message.data['chatRoomId'] ?? message.data['chatroomId'];
 
     // 초대 알림 특별 처리
@@ -361,7 +361,7 @@ class FCMService {
         return;
       }
 
-      // (2) 매칭 성공: 알림의 방 ID(예: A_B)가 내 현재 방 ID(예: A)를 포함하면 알림 안 띄움
+      // 매칭 성공: 알림의 방 ID(예: A_B)가 내 현재 방 ID(예: A)를 포함하면 알림 안 띄움
       // 즉, 내가 대기방에 있는데 매칭되었다는 알림이 오면 팝업 띄우지 않음
       if (messageType == 'matching_completed' &&
           msgChatRoomId.toString().contains(_currentChatRoomId!)) {
@@ -370,7 +370,7 @@ class FCMService {
       }
     }
 
-    // 4. 위 조건에 걸리지 않으면 로컬 알림 표시
+    // 위 조건에 걸리지 않으면 로컬 알림 표시
     debugPrint('로컬 알림 표시 시작...');
     _showLocalNotification(message);
   }

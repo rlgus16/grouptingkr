@@ -19,6 +19,7 @@ import 'firebase_options.dart';
 import 'services/version_service.dart';
 import 'views/update_view.dart';
 import 'l10n/generated/app_localizations.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 // 전역 네비게이터 키
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -60,19 +61,71 @@ void main() async {
 // FCM 백그라운드 메시지 핸들러
 @pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // 시스템 메시지(senderId가 'system')인 경우 백그라운드 처리 중단
-  if (message.data['senderId'] == 'system') {
-    debugPrint('백그라운드: 시스템 메시지 무시됨 (알림 미표시)');
-    return;
-  }
-
-  // Firebase 초기화 (백그라운드에서 Firebase 기능 사용 시 필요)
-  // 시스템 메시지가 아닌 경우에만 실행됩니다.
+  // Firebase 초기화
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // 시스템 메시지 무시
+  if (message.data['senderId'] == 'system') {
+    return;
+  }
+
   debugPrint('백그라운드 메시지 수신: ${message.messageId}');
+
+  // 로컬 알림 플러그인 설정
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+  FlutterLocalNotificationsPlugin();
+
+  const AndroidInitializationSettings initializationSettingsAndroid =
+  AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  const InitializationSettings initializationSettings =
+  InitializationSettings(android: initializationSettingsAndroid);
+
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+
+  // 알림 채널 생성
+  const AndroidNotificationChannel channel = AndroidNotificationChannel(
+    'groupting_message',
+    '채팅 메세지 알림',
+    description: '새로운 채팅 메세지 알림을 받습니다',
+    importance: Importance.high,
+  );
+
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(channel);
+
+  // 알림 표시
+  String? title = message.notification?.title;
+  String? body = message.notification?.body;
+
+  // 데이터 메시지인 경우 내용 채우기
+  if (title == null && message.data.isNotEmpty) {
+    title = message.data['senderNickname'] ?? '알림';
+    body = message.data['content'] ?? '새로운 메시지가 도착했습니다.';
+    if (message.data['type'] == 'image') {
+      body = '(사진)';
+    }
+  }
+
+  if (title != null && body != null) {
+    await flutterLocalNotificationsPlugin.show(
+      message.hashCode,
+      title,
+      body,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          channel.id,
+          channel.name,
+          channelDescription: channel.description,
+          icon: '@mipmap/ic_launcher',
+          importance: Importance.high,
+        ),
+      ),
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
