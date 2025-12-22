@@ -68,6 +68,11 @@
 				<array>
 					<string>com.googleusercontent.apps.826622552589-320m8mfr1vg913ivqnk6giboivnejkd1</string>
 				</array>
+		<key>CFBundleLocalizations</key>
+        <array>
+            <string>ko</string>
+            <string>en</string>
+            </array>
 			</dict>
 		</array>
 	</dict>
