@@ -194,7 +194,7 @@ class AuthController extends ChangeNotifier {
 
       // 5. FCM 토큰 저장
       try {
-        await _fcmService.retryTokenSave();
+        await _fcmService.ensureTokenSaved();
       } catch (_) {}
 
       // 성공 처리
@@ -453,14 +453,14 @@ class AuthController extends ChangeNotifier {
         if (_currentUserModel != null) {
           notifyListeners();
           try {
-            await _fcmService.retryTokenSave();
+            await _fcmService.ensureTokenSaved();
           } catch (_) {}
         } else {
           // 사용자 데이터 없음 (계정 복구 시도)
           await _attemptAccountRecovery(userCredential.user!);
           notifyListeners();
           if (_currentUserModel != null) {
-            try { await _fcmService.retryTokenSave(); } catch (_) {}
+            try { await _fcmService.ensureTokenSaved(); } catch (_) {}
           }
         }
       } else {

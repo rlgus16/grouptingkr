@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -22,6 +24,12 @@ class FCMService {
 
   String? _fcmToken;
   String? _currentChatRoomId; // 현재 활성 채팅방 ID 추적
+  
+  // FCM 토큰 저장 재시도 관련 필드
+  bool _tokenSavePending = false;
+  Timer? _tokenSaveRetryTimer;
+  int _tokenSaveRetryCount = 0;
+  static const int _maxTokenSaveRetries = 5;
   
   // FCM 토큰 getter
   String? get fcmToken => _fcmToken;
@@ -306,32 +314,93 @@ class FCMService {
       if (currentUser == null) {
         debugPrint('사용자가 로그인되지 않음 - 토큰 저장 연기');
         _fcmToken = token;
+        _tokenSavePending = true;
         return;
       }
 
       debugPrint('Firestore에 FCM 토큰 저장 중... (사용자: ${currentUser.uid})');
+      debugPrint('저장할 토큰: ${token.substring(0, 20)}...');
       
-      // 사용자 문서가 존재하는지 먼저 확인
-      final userDoc = await _firebaseService.users.doc(currentUser.uid).get();
-      if (!userDoc.exists) {
-        debugPrint('사용자 문서가 존재하지 않음 - 토큰 저장 연기');
-        _fcmToken = token;
-        return;
-      }
-
+      // update()를 사용하여 기존 문서에 필드 추가/업데이트
       await _firebaseService.users.doc(currentUser.uid).update({
         'fcmToken': token,
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      debugPrint('FCM 토큰 Firestore 저장 성공!');
+      // 저장 확인을 위해 서버에서 직접 읽어옴 (캐시가 아닌 서버 데이터 확인)
+      final doc = await _firebaseService.users.doc(currentUser.uid).get(
+        const GetOptions(source: Source.server),
+      );
+      final savedToken = doc.data()?['fcmToken'];
+      
+      if (savedToken == token) {
+        debugPrint('FCM 토큰 Firestore 저장 확인 완료!');
+        _tokenSavePending = false;
+        _tokenSaveRetryCount = 0;
+        _tokenSaveRetryTimer?.cancel();
+      } else {
+        debugPrint('FCM 토큰 저장 확인 실패! 저장된 토큰: $savedToken');
+        _tokenSavePending = true;
+        _scheduleTokenSaveRetry();
+      }
     } catch (e) {
       debugPrint('Firestore 토큰 업데이트 실패: $e');
-      // FCM 토큰 Firestore 저장 오류
-      // 토큰만 저장해두고, 나중에 다시 시도
       _fcmToken = token;
+      _tokenSavePending = true;
+      _scheduleTokenSaveRetry();
     }
   }
+
+
+  // FCM 토큰 저장 재시도 스케줄러
+  void _scheduleTokenSaveRetry() {
+    if (_tokenSaveRetryCount >= _maxTokenSaveRetries) {
+      debugPrint('FCM 토큰 저장 최대 재시도 횟수 초과');
+      return;
+    }
+    
+    _tokenSaveRetryTimer?.cancel();
+    final delaySeconds = math.pow(2, _tokenSaveRetryCount).toInt();
+    _tokenSaveRetryCount++;
+    
+    debugPrint('FCM 토큰 저장 재시도 예약: ${delaySeconds}초 후 (시도: $_tokenSaveRetryCount)');
+    
+    _tokenSaveRetryTimer = Timer(Duration(seconds: delaySeconds), () {
+      if (_fcmToken != null && _tokenSavePending) {
+        _updateTokenInFirestore(_fcmToken!);
+      }
+    });
+  }
+
+  // 로그인 후 FCM 토큰이 저장되었는지 확인하고 저장 (공개 메서드)
+  // 항상 새로운 토큰을 가져와서 저장합니다 (앱 재설치/디바이스 변경 대응)
+  Future<void> ensureTokenSaved() async {
+    debugPrint('FCM 토큰 새로 가져오기 및 저장 시작...');
+    
+    try {
+      // 항상 FCM에서 새로운 토큰을 가져옴 (캐시된 토큰 사용하지 않음)
+      final freshToken = await _messaging.getToken();
+      
+      if (freshToken == null) {
+        debugPrint('FCM 토큰을 가져올 수 없습니다.');
+        return;
+      }
+      
+      debugPrint('FCM 새 토큰 획득: ${freshToken.substring(0, 20)}...');
+      _fcmToken = freshToken;
+      
+      // Firestore에 저장
+      await _updateTokenInFirestore(freshToken);
+    } catch (e) {
+      debugPrint('FCM 토큰 갱신 실패: $e');
+      // 실패 시 기존 로직으로 폴백
+      if (_fcmToken != null) {
+        await _updateTokenInFirestore(_fcmToken!);
+      }
+    }
+  }
+
+
 
   // 포그라운드 메시지 처리 (상세 로그)
   void _handleForegroundMessage(RemoteMessage message) {
@@ -488,13 +557,36 @@ class FCMService {
   // 포그라운드에서 로컬 알림 표시
   Future<void> _showLocalNotification(RemoteMessage message) async {
     try {
+      // Support both notification payload and data-only messages
       final notification = message.notification;
-      if (notification == null) {
-        debugPrint('FCM 알림 데이터가 null입니다');
+      final data = message.data;
+      
+      // Extract title and body from notification or data payload
+      String? title;
+      String? body;
+      
+      if (notification != null) {
+        title = notification.title;
+        body = notification.body;
+      } else if (data.isNotEmpty) {
+        // Data-only message: extract from data payload
+        final messageType = data['type'];
+        if (messageType == 'new_message') {
+          title = data['senderNickname'] ?? '새 메시지';
+          body = data['content'] ?? '';
+        } else {
+          // For other types, try generic fields
+          title = data['title'] ?? '알림';
+          body = data['body'] ?? data['message'] ?? '';
+        }
+      }
+      
+      if (title == null || title.isEmpty) {
+        debugPrint('FCM 알림 데이터가 없거나 유효하지 않습니다');
         return;
       }
 
-      debugPrint('로컬 알림 표시 시작: ${notification.title}');
+      debugPrint('로컬 알림 표시 시작: $title');
 
       // 플러그인 상태 확인
       try {
@@ -548,8 +640,8 @@ class FCMService {
       // 로컬 알림 표시
       await _localNotifications.show(
         notificationId,
-        notification.title,
-        notification.body,
+        title,
+        body,
         platformChannelSpecifics,
         payload: payload,
       );

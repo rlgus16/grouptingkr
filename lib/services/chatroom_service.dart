@@ -106,6 +106,7 @@ class ChatroomService {
       await _chatroomsCollection.doc(chatRoomId).update({
         'messages': FieldValue.arrayUnion([newMessage.toFirestore()]),
         'lastMessage': newMessage.toFirestore(),
+        'lastMessageId': messageId, // Required for Cloud Function to detect new messages and send push notifications
         'updatedAt': FieldValue.serverTimestamp(),
         'messageCount': FieldValue.increment(1),
       });

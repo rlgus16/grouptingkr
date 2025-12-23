@@ -108,8 +108,9 @@ class UserModel {
   }
 
   // Firestore에 저장할 데이터 형태로 변환
+  // 주의: fcmToken은 null인 경우 제외하여 기존 값을 덮어쓰지 않도록 함
   Map<String, dynamic> toFirestore() {
-    return {
+    final data = <String, dynamic>{
       'uid': uid,
       'email': email,
       'phoneNumber': phoneNumber,
@@ -121,7 +122,7 @@ class UserModel {
       'activityArea': activityArea,
       'profileImages': profileImages,
       'currentGroupId': currentGroupId,
-      'fcmToken': fcmToken,
+      // fcmToken은 FCMService에서 별도로 관리하므로 여기서는 제외
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
       'isProfileComplete': isProfileComplete,
@@ -131,7 +132,15 @@ class UserModel {
       'latitude': latitude,
       'longitude': longitude,
     };
+    
+    // fcmToken이 null이 아닌 경우에만 포함 (기존 값 덮어쓰기 방지)
+    if (fcmToken != null) {
+      data['fcmToken'] = fcmToken;
+    }
+    
+    return data;
   }
+
 
   // 사용자 정보 업데이트용 copyWith 메서드
   UserModel copyWith({
