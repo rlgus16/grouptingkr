@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:in_app_purchase/in_app_purchase.dart';
-import '../controllers/store_controller.dart';
 import '../utils/app_theme.dart';
-import '../l10n/generated/app_localizations.dart';
 
 class StoreView extends StatefulWidget {
   const StoreView({super.key});
@@ -12,284 +8,215 @@ class StoreView extends StatefulWidget {
   State<StoreView> createState() => _StoreViewState();
 }
 
-class _StoreViewState extends State<StoreView> {
+class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  // Ting packages data
+  final List<TingPackage> _packages = [
+    TingPackage(
+      baseAmount: 100,
+      bonusAmount: 0,
+      price: '₩1,4000',
+    ),
+    TingPackage(
+      baseAmount: 200,
+      bonusAmount: 20,
+      price: '₩2,8000',
+    ),
+    TingPackage(
+      baseAmount: 400,
+      bonusAmount: 80,
+      price: '₩5,6000',
+    ),
+    TingPackage(
+      baseAmount: 800,
+      bonusAmount: 240,
+      price: '₩112,000',
+    ),
+  ];
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<StoreController>().initialize();
-    });
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.1),
+      end: Offset.zero,
+    ).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
+    );
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    
     return Scaffold(
       backgroundColor: AppTheme.gray50,
       appBar: AppBar(
-        title: Text(l10n.storeTitle),
+        title: const Text('스토어'),
         centerTitle: false,
         elevation: 0,
         backgroundColor: AppTheme.gray50,
         foregroundColor: AppTheme.textPrimary,
-        actions: [
-          Consumer<StoreController>(
-            builder: (context, controller, _) {
-              return TextButton(
-                onPressed: controller.isLoading ? null : () => controller.restorePurchases(),
-                child: Text(
-                  l10n.storeRestorePurchases,
-                  style: TextStyle(
-                    color: controller.isLoading ? AppTheme.gray400 : AppTheme.primaryColor,
-                    fontSize: 14,
-                  ),
-                ),
-              );
-            },
+      ),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SlideTransition(
+          position: _slideAnimation,
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 40),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header Banner
+                _buildHeaderBanner(),
+                const SizedBox(height: 28),
+                // Section Title
+                _buildSectionTitle(),
+                const SizedBox(height: 16),
+                // Ting Packages Grid
+                _buildPackagesGrid(),
+                const SizedBox(height: 24),
+                // Info Cards
+                _buildInfoCards(),
+              ],
+            ),
           ),
-        ],
-      ),
-      body: Consumer<StoreController>(
-        builder: (context, controller, _) {
-          if (controller.isLoading && controller.products.isEmpty) {
-            return _buildLoadingState();
-          }
-
-          if (!controller.isStoreAvailable) {
-            return _buildUnavailableState(l10n);
-          }
-
-          if (controller.error != null && controller.products.isEmpty) {
-            return _buildErrorState(controller.error!, l10n, controller);
-          }
-
-          return _buildStoreContent(context, controller, l10n);
-        },
-      ),
-    );
-  }
-
-  Widget _buildLoadingState() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(color: AppTheme.primaryColor),
-          SizedBox(height: 16),
-          Text(
-            'Loading store...',
-            style: TextStyle(color: AppTheme.textSecondary),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildUnavailableState(AppLocalizations l10n) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppTheme.gray100,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.store_outlined,
-                size: 64,
-                color: AppTheme.gray400,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              l10n.storeUnavailable,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              l10n.storeUnavailableDesc,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 14,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
         ),
       ),
     );
   }
 
-  Widget _buildErrorState(String error, AppLocalizations l10n, StoreController controller) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: AppTheme.errorColor,
-            ),
-            const SizedBox(height: 24),
-            Text(
-              l10n.storeError,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              error,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 14,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () => controller.initialize(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: Text(l10n.commonRetry),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStoreContent(BuildContext context, StoreController controller, AppLocalizations l10n) {
-    // Show error snackbar if there's an error
-    if (controller.error != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(controller.error!),
-            backgroundColor: AppTheme.errorColor,
-            action: SnackBarAction(
-              label: l10n.commonClose,
-              textColor: Colors.white,
-              onPressed: () => controller.clearError(),
-            ),
-          ),
-        );
-        controller.clearError();
-      });
-    }
-
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 40),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Premium Banner
-          _buildPremiumBanner(l10n),
-          
-          const SizedBox(height: 24),
-          
-          // Premium Subscription Section
-          if (controller.premiumProducts.isNotEmpty) ...[
-            _buildSectionTitle(l10n.storePremiumSection, Icons.workspace_premium),
-            const SizedBox(height: 12),
-            ...controller.premiumProducts.map((product) => 
-              _buildPremiumCard(context, product, controller, l10n)
-            ),
-            const SizedBox(height: 24),
-          ],
-
-          // Coins Section
-          if (controller.coinProducts.isNotEmpty) ...[
-            _buildSectionTitle(l10n.storeCoinsSection, Icons.monetization_on_outlined),
-            const SizedBox(height: 12),
-            _buildCoinGrid(context, controller.coinProducts, controller, l10n),
-          ],
-
-          // Empty State when no products
-          if (controller.products.isEmpty) ...[
-            _buildEmptyProducts(l10n),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPremiumBanner(AppLocalizations l10n) {
+  Widget _buildHeaderBanner() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           colors: [
-            AppTheme.primaryColor,
-            AppTheme.primaryColor.withValues(alpha: 0.8),
+            Color(0xFFFFD54F),
+            Color(0xFFFFB300),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: const Color(0xFFFFB300).withValues(alpha: 0.35),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          Row(
+          // Decorative circles
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.15),
+              ),
+            ),
+          ),
+          Positioned(
+            right: 40,
+            bottom: -30,
+            child: Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.1),
+              ),
+            ),
+          ),
+          // Content
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.25),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Text(
+                      '💎',
+                      style: TextStyle(fontSize: 28),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Ting 충전하기',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '매칭에 필요한 Ting을 충전하세요',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
-                  Icons.diamond_outlined,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      l10n.storePremiumTitle,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Icon(
+                      Icons.local_offer_outlined,
+                      color: Colors.white.withValues(alpha: 0.95),
+                      size: 18,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(width: 8),
                     Text(
-                      l10n.storePremiumSubtitle,
+                      '많이 구매할수록 더 많은 보너스!',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        fontSize: 14,
+                        color: Colors.white.withValues(alpha: 0.95),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -297,68 +224,233 @@ class _StoreViewState extends State<StoreView> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          // Benefits
-          _buildPremiumBenefit(Icons.visibility, l10n.storeBenefit1),
-          const SizedBox(height: 8),
-          _buildPremiumBenefit(Icons.flash_on, l10n.storeBenefit2),
-          const SizedBox(height: 8),
-          _buildPremiumBenefit(Icons.favorite, l10n.storeBenefit3),
         ],
       ),
     );
   }
 
-  Widget _buildPremiumBenefit(IconData icon, String text) {
+  Widget _buildSectionTitle() {
     return Row(
       children: [
-        Icon(icon, color: Colors.white.withValues(alpha: 0.9), size: 18),
-        const SizedBox(width: 8),
-        Text(
-          text,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.9),
-            fontSize: 13,
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFB300).withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: const Text(
+            '✨',
+            style: TextStyle(fontSize: 18),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildSectionTitle(String title, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, color: AppTheme.primaryColor, size: 22),
-        const SizedBox(width: 8),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
+        const SizedBox(width: 12),
+        const Text(
+          'Ting 패키지',
+          style: TextStyle(
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimary,
+            letterSpacing: -0.5,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildPremiumCard(
-    BuildContext context, 
-    ProductDetails product, 
-    StoreController controller,
-    AppLocalizations l10n,
-  ) {
-    final bool isPurchased = controller.purchasedProductIds.contains(product.id);
-    final bool isPurchasing = controller.purchasingProductId == product.id;
-    final bool isMonthly = product.id.contains('monthly');
+  Widget _buildPackagesGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
+        childAspectRatio: 0.78,
+      ),
+      itemCount: _packages.length,
+      itemBuilder: (context, index) {
+        return _buildPackageCard(_packages[index], index);
+      },
+    );
+  }
 
+  Widget _buildPackageCard(TingPackage package, int index) {
+    final totalAmount = package.baseAmount + package.bonusAmount;
+    final hasBonus = package.bonusAmount > 0;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 400 + (index * 100)),
+      curve: Curves.easeOutBack,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: 0.8 + (0.2 * value),
+          child: Opacity(
+            opacity: value,
+            child: child,
+          ),
+        );
+      },
+      child: GestureDetector(
+        onTap: () => _onPackageTap(package),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Ting Icon
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFFE082), Color(0xFFFFCA28)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFFCA28).withValues(alpha: 0.4),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Text(
+                    '💎',
+                    style: TextStyle(fontSize: 24),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Amount Display
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${package.baseAmount}',
+                      style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 4),
+                      child: Text(
+                        'Ting',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                // Bonus Badge
+                if (hasBonus) ...[
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F5E9),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '+${package.bonusAmount} 보너스',
+                      style: const TextStyle(
+                        color: Color(0xFF2E7D32),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+                const Spacer(),
+                // Price Button
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFFB300).withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      package.price,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCards() {
+    return Column(
+      children: [
+        _buildInfoCard(
+          icon: '🔒',
+          title: '안전한 결제',
+          description: 'Google Play / App Store를 통한 안전한 결제',
+        ),
+        const SizedBox(height: 12),
+        _buildInfoCard(
+          icon: '💡',
+          title: 'Ting 사용처',
+          description: '매칭 신청, 프로필 부스트 등 다양한 기능 이용',
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoCard({
+    required String icon,
+    required String title,
+    required String description,
+  }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: isMonthly ? Border.all(color: AppTheme.primaryColor, width: 2) : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
@@ -369,301 +461,203 @@ class _StoreViewState extends State<StoreView> {
       ),
       child: Row(
         children: [
-          // Icon
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+              color: AppTheme.gray100,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              isMonthly ? Icons.star : Icons.diamond,
-              color: AppTheme.primaryColor,
-              size: 24,
+            child: Text(
+              icon,
+              style: const TextStyle(fontSize: 20),
             ),
           ),
-          const SizedBox(width: 16),
-          // Details
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      isMonthly ? l10n.storeMonthlyPlan : l10n.storeYearlyPlan,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                    if (isMonthly) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          l10n.storePopular,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 4),
                 Text(
-                  product.price,
+                  title,
                   style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  description,
+                  style: const TextStyle(
+                    fontSize: 13,
                     color: AppTheme.textSecondary,
-                    fontSize: 14,
                   ),
                 ),
               ],
             ),
           ),
-          // Button
-          if (isPurchased)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppTheme.successColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.check, color: AppTheme.successColor, size: 16),
-                  const SizedBox(width: 4),
-                  Text(
-                    l10n.storePurchased,
-                    style: const TextStyle(
-                      color: AppTheme.successColor,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else
-            ElevatedButton(
-              onPressed: isPurchasing || controller.isPurchasing 
-                  ? null 
-                  : () => controller.purchaseProduct(product),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              ),
-              child: isPurchasing
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : Text(
-                      l10n.storeBuyButton,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-            ),
         ],
       ),
     );
   }
 
-  Widget _buildCoinGrid(
-    BuildContext context,
-    List<ProductDetails> products,
-    StoreController controller,
-    AppLocalizations l10n,
-  ) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.85,
-      ),
-      itemCount: products.length,
-      itemBuilder: (context, index) {
-        return _buildCoinCard(context, products[index], controller, l10n);
-      },
+  void _onPackageTap(TingPackage package) {
+    // TODO: Implement actual purchase logic
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildPurchaseConfirmSheet(package),
     );
   }
 
-  Widget _buildCoinCard(
-    BuildContext context,
-    ProductDetails product,
-    StoreController controller,
-    AppLocalizations l10n,
-  ) {
-    final bool isPurchasing = controller.purchasingProductId == product.id;
-    final int coinAmount = _getCoinAmount(product.id);
+  Widget _buildPurchaseConfirmSheet(TingPackage package) {
+    final totalAmount = package.baseAmount + package.bonusAmount;
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.all(24),
+      decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(28),
+          topRight: Radius.circular(28),
+        ),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Coin Icon with amount
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.amber.shade400,
-                      Colors.amber.shade600,
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.amber.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.monetization_on,
-                  color: Colors.white,
-                  size: 32,
-                ),
-              ),
-            ],
+          // Handle bar
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppTheme.gray300,
+              borderRadius: BorderRadius.circular(2),
+            ),
           ),
-          const SizedBox(height: 12),
-          // Coin amount
+          const SizedBox(height: 24),
+          // Icon
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFFE082), Color(0xFFFFCA28)],
+              ),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFFCA28).withValues(alpha: 0.4),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: const Text(
+              '💎',
+              style: TextStyle(fontSize: 36),
+            ),
+          ),
+          const SizedBox(height: 20),
+          // Amount
           Text(
-            '$coinAmount',
+            '$totalAmount Ting',
             style: const TextStyle(
-              fontSize: 22,
+              fontSize: 28,
               fontWeight: FontWeight.bold,
               color: AppTheme.textPrimary,
             ),
           ),
+          if (package.bonusAmount > 0) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '${package.baseAmount} + ${package.bonusAmount} 보너스',
+                style: const TextStyle(
+                  color: Color(0xFF2E7D32),
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 8),
           Text(
-            l10n.storeCoins,
+            package.price,
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 18,
               color: AppTheme.textSecondary,
+              fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 12),
-          // Price button
+          const SizedBox(height: 28),
+          // Purchase Button
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: isPurchasing || controller.isPurchasing
-                  ? null
-                  : () => controller.purchaseProduct(product),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amber.shade600,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: isPurchasing
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : Text(
-                      product.price,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
+              onPressed: () {
+                Navigator.pop(context);
+                // TODO: Trigger actual in-app purchase
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('$totalAmount Ting 구매를 시작합니다...'),
+                    backgroundColor: const Color(0xFFFFB300),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFFB300),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                '구매하기',
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
+          const SizedBox(height: 12),
+          // Cancel Button
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              '취소',
+              style: TextStyle(
+                color: AppTheme.textSecondary,
+                fontSize: 15,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
         ],
       ),
     );
   }
+}
 
-  Widget _buildEmptyProducts(AppLocalizations l10n) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 60),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppTheme.gray100,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.shopping_bag_outlined,
-                size: 48,
-                color: AppTheme.gray400,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              l10n.storeNoProducts,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.storeNoProductsDesc,
-              style: const TextStyle(
-                color: AppTheme.textSecondary,
-                fontSize: 14,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+/// Data model for Ting packages
+class TingPackage {
+  final int baseAmount;
+  final int bonusAmount;
+  final String price;
 
-  int _getCoinAmount(String productId) {
-    if (productId.contains('1000')) return 1000;
-    if (productId.contains('500')) return 500;
-    if (productId.contains('100')) return 100;
-    return 0;
-  }
+  const TingPackage({
+    required this.baseAmount,
+    required this.bonusAmount,
+    required this.price,
+  });
 }
