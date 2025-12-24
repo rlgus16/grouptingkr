@@ -9,6 +9,7 @@ import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'profile_edit_view.dart';
 import 'settings_view.dart';
+import 'store_view.dart';
 import 'help_view.dart';
 
 class MyPageView extends StatefulWidget {
@@ -362,6 +363,11 @@ class _MyPageViewState extends State<MyPageView> {
             icon: Icons.settings_outlined,
             title: l10n.myPageMenuSettings,
             onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsView())),
+          ),
+          _buildMenuItem(
+            icon: Icons.shopping_bag_outlined,
+            title: l10n.myPageMenuStore,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const StoreView())),
           ),
           _buildMenuItem(
             icon: Icons.help_outline_rounded,

@@ -303,6 +303,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myPageMenuSettings => 'Settings';
 
   @override
+  String get myPageMenuStore => 'Store';
+
+  @override
   String get myPageMenuHelp => 'Help';
 
   @override
@@ -1282,4 +1285,66 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get homeErrorCheckConnectionDesc =>
       'Please check your Wi-Fi or mobile data connection.';
+
+  @override
+  String get storeTitle => 'Store';
+
+  @override
+  String get storeRestorePurchases => 'Restore';
+
+  @override
+  String get storeUnavailable => 'Store Unavailable';
+
+  @override
+  String get storeUnavailableDesc =>
+      'The store is currently unavailable.\nPlease try again later.';
+
+  @override
+  String get storeError => 'An error occurred';
+
+  @override
+  String get storePremiumTitle => 'Groupting Premium';
+
+  @override
+  String get storePremiumSubtitle => 'Unlock more features';
+
+  @override
+  String get storeBenefit1 => 'Unlimited profile views';
+
+  @override
+  String get storeBenefit2 => 'Priority matching';
+
+  @override
+  String get storeBenefit3 => 'Special emoticons';
+
+  @override
+  String get storePremiumSection => 'Premium Subscription';
+
+  @override
+  String get storeCoinsSection => 'Coin Packages';
+
+  @override
+  String get storeMonthlyPlan => 'Monthly';
+
+  @override
+  String get storeYearlyPlan => 'Yearly';
+
+  @override
+  String get storePopular => 'Popular';
+
+  @override
+  String get storePurchased => 'Active';
+
+  @override
+  String get storeBuyButton => 'Buy';
+
+  @override
+  String get storeCoins => 'Coins';
+
+  @override
+  String get storeNoProducts => 'No products available';
+
+  @override
+  String get storeNoProductsDesc =>
+      'No products are available at this time.\nPlease check back later.';
 }

@@ -674,6 +674,12 @@ abstract class AppLocalizations {
   /// **'설정'**
   String get myPageMenuSettings;
 
+  /// No description provided for @myPageMenuStore.
+  ///
+  /// In ko, this message translates to:
+  /// **'스토어'**
+  String get myPageMenuStore;
+
   /// No description provided for @myPageMenuHelp.
   ///
   /// In ko, this message translates to:
@@ -2509,6 +2515,126 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'Wi-Fi나 모바일 데이터 연결을 확인해주세요.'**
   String get homeErrorCheckConnectionDesc;
+
+  /// No description provided for @storeTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'스토어'**
+  String get storeTitle;
+
+  /// No description provided for @storeRestorePurchases.
+  ///
+  /// In ko, this message translates to:
+  /// **'구매 복원'**
+  String get storeRestorePurchases;
+
+  /// No description provided for @storeUnavailable.
+  ///
+  /// In ko, this message translates to:
+  /// **'스토어를 이용할 수 없습니다'**
+  String get storeUnavailable;
+
+  /// No description provided for @storeUnavailableDesc.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 스토어를 사용할 수 없습니다.\n나중에 다시 시도해주세요.'**
+  String get storeUnavailableDesc;
+
+  /// No description provided for @storeError.
+  ///
+  /// In ko, this message translates to:
+  /// **'오류가 발생했습니다'**
+  String get storeError;
+
+  /// No description provided for @storePremiumTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'그룹팅 프리미엄'**
+  String get storePremiumTitle;
+
+  /// No description provided for @storePremiumSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'더 많은 기능을 경험하세요'**
+  String get storePremiumSubtitle;
+
+  /// No description provided for @storeBenefit1.
+  ///
+  /// In ko, this message translates to:
+  /// **'무제한 프로필 확인'**
+  String get storeBenefit1;
+
+  /// No description provided for @storeBenefit2.
+  ///
+  /// In ko, this message translates to:
+  /// **'우선 매칭 기능'**
+  String get storeBenefit2;
+
+  /// No description provided for @storeBenefit3.
+  ///
+  /// In ko, this message translates to:
+  /// **'특별 이모티콘 사용'**
+  String get storeBenefit3;
+
+  /// No description provided for @storePremiumSection.
+  ///
+  /// In ko, this message translates to:
+  /// **'프리미엄 구독'**
+  String get storePremiumSection;
+
+  /// No description provided for @storeCoinsSection.
+  ///
+  /// In ko, this message translates to:
+  /// **'코인 패키지'**
+  String get storeCoinsSection;
+
+  /// No description provided for @storeMonthlyPlan.
+  ///
+  /// In ko, this message translates to:
+  /// **'월간 구독'**
+  String get storeMonthlyPlan;
+
+  /// No description provided for @storeYearlyPlan.
+  ///
+  /// In ko, this message translates to:
+  /// **'연간 구독'**
+  String get storeYearlyPlan;
+
+  /// No description provided for @storePopular.
+  ///
+  /// In ko, this message translates to:
+  /// **'인기'**
+  String get storePopular;
+
+  /// No description provided for @storePurchased.
+  ///
+  /// In ko, this message translates to:
+  /// **'구독 중'**
+  String get storePurchased;
+
+  /// No description provided for @storeBuyButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'구매'**
+  String get storeBuyButton;
+
+  /// No description provided for @storeCoins.
+  ///
+  /// In ko, this message translates to:
+  /// **'코인'**
+  String get storeCoins;
+
+  /// No description provided for @storeNoProducts.
+  ///
+  /// In ko, this message translates to:
+  /// **'상품이 없습니다'**
+  String get storeNoProducts;
+
+  /// No description provided for @storeNoProductsDesc.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 이용 가능한 상품이 없습니다.\n나중에 다시 확인해주세요.'**
+  String get storeNoProductsDesc;
 }
 
 class _AppLocalizationsDelegate

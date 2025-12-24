@@ -109,6 +109,7 @@
   "myPageLocation": "Location",
   "myPageIntro": "Bio",
   "myPageMenuSettings": "Settings",
+  "myPageMenuStore": "Store",
   "myPageMenuHelp": "Help",
   "myPageMenuAppInfo": "App Info",
 
@@ -453,5 +454,26 @@
   "homeMemberCount": "{count} members",
   "homeInvite": "Invite",
   "homeMatchFilter": "Match Filter",
-  "homeErrorCheckConnectionDesc": "Please check your Wi-Fi or mobile data connection."
+  "homeErrorCheckConnectionDesc": "Please check your Wi-Fi or mobile data connection.",
+
+  "storeTitle": "Store",
+  "storeRestorePurchases": "Restore",
+  "storeUnavailable": "Store Unavailable",
+  "storeUnavailableDesc": "The store is currently unavailable.\nPlease try again later.",
+  "storeError": "An error occurred",
+  "storePremiumTitle": "Groupting Premium",
+  "storePremiumSubtitle": "Unlock more features",
+  "storeBenefit1": "Unlimited profile views",
+  "storeBenefit2": "Priority matching",
+  "storeBenefit3": "Special emoticons",
+  "storePremiumSection": "Premium Subscription",
+  "storeCoinsSection": "Coin Packages",
+  "storeMonthlyPlan": "Monthly",
+  "storeYearlyPlan": "Yearly",
+  "storePopular": "Popular",
+  "storePurchased": "Active",
+  "storeBuyButton": "Buy",
+  "storeCoins": "Coins",
+  "storeNoProducts": "No products available",
+  "storeNoProductsDesc": "No products are available at this time.\nPlease check back later."
 }

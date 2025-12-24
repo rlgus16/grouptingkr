@@ -109,6 +109,7 @@
   "myPageLocation": "위치",
   "myPageIntro": "자기소개",
   "myPageMenuSettings": "설정",
+  "myPageMenuStore": "스토어",
   "myPageMenuHelp": "도움말",
   "myPageMenuAppInfo": "앱 정보",
 
@@ -453,5 +454,26 @@
   "homeMemberCount": "{count}명",
   "homeInvite": "초대하기",
   "homeMatchFilter": "매칭 필터",
-  "homeErrorCheckConnectionDesc": "Wi-Fi나 모바일 데이터 연결을 확인해주세요."
+  "homeErrorCheckConnectionDesc": "Wi-Fi나 모바일 데이터 연결을 확인해주세요.",
+
+  "storeTitle": "스토어",
+  "storeRestorePurchases": "구매 복원",
+  "storeUnavailable": "스토어를 이용할 수 없습니다",
+  "storeUnavailableDesc": "현재 스토어를 사용할 수 없습니다.\n나중에 다시 시도해주세요.",
+  "storeError": "오류가 발생했습니다",
+  "storePremiumTitle": "그룹팅 프리미엄",
+  "storePremiumSubtitle": "더 많은 기능을 경험하세요",
+  "storeBenefit1": "무제한 프로필 확인",
+  "storeBenefit2": "우선 매칭 기능",
+  "storeBenefit3": "특별 이모티콘 사용",
+  "storePremiumSection": "프리미엄 구독",
+  "storeCoinsSection": "코인 패키지",
+  "storeMonthlyPlan": "월간 구독",
+  "storeYearlyPlan": "연간 구독",
+  "storePopular": "인기",
+  "storePurchased": "구독 중",
+  "storeBuyButton": "구매",
+  "storeCoins": "코인",
+  "storeNoProducts": "상품이 없습니다",
+  "storeNoProductsDesc": "현재 이용 가능한 상품이 없습니다.\n나중에 다시 확인해주세요."
 }

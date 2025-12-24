@@ -298,6 +298,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get myPageMenuSettings => '설정';
 
   @override
+  String get myPageMenuStore => '스토어';
+
+  @override
   String get myPageMenuHelp => '도움말';
 
   @override
@@ -1255,4 +1258,64 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get homeErrorCheckConnectionDesc => 'Wi-Fi나 모바일 데이터 연결을 확인해주세요.';
+
+  @override
+  String get storeTitle => '스토어';
+
+  @override
+  String get storeRestorePurchases => '구매 복원';
+
+  @override
+  String get storeUnavailable => '스토어를 이용할 수 없습니다';
+
+  @override
+  String get storeUnavailableDesc => '현재 스토어를 사용할 수 없습니다.\n나중에 다시 시도해주세요.';
+
+  @override
+  String get storeError => '오류가 발생했습니다';
+
+  @override
+  String get storePremiumTitle => '그룹팅 프리미엄';
+
+  @override
+  String get storePremiumSubtitle => '더 많은 기능을 경험하세요';
+
+  @override
+  String get storeBenefit1 => '무제한 프로필 확인';
+
+  @override
+  String get storeBenefit2 => '우선 매칭 기능';
+
+  @override
+  String get storeBenefit3 => '특별 이모티콘 사용';
+
+  @override
+  String get storePremiumSection => '프리미엄 구독';
+
+  @override
+  String get storeCoinsSection => '코인 패키지';
+
+  @override
+  String get storeMonthlyPlan => '월간 구독';
+
+  @override
+  String get storeYearlyPlan => '연간 구독';
+
+  @override
+  String get storePopular => '인기';
+
+  @override
+  String get storePurchased => '구독 중';
+
+  @override
+  String get storeBuyButton => '구매';
+
+  @override
+  String get storeCoins => '코인';
+
+  @override
+  String get storeNoProducts => '상품이 없습니다';
+
+  @override
+  String get storeNoProductsDesc => '현재 이용 가능한 상품이 없습니다.\n나중에 다시 확인해주세요.';
 }

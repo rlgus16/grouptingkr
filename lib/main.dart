@@ -11,6 +11,7 @@ import 'controllers/profile_controller.dart';
 import 'controllers/group_controller.dart';
 import 'controllers/chat_controller.dart';
 import 'controllers/locale_controller.dart';
+import 'controllers/store_controller.dart';
 import 'views/login_view.dart';
 import 'views/home_view.dart';
 import 'views/register_view.dart';
@@ -140,6 +141,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ProfileController()),
         ChangeNotifierProvider(create: (_) => GroupController()),
         ChangeNotifierProvider(create: (_) => ChatController()),
+        ChangeNotifierProvider(create: (_) => StoreController()),
         ChangeNotifierProvider(create: (_) {
           final controller = LocaleController();
           controller.initialize();
