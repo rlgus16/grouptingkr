@@ -262,6 +262,10 @@
   "profileDetailReasonFraud": "Impersonation/Fraud",
   "profileDetailReasonOther": "Other",
 
+  "profileEditNicknameChangeCost": "Changing nickname costs 10 Ting.",
+  "profileEditNicknameChangeConfirm": "Change your nickname?\n10 Ting will be deducted.",
+  "profileEditInsufficientTings": "Insufficient Ting. Please recharge at the Store.",
+  "profileEditNicknameChangeSuccess": "Nickname changed. (10 Ting deducted)",
   "profileEditNicknameDuplicate": "This nickname is already in use.",
   "profileEditNicknameAvailable": "This nickname is available.",
   "profileEditNicknameCheckError": "Error checking nickname.",

@@ -716,6 +716,19 @@ class AppLocalizationsKo extends AppLocalizations {
   String get profileDetailReasonOther => '기타';
 
   @override
+  String get profileEditNicknameChangeCost => '닉네임 변경에 10 Ting이 필요합니다.';
+
+  @override
+  String get profileEditNicknameChangeConfirm =>
+      '닉네임을 변경하시겠습니까?\n10 Ting이 차감됩니다.';
+
+  @override
+  String get profileEditInsufficientTings => 'Ting이 부족합니다. 스토어에서 충전해주세요.';
+
+  @override
+  String get profileEditNicknameChangeSuccess => '닉네임이 변경되었습니다. (10 Ting 차감)';
+
+  @override
   String get profileEditNicknameDuplicate => '이미 사용 중인 닉네임입니다.';
 
   @override

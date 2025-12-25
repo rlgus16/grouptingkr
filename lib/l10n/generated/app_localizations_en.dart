@@ -726,6 +726,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileDetailReasonOther => 'Other';
 
   @override
+  String get profileEditNicknameChangeCost =>
+      'Changing nickname costs 10 Ting.';
+
+  @override
+  String get profileEditNicknameChangeConfirm =>
+      'Change your nickname?\n10 Ting will be deducted.';
+
+  @override
+  String get profileEditInsufficientTings =>
+      'Insufficient Ting. Please recharge at the Store.';
+
+  @override
+  String get profileEditNicknameChangeSuccess =>
+      'Nickname changed. (10 Ting deducted)';
+
+  @override
   String get profileEditNicknameDuplicate => 'This nickname is already in use.';
 
   @override

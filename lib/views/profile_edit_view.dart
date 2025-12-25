@@ -9,6 +9,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import '../controllers/auth_controller.dart';
 import '../controllers/profile_controller.dart';
+import '../services/user_service.dart';
 import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'location_picker_view.dart';
@@ -267,6 +268,7 @@ class _ProfileEditViewState extends State<ProfileEditView> {
                           icon: Icons.person_outline,
                           maxLength: 10,
                           onChanged: (value) {
+                            setState(() {}); // Refresh to show cost indicator
                             Future.delayed(const Duration(milliseconds: 500), () {
                               if (_nicknameController.text == value) {
                                 _checkNicknameDuplicate(value);
@@ -284,6 +286,25 @@ class _ProfileEditViewState extends State<ProfileEditView> {
                           },
                           l10n: l10n,
                         ),
+                        // 닉네임 변경 비용 안내 (처음 설정하는 경우는 표시 안함)
+                        if (_originalNickname.isNotEmpty && _nicknameController.text.trim() != _originalNickname && _nicknameController.text.trim().isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 6, left: 4),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.info_outline, size: 14, color: AppTheme.primaryColor),
+                                const SizedBox(width: 4),
+                                Text(
+                                  l10n.profileEditNicknameChangeCost,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: AppTheme.primaryColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         const SizedBox(height: 20),
                         _buildTextField(
                           controller: _heightController,
@@ -760,6 +781,53 @@ class _ProfileEditViewState extends State<ProfileEditView> {
     final authController = context.read<AuthController>();
     final user = authController.currentUserModel;
     if (user == null) return;
+
+    // 닉네임 변경 시 10 Ting 차감 (처음 설정하는 경우는 무료)
+    final newNickname = _nicknameController.text.trim();
+    final isNicknameChanged = newNickname != _originalNickname && _originalNickname.isNotEmpty;
+    
+    if (isNicknameChanged) {
+      // 잔액 확인
+      if (user.tingBalance < 10) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.profileEditInsufficientTings)),
+        );
+        return;
+      }
+      
+      // 확인 다이얼로그
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.profileEditNickname),
+          content: Text(l10n.profileEditNicknameChangeConfirm),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(l10n.commonCancel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(l10n.commonConfirm),
+            ),
+          ],
+        ),
+      );
+      
+      if (confirmed != true) return;
+      
+      // Ting 차감
+      final userService = UserService();
+      final deducted = await userService.deductTings(user.uid, 10);
+      if (!deducted) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.profileEditInsufficientTings)),
+          );
+        }
+        return;
+      }
+    }
 
     for (String imageUrl in _imagesToDelete) {
       try {

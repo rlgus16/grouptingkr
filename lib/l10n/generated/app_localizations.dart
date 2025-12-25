@@ -1490,6 +1490,30 @@ abstract class AppLocalizations {
   /// **'기타'**
   String get profileDetailReasonOther;
 
+  /// No description provided for @profileEditNicknameChangeCost.
+  ///
+  /// In ko, this message translates to:
+  /// **'닉네임 변경에 10 Ting이 필요합니다.'**
+  String get profileEditNicknameChangeCost;
+
+  /// No description provided for @profileEditNicknameChangeConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'닉네임을 변경하시겠습니까?\n10 Ting이 차감됩니다.'**
+  String get profileEditNicknameChangeConfirm;
+
+  /// No description provided for @profileEditInsufficientTings.
+  ///
+  /// In ko, this message translates to:
+  /// **'Ting이 부족합니다. 스토어에서 충전해주세요.'**
+  String get profileEditInsufficientTings;
+
+  /// No description provided for @profileEditNicknameChangeSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'닉네임이 변경되었습니다. (10 Ting 차감)'**
+  String get profileEditNicknameChangeSuccess;
+
   /// No description provided for @profileEditNicknameDuplicate.
   ///
   /// In ko, this message translates to:

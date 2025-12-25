@@ -213,4 +213,28 @@ class UserService {
   // 사용자 컬렉션 참조 getter (서비스 내부에서 사용)
   CollectionReference<Map<String, dynamic>> get usersCollection =>
       _usersCollection;
+
+  /// Ting 차감 (닉네임 변경 등에 사용)
+  /// 잔액이 부족하면 false 반환
+  Future<bool> deductTings(String userId, int amount) async {
+    try {
+      // 현재 잔액 확인
+      final doc = await _usersCollection.doc(userId).get();
+      if (!doc.exists) return false;
+      
+      final currentBalance = doc.data()?['tingBalance'] ?? 0;
+      if (currentBalance < amount) {
+        return false; // 잔액 부족
+      }
+      
+      // 원자적 차감
+      await _usersCollection.doc(userId).update({
+        'tingBalance': FieldValue.increment(-amount),
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
+      });
+      return true;
+    } catch (e) {
+      throw Exception('Ting 차감에 실패했습니다: $e');
+    }
+  }
 }

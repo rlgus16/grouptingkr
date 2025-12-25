@@ -18,17 +18,17 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
     TingPackage(
       baseAmount: 100,
       bonusAmount: 0,
-      price: '₩1,4000',
+      price: '₩14,000',
     ),
     TingPackage(
       baseAmount: 200,
       bonusAmount: 20,
-      price: '₩2,8000',
+      price: '₩28,000',
     ),
     TingPackage(
       baseAmount: 400,
       bonusAmount: 80,
-      price: '₩5,6000',
+      price: '₩56,000',
     ),
     TingPackage(
       baseAmount: 800,
@@ -430,12 +430,6 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
           icon: '🔒',
           title: '안전한 결제',
           description: 'Google Play / App Store를 통한 안전한 결제',
-        ),
-        const SizedBox(height: 12),
-        _buildInfoCard(
-          icon: '💡',
-          title: 'Ting 사용처',
-          description: '매칭 신청, 프로필 부스트 등 다양한 기능 이용',
         ),
       ],
     );

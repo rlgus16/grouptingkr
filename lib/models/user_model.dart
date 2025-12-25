@@ -18,6 +18,7 @@ class UserModel {
   final bool isProfileComplete;
   final double latitude;
   final double longitude;
+  final int tingBalance; // Ting 잔액
 
   // 알림 설정 필드
   final bool matchingNotification;
@@ -45,6 +46,7 @@ class UserModel {
     this.chatNotification = true,
     this.latitude = 0.0,
     this.longitude = 0.0,
+    this.tingBalance = 0,
   });
 
   // 나이 계산
@@ -104,6 +106,7 @@ class UserModel {
       chatNotification: dataMap['chatNotification'] ?? true,
       latitude: (data['latitude'] ?? 0.0).toDouble(),
       longitude: (data['longitude'] ?? 0.0).toDouble(),
+      tingBalance: dataMap['tingBalance'] ?? 0,
     );
   }
 
@@ -131,6 +134,7 @@ class UserModel {
       'chatNotification': chatNotification,
       'latitude': latitude,
       'longitude': longitude,
+      'tingBalance': tingBalance,
     };
     
     // fcmToken이 null이 아닌 경우에만 포함 (기존 값 덮어쓰기 방지)
@@ -164,6 +168,7 @@ class UserModel {
     bool? chatNotification,
     double? latitude,
     double? longitude,
+    int? tingBalance,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -186,6 +191,7 @@ class UserModel {
       chatNotification: chatNotification ?? this.chatNotification,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
+      tingBalance: tingBalance ?? this.tingBalance,
     );
   }
 }
