@@ -31,6 +31,12 @@
   "loginErrorEmailInvalid": "Please enter a valid email address.",
   "loginErrorPasswordEmpty": "Please enter your password.",
   "loginErrorPasswordShort": "Password must be at least 6 characters.",
+  "loginForgotPassword": "Forgot password?",
+  "loginForgotPasswordTitle": "Reset Password",
+  "loginForgotPasswordDesc": "Enter the email you used to sign up\nand we'll send you a reset link.",
+  "loginForgotPasswordSent": "Password reset email sent. Please check your inbox.",
+  "loginForgotPasswordError": "Failed to send email. Please check the email address.",
+  "loginForgotPasswordSendButton": "Send Email",
 
   "registerTitle": "Sign Up",
   "registerWelcome": "Welcome!",

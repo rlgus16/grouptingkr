@@ -63,6 +63,10 @@ class FirebaseService {
 
   Future<void> signOut() => _auth.signOut();
 
+  /// 비밀번호 재설정 이메일 발송
+  Future<void> sendPasswordResetEmail(String email) =>
+      _auth.sendPasswordResetEmail(email: email);
+
   // Storage methods
   Reference getStorageRef(String path) => _storage.ref(path);
 }

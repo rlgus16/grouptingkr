@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/locale_controller.dart';
+import '../services/firebase_service.dart';
 import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -93,11 +94,11 @@ class _LoginViewState extends State<LoginView> {
 
                       // 2. 입력 폼 섹션
                       _buildInputSection(l10n),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 12),
 
                       // 3. 에러 메시지
                       _buildErrorMessage(),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 12),
 
                       // 4. 버튼 및 하단 링크 섹션
                       _buildBottomSection(l10n),
@@ -276,6 +277,109 @@ class _LoginViewState extends State<LoginView> {
     );
   }
 
+  void _showForgotPasswordDialog(AppLocalizations l10n) {
+    final emailController = TextEditingController(text: _emailController.text);
+    bool isLoading = false;
+    
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            l10n.loginForgotPasswordTitle,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                l10n.loginForgotPasswordDesc,
+                style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: l10n.loginEmailLabel,
+                  hintText: l10n.loginEmailHint,
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  filled: true,
+                  fillColor: AppTheme.gray50,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppTheme.primaryColor),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(l10n.commonCancel),
+            ),
+            ElevatedButton(
+              onPressed: isLoading ? null : () async {
+                final email = emailController.text.trim();
+                if (email.isEmpty) return;
+                
+                setState(() => isLoading = true);
+                
+                try {
+                  final firebaseService = FirebaseService();
+                  await firebaseService.sendPasswordResetEmail(email);
+                  
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(this.context).showSnackBar(
+                      SnackBar(
+                        content: Text(l10n.loginForgotPasswordSent),
+                        backgroundColor: AppTheme.successColor,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  setState(() => isLoading = false);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(l10n.loginForgotPasswordError),
+                        backgroundColor: AppTheme.errorColor,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: isLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : Text(l10n.loginForgotPasswordSendButton),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildErrorMessage() {
     return Consumer<AuthController>(
       builder: (context, authController, _) {
@@ -385,6 +489,21 @@ class _LoginViewState extends State<LoginView> {
               ),
             ),
           ],
+        ),
+        // Forgot password link
+        TextButton(
+          onPressed: () => _showForgotPasswordDialog(l10n),
+          style: TextButton.styleFrom(
+            foregroundColor: AppTheme.textSecondary,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          ),
+          child: Text(
+            l10n.loginForgotPassword,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
       ],
     );

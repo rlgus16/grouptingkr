@@ -94,6 +94,27 @@ class AppLocalizationsEn extends AppLocalizations {
       'Password must be at least 6 characters.';
 
   @override
+  String get loginForgotPassword => 'Forgot password?';
+
+  @override
+  String get loginForgotPasswordTitle => 'Reset Password';
+
+  @override
+  String get loginForgotPasswordDesc =>
+      'Enter the email you used to sign up\nand we\'ll send you a reset link.';
+
+  @override
+  String get loginForgotPasswordSent =>
+      'Password reset email sent. Please check your inbox.';
+
+  @override
+  String get loginForgotPasswordError =>
+      'Failed to send email. Please check the email address.';
+
+  @override
+  String get loginForgotPasswordSendButton => 'Send Email';
+
+  @override
   String get registerTitle => 'Sign Up';
 
   @override

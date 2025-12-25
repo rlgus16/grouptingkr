@@ -31,6 +31,12 @@
   "loginErrorEmailInvalid": "올바른 이메일 형식을 입력해주세요.",
   "loginErrorPasswordEmpty": "비밀번호를 입력해주세요.",
   "loginErrorPasswordShort": "비밀번호는 6자 이상이어야 합니다.",
+  "loginForgotPassword": "비밀번호를 잊으셨나요?",
+  "loginForgotPasswordTitle": "비밀번호 찾기",
+  "loginForgotPasswordDesc": "가입 시 사용한 이메일을 입력하시면\n비밀번호 재설정 링크를 보내드립니다.",
+  "loginForgotPasswordSent": "비밀번호 재설정 이메일을 보냈습니다. 이메일을 확인해주세요.",
+  "loginForgotPasswordError": "이메일 발송에 실패했습니다. 이메일 주소를 확인해주세요.",
+  "loginForgotPasswordSendButton": "이메일 보내기",
 
   "registerTitle": "회원가입",
   "registerWelcome": "환영합니다!",

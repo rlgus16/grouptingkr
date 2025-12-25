@@ -266,6 +266,42 @@ abstract class AppLocalizations {
   /// **'비밀번호는 6자 이상이어야 합니다.'**
   String get loginErrorPasswordShort;
 
+  /// No description provided for @loginForgotPassword.
+  ///
+  /// In ko, this message translates to:
+  /// **'비밀번호를 잊으셨나요?'**
+  String get loginForgotPassword;
+
+  /// No description provided for @loginForgotPasswordTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'비밀번호 찾기'**
+  String get loginForgotPasswordTitle;
+
+  /// No description provided for @loginForgotPasswordDesc.
+  ///
+  /// In ko, this message translates to:
+  /// **'가입 시 사용한 이메일을 입력하시면\n비밀번호 재설정 링크를 보내드립니다.'**
+  String get loginForgotPasswordDesc;
+
+  /// No description provided for @loginForgotPasswordSent.
+  ///
+  /// In ko, this message translates to:
+  /// **'비밀번호 재설정 이메일을 보냈습니다. 이메일을 확인해주세요.'**
+  String get loginForgotPasswordSent;
+
+  /// No description provided for @loginForgotPasswordError.
+  ///
+  /// In ko, this message translates to:
+  /// **'이메일 발송에 실패했습니다. 이메일 주소를 확인해주세요.'**
+  String get loginForgotPasswordError;
+
+  /// No description provided for @loginForgotPasswordSendButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'이메일 보내기'**
+  String get loginForgotPasswordSendButton;
+
   /// No description provided for @registerTitle.
   ///
   /// In ko, this message translates to:

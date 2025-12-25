@@ -93,6 +93,25 @@ class AppLocalizationsKo extends AppLocalizations {
   String get loginErrorPasswordShort => '비밀번호는 6자 이상이어야 합니다.';
 
   @override
+  String get loginForgotPassword => '비밀번호를 잊으셨나요?';
+
+  @override
+  String get loginForgotPasswordTitle => '비밀번호 찾기';
+
+  @override
+  String get loginForgotPasswordDesc =>
+      '가입 시 사용한 이메일을 입력하시면\n비밀번호 재설정 링크를 보내드립니다.';
+
+  @override
+  String get loginForgotPasswordSent => '비밀번호 재설정 이메일을 보냈습니다. 이메일을 확인해주세요.';
+
+  @override
+  String get loginForgotPasswordError => '이메일 발송에 실패했습니다. 이메일 주소를 확인해주세요.';
+
+  @override
+  String get loginForgotPasswordSendButton => '이메일 보내기';
+
+  @override
   String get registerTitle => '회원가입';
 
   @override
