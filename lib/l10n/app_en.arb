@@ -142,6 +142,11 @@
   "settingsAccount": "Account",
   "settingsChangePw": "Change Password",
   "settingsBlock": "Blocked Users",
+  "settingsBlockEmpty": "No blocked users",
+  "settingsUnblock": "Unblock",
+  "settingsExemption": "Match Exemptions",
+  "settingsExemptionEmpty": "No exempted users",
+  "settingsExemptionRemove": "Remove",
   "settingsDeleteAccount": "Delete Account",
   "settingsInfo": "Info & Support",
   "settingsPrivacy": "Privacy Policy",
@@ -267,6 +272,11 @@
   "profileDetailReasonSpam": "Spam/Promotion",
   "profileDetailReasonFraud": "Impersonation/Fraud",
   "profileDetailReasonOther": "Other",
+
+  "profileDetailExemptTitle": "Exempt from Matching",
+  "profileDetailExempt": "Exempt from Matching",
+  "profileDetailExemptConfirm": "Exempt this user from matching?\nYou won't be matched with groups containing this user.",
+  "profileDetailExempted": "User exempted from matching.",
 
   "profileEditNicknameChangeCost": "Changing nickname costs 10 Ting.",
   "profileEditNicknameChangeConfirm": "Change your nickname?\n10 Ting will be deducted.",

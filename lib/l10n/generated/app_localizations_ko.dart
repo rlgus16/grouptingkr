@@ -392,6 +392,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsBlock => '차단 관리';
 
   @override
+  String get settingsBlockEmpty => '차단한 사용자가 없습니다';
+
+  @override
+  String get settingsUnblock => '해제';
+
+  @override
+  String get settingsExemption => '매칭 제외 관리';
+
+  @override
+  String get settingsExemptionEmpty => '매칭 제외한 사용자가 없습니다';
+
+  @override
+  String get settingsExemptionRemove => '해제';
+
+  @override
   String get settingsDeleteAccount => '계정 삭제';
 
   @override
@@ -733,6 +748,19 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get profileDetailReasonOther => '기타';
+
+  @override
+  String get profileDetailExemptTitle => '매칭 제외';
+
+  @override
+  String get profileDetailExempt => '매칭 제외';
+
+  @override
+  String get profileDetailExemptConfirm =>
+      '이 사용자를 매칭에서 제외하시겠습니까?\n이 사용자가 속한 그룹과는 매칭되지 않습니다.';
+
+  @override
+  String get profileDetailExempted => '매칭에서 제외되었습니다.';
 
   @override
   String get profileEditNicknameChangeCost => '닉네임 변경에 10 Ting이 필요합니다.';

@@ -154,5 +154,18 @@ service cloud.firestore {
     match /reports/{reportId} {
       allow create: if request.auth != null;
     }
+
+    // 매칭 제외 컬렉션 (ID 형식: "제외한UID_제외된UID")
+    match /matchExemptions/{exemptId} {
+      // 생성: 본인이 제외하는 경우만 허용
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.exempterId;
+      // 읽기: 제외한 사람과 제외당한 사람 모두 읽기 가능
+      allow read: if request.auth != null && (
+        request.auth.uid == resource.data.exempterId ||
+        request.auth.uid == resource.data.exemptedId
+      );
+      // 삭제(제외 해제): 제외한 사람만 가능
+      allow delete: if request.auth != null && request.auth.uid == resource.data.exempterId;
+    }
   }
 }

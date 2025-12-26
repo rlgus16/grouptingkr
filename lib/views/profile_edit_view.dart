@@ -292,13 +292,13 @@ class _ProfileEditViewState extends State<ProfileEditView> {
                             padding: const EdgeInsets.only(top: 6, left: 4),
                             child: Row(
                               children: [
-                                const Icon(Icons.info_outline, size: 14, color: AppTheme.primaryColor),
+                                const Icon(Icons.info_outline, size: 14, color: AppTheme.warningColor),
                                 const SizedBox(width: 4),
                                 Text(
                                   l10n.profileEditNicknameChangeCost,
                                   style: const TextStyle(
                                     fontSize: 12,
-                                    color: AppTheme.primaryColor,
+                                    color: AppTheme.warningColor,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),

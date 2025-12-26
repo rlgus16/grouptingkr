@@ -84,6 +84,28 @@ export const handleGroupUpdate = onDocumentUpdated("groups/{groupId}", async (ev
       return;
     }
 
+    // ===== EXEMPTION FILTER =====
+    // Query exemptions involving my group members
+    const myMemberIds = afterData.memberIds;
+    
+    // 1. Users that my group members have exempted
+    const exemptionsFromMeQuery = await db.collection("matchExemptions")
+      .where("exempterId", "in", myMemberIds)
+      .get();
+      
+    // 2. Users who have exempted my group members
+    const exemptionsAgainstMeQuery = await db.collection("matchExemptions")
+      .where("exemptedId", "in", myMemberIds)
+      .get();
+
+    // Build set of user IDs to avoid
+    const exemptedUserIds = new Set<string>();
+    exemptionsFromMeQuery.forEach(doc => exemptedUserIds.add(doc.data().exemptedId));
+    exemptionsAgainstMeQuery.forEach(doc => exemptedUserIds.add(doc.data().exempterId));
+    
+    console.log(`Exempted user IDs for group ${groupId}: [${Array.from(exemptedUserIds).join(", ")}]`);
+    // ===== END EXEMPTION FILTER =====
+
     // 조건에 맞는 그룹 찾기
     let matchedCandidate: GroupData | null = null;
 
@@ -93,6 +115,14 @@ export const handleGroupUpdate = onDocumentUpdated("groups/{groupId}", async (ev
       // [기본 조건] 멤버 수가 같아야 함
       if (targetData.memberIds.length !== afterData.memberIds.length) continue;
 
+      // [EXEMPTION CHECK] Skip groups containing exempted users
+      const hasExemptedMember = targetData.memberIds.some(
+        (memberId: string) => exemptedUserIds.has(memberId)
+      );
+      if (hasExemptedMember) {
+        console.log(`Skipping group ${doc.id} - contains exempted member`);
+        continue;
+      }
 
       // [필터 조건 1] 성별 매칭 (양방향 확인)
       const targetGender = targetData.groupGender || "혼성";

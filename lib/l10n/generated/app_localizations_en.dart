@@ -400,6 +400,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsBlock => 'Blocked Users';
 
   @override
+  String get settingsBlockEmpty => 'No blocked users';
+
+  @override
+  String get settingsUnblock => 'Unblock';
+
+  @override
+  String get settingsExemption => 'Match Exemptions';
+
+  @override
+  String get settingsExemptionEmpty => 'No exempted users';
+
+  @override
+  String get settingsExemptionRemove => 'Remove';
+
+  @override
   String get settingsDeleteAccount => 'Delete Account';
 
   @override
@@ -745,6 +760,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileDetailReasonOther => 'Other';
+
+  @override
+  String get profileDetailExemptTitle => 'Exempt from Matching';
+
+  @override
+  String get profileDetailExempt => 'Exempt from Matching';
+
+  @override
+  String get profileDetailExemptConfirm =>
+      'Exempt this user from matching?\nYou won\'t be matched with groups containing this user.';
+
+  @override
+  String get profileDetailExempted => 'User exempted from matching.';
 
   @override
   String get profileEditNicknameChangeCost =>

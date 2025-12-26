@@ -218,7 +218,7 @@ Platform: ${Theme.of(context).platform}
       builder: (context) => AlertDialog(
         title: Text(l10n.profileDetailBlockTitle),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Text(l10n.settingsBlockConfirm),
+        content: Text(l10n.profileDetailBlockConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -255,7 +255,59 @@ Platform: ${Theme.of(context).platform}
               foregroundColor: Colors.white,
               elevation: 0,
             ),
-            child: Text(l10n.settingsBlock),
+            child: Text(l10n.profileDetailBlock),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Exempt from matching functionality
+  void _showExemptFromMatchingDialog(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.profileDetailExemptTitle),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Text(l10n.profileDetailExemptConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.commonCancel, style: const TextStyle(color: AppTheme.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                final currentUser = context.read<AuthController>().currentUserModel;
+                if (currentUser == null) return;
+                final exemptDocId = '${currentUser.uid}_${widget.user.uid}';
+
+                await FirebaseFirestore.instance.collection('matchExemptions').doc(exemptDocId).set({
+                  'exempterId': currentUser.uid,
+                  'exempterNickname': currentUser.nickname,
+                  'exemptedId': widget.user.uid,
+                  'exemptedNickname': widget.user.nickname,
+                  'createdAt': FieldValue.serverTimestamp(),
+                });
+
+                if (mounted) {
+                  Navigator.pop(context);
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.profileDetailExempted)),
+                  );
+                }
+              } catch (e) {
+                debugPrint('Exempt from matching failed: $e');
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.warningColor,
+              foregroundColor: Colors.white,
+              elevation: 0,
+            ),
+            child: Text(l10n.profileDetailExempt),
           ),
         ],
       ),
@@ -321,15 +373,23 @@ Platform: ${Theme.of(context).platform}
                           children: [
                             ListTile(
                               leading: const Icon(Icons.report_problem_outlined, color: Colors.orange),
-                              title: Text(l10n.settingsReport),
+                              title: Text(l10n.profileDetailReport),
                               onTap: () {
                                 Navigator.pop(context);
                                 _showReportDialog(context);
                               },
                             ),
                             ListTile(
+                              leading: const Icon(Icons.person_off_outlined, color: Colors.orange),
+                              title: Text(l10n.profileDetailExempt),
+                              onTap: () {
+                                Navigator.pop(context);
+                                _showExemptFromMatchingDialog(context);
+                              },
+                            ),
+                            ListTile(
                               leading: const Icon(Icons.block, color: Colors.red),
-                              title: Text(l10n.settingsBlock),
+                              title: Text(l10n.profileDetailBlock),
                               onTap: () {
                                 Navigator.pop(context);
                                 _showBlockDialog(context);

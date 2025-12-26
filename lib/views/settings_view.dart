@@ -140,6 +140,12 @@ class _SettingsViewState extends State<SettingsView> {
                 ),
                 _buildDivider(),
                 _buildMenuTile(
+                  icon: Icons.do_not_disturb_on_outlined,
+                  title: l10n.settingsExemption,
+                  onTap: _showExemptedUsersDialog,
+                ),
+                _buildDivider(),
+                _buildMenuTile(
                   icon: Icons.delete_outline,
                   title: l10n.settingsDeleteAccount,
                   textColor: AppTheme.errorColor,
@@ -583,7 +589,7 @@ class _SettingsViewState extends State<SettingsView> {
               if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
               final docs = snapshot.data!.docs;
               if (docs.isEmpty) {
-                return const Center(child: Text('No blocked users', style: TextStyle(color: AppTheme.textSecondary)));
+                return Center(child: Text(l10n.settingsBlockEmpty, style: const TextStyle(color: AppTheme.textSecondary)));
               }
               return ListView.separated(
                 itemCount: docs.length,
@@ -595,7 +601,60 @@ class _SettingsViewState extends State<SettingsView> {
                     title: Text(data['blockedNickname'] ?? 'Unknown'),
                     trailing: TextButton(
                       onPressed: () => FirebaseFirestore.instance.collection('blocks').doc(docs[index].id).delete(),
-                      child: const Text('Unblock', style: TextStyle(color: AppTheme.primaryColor)),
+                      child: Text(l10n.settingsUnblock, style: const TextStyle(color: AppTheme.primaryColor)),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.commonClose, style: const TextStyle(color: AppTheme.textPrimary)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showExemptedUsersDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    final currentUser = context.read<AuthController>().currentUserModel;
+    if (currentUser == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(l10n.settingsExemption, style: const TextStyle(fontWeight: FontWeight.bold)),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 300,
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('matchExemptions')
+                .where('exempterId', isEqualTo: currentUser.uid)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+              final docs = snapshot.data!.docs;
+              if (docs.isEmpty) {
+                return Center(child: Text(l10n.settingsExemptionEmpty, style: const TextStyle(color: AppTheme.textSecondary)));
+              }
+              return ListView.separated(
+                itemCount: docs.length,
+                separatorBuilder: (context, index) => const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final data = docs[index].data() as Map<String, dynamic>;
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(data['exemptedNickname'] ?? 'Unknown'),
+                    trailing: TextButton(
+                      onPressed: () => FirebaseFirestore.instance.collection('matchExemptions').doc(docs[index].id).delete(),
+                      child: Text(l10n.settingsExemptionRemove, style: const TextStyle(color: AppTheme.primaryColor)),
                     ),
                   );
                 },

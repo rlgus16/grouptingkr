@@ -8,6 +8,7 @@ class AppTheme {
   static const Color surfaceColor = Color(0xFFF8F9FA);
   static const Color errorColor = Color(0xFFFF5252);
   static const Color successColor = Color(0xFF81C784);
+  static const Color warningColor = Color(0xFFFB8C00);
   
   // 그라디언트
   static const LinearGradient primaryGradient = LinearGradient(

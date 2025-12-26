@@ -142,6 +142,11 @@
   "settingsAccount": "계정",
   "settingsChangePw": "비밀번호 변경",
   "settingsBlock": "차단 관리",
+  "settingsBlockEmpty": "차단한 사용자가 없습니다",
+  "settingsUnblock": "해제",
+  "settingsExemption": "매칭 제외 관리",
+  "settingsExemptionEmpty": "매칭 제외한 사용자가 없습니다",
+  "settingsExemptionRemove": "해제",
   "settingsDeleteAccount": "계정 삭제",
   "settingsInfo": "정보 및 지원",
   "settingsPrivacy": "개인정보 처리방침",
@@ -267,6 +272,11 @@
   "profileDetailReasonSpam": "스팸/홍보",
   "profileDetailReasonFraud": "사칭/사기",
   "profileDetailReasonOther": "기타",
+
+  "profileDetailExemptTitle": "매칭 제외",
+  "profileDetailExempt": "매칭 제외",
+  "profileDetailExemptConfirm": "이 사용자를 매칭에서 제외하시겠습니까?\n이 사용자가 속한 그룹과는 매칭되지 않습니다.",
+  "profileDetailExempted": "매칭에서 제외되었습니다.",
 
   "profileEditNicknameChangeCost": "닉네임 변경에 10 Ting이 필요합니다.",
   "profileEditNicknameChangeConfirm": "닉네임을 변경하시겠습니까?\n10 Ting이 차감됩니다.",

@@ -860,6 +860,36 @@ abstract class AppLocalizations {
   /// **'차단 관리'**
   String get settingsBlock;
 
+  /// No description provided for @settingsBlockEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'차단한 사용자가 없습니다'**
+  String get settingsBlockEmpty;
+
+  /// No description provided for @settingsUnblock.
+  ///
+  /// In ko, this message translates to:
+  /// **'해제'**
+  String get settingsUnblock;
+
+  /// No description provided for @settingsExemption.
+  ///
+  /// In ko, this message translates to:
+  /// **'매칭 제외 관리'**
+  String get settingsExemption;
+
+  /// No description provided for @settingsExemptionEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'매칭 제외한 사용자가 없습니다'**
+  String get settingsExemptionEmpty;
+
+  /// No description provided for @settingsExemptionRemove.
+  ///
+  /// In ko, this message translates to:
+  /// **'해제'**
+  String get settingsExemptionRemove;
+
   /// No description provided for @settingsDeleteAccount.
   ///
   /// In ko, this message translates to:
@@ -1525,6 +1555,30 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'기타'**
   String get profileDetailReasonOther;
+
+  /// No description provided for @profileDetailExemptTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'매칭 제외'**
+  String get profileDetailExemptTitle;
+
+  /// No description provided for @profileDetailExempt.
+  ///
+  /// In ko, this message translates to:
+  /// **'매칭 제외'**
+  String get profileDetailExempt;
+
+  /// No description provided for @profileDetailExemptConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 사용자를 매칭에서 제외하시겠습니까?\n이 사용자가 속한 그룹과는 매칭되지 않습니다.'**
+  String get profileDetailExemptConfirm;
+
+  /// No description provided for @profileDetailExempted.
+  ///
+  /// In ko, this message translates to:
+  /// **'매칭에서 제외되었습니다.'**
+  String get profileDetailExempted;
 
   /// No description provided for @profileEditNicknameChangeCost.
   ///
