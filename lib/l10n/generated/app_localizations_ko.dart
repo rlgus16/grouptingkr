@@ -795,6 +795,14 @@ class AppLocalizationsKo extends AppLocalizations {
       '활동지역을 변경하시겠습니까?\n5 Ting이 차감됩니다.';
 
   @override
+  String profileEditTotalCostConfirm(Object cost) {
+    return '프로필 저장 시 $cost Ting이 차감됩니다.\n계속하시겠습니까?';
+  }
+
+  @override
+  String get profileEditTotalCostTitle => 'Ting 차감 안내';
+
+  @override
   String get profileEditNicknameDuplicate => '이미 사용 중인 닉네임입니다.';
 
   @override

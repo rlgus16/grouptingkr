@@ -1640,6 +1640,18 @@ abstract class AppLocalizations {
   /// **'활동지역을 변경하시겠습니까?\n5 Ting이 차감됩니다.'**
   String get profileEditActivityAreaChangeConfirm;
 
+  /// No description provided for @profileEditTotalCostConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'프로필 저장 시 {cost} Ting이 차감됩니다.\n계속하시겠습니까?'**
+  String profileEditTotalCostConfirm(Object cost);
+
+  /// No description provided for @profileEditTotalCostTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'Ting 차감 안내'**
+  String get profileEditTotalCostTitle;
+
   /// No description provided for @profileEditNicknameDuplicate.
   ///
   /// In ko, this message translates to:

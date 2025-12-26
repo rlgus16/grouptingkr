@@ -812,6 +812,14 @@ class AppLocalizationsEn extends AppLocalizations {
       'Change your activity area?\n5 Ting will be deducted.';
 
   @override
+  String profileEditTotalCostConfirm(Object cost) {
+    return 'Saving profile will deduct $cost Ting.\nDo you want to continue?';
+  }
+
+  @override
+  String get profileEditTotalCostTitle => 'Ting Deduction Notice';
+
+  @override
   String get profileEditNicknameDuplicate => 'This nickname is already in use.';
 
   @override

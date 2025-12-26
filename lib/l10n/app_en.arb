@@ -288,6 +288,8 @@
   "profileEditNicknameChangeSuccess": "Nickname changed. (10 Ting deducted)",
   "profileEditActivityAreaChangeCost": "Changing activity area costs 5 Ting.",
   "profileEditActivityAreaChangeConfirm": "Change your activity area?\n5 Ting will be deducted.",
+  "profileEditTotalCostConfirm": "Saving profile will deduct {cost} Ting.\nDo you want to continue?",
+  "profileEditTotalCostTitle": "Ting Deduction Notice",
   "profileEditNicknameDuplicate": "This nickname is already in use.",
   "profileEditNicknameAvailable": "This nickname is available.",
   "profileEditNicknameCheckError": "Error checking nickname.",

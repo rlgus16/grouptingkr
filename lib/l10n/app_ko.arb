@@ -288,6 +288,8 @@
   "profileEditNicknameChangeSuccess": "닉네임이 변경되었습니다. (10 Ting 차감)",
   "profileEditActivityAreaChangeCost": "활동지역 변경에 5 Ting이 필요합니다.",
   "profileEditActivityAreaChangeConfirm": "활동지역을 변경하시겠습니까?\n5 Ting이 차감됩니다.",
+  "profileEditTotalCostConfirm": "프로필 저장 시 {cost} Ting이 차감됩니다.\n계속하시겠습니까?",
+  "profileEditTotalCostTitle": "Ting 차감 안내",
   "profileEditNicknameDuplicate": "이미 사용 중인 닉네임입니다.",
   "profileEditNicknameAvailable": "사용 가능한 닉네임입니다.",
   "profileEditNicknameCheckError": "닉네임 확인 중 오류가 발생했습니다.",

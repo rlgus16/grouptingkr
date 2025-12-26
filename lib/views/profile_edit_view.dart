@@ -807,57 +807,23 @@ class _ProfileEditViewState extends State<ProfileEditView> {
     final newNickname = _nicknameController.text.trim();
     final isNicknameChanged = newNickname != _originalNickname && _originalNickname.isNotEmpty;
     
-    if (isNicknameChanged) {
-      // 잔액 확인
-      if (user.tingBalance < 10) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.profileEditInsufficientTings)),
-        );
-        return;
-      }
-      
-      // 확인 다이얼로그
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(l10n.profileEditNickname),
-          content: Text(l10n.profileEditNicknameChangeConfirm),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(l10n.commonCancel),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(l10n.commonConfirm),
-            ),
-          ],
-        ),
-      );
-      
-      if (confirmed != true) return;
-      
-      // Ting 차감
-      final userService = UserService();
-      final deducted = await userService.deductTings(user.uid, 10);
-      if (!deducted) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(l10n.profileEditInsufficientTings)),
-          );
-        }
-        return;
-      }
-    }
-
     // 활동지역 변경 시 5 Ting 차감 (처음 설정하는 경우는 무료)
     final newActivityArea = _activityAreaController.text.trim();
     final isActivityAreaChanged = newActivityArea != _originalActivityArea && _originalActivityArea.isNotEmpty;
     
-    if (isActivityAreaChanged) {
-      // 잔액 확인 (닉네임 변경으로 이미 차감된 경우 반영)
-      final currentBalance = isNicknameChanged ? user.tingBalance - 10 : user.tingBalance;
-      if (currentBalance < 5) {
+    // 총 Ting 비용 계산
+    int totalTingCost = 0;
+    if (isNicknameChanged) totalTingCost += 10;
+    if (isActivityAreaChanged) totalTingCost += 5;
+    
+    debugPrint('Nickname: original="$_originalNickname", new="$newNickname", changed=$isNicknameChanged');
+    debugPrint('ActivityArea: original="$_originalActivityArea", new="$newActivityArea", changed=$isActivityAreaChanged');
+    debugPrint('Total Ting Cost: $totalTingCost');
+    
+    // Ting 차감이 필요한 경우 확인 다이얼로그 표시
+    if (totalTingCost > 0) {
+      // 잔액 확인
+      if (user.tingBalance < totalTingCost) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.profileEditInsufficientTings)),
         );
@@ -868,8 +834,8 @@ class _ProfileEditViewState extends State<ProfileEditView> {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text(l10n.registerActivityArea),
-          content: Text(l10n.profileEditActivityAreaChangeConfirm),
+          title: Text(l10n.profileEditTotalCostTitle),
+          content: Text(l10n.profileEditTotalCostConfirm(totalTingCost)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
@@ -887,7 +853,7 @@ class _ProfileEditViewState extends State<ProfileEditView> {
       
       // Ting 차감
       final userService = UserService();
-      final deducted = await userService.deductTings(user.uid, 5);
+      final deducted = await userService.deductTings(user.uid, totalTingCost);
       if (!deducted) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
