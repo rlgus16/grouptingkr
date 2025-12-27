@@ -2803,6 +2803,60 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'현재 이용 가능한 상품이 없습니다.\n나중에 다시 확인해주세요.'**
   String get storeNoProductsDesc;
+
+  /// No description provided for @storeRechargeTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'Ting 충전하기'**
+  String get storeRechargeTitle;
+
+  /// No description provided for @storeRechargeDesc.
+  ///
+  /// In ko, this message translates to:
+  /// **'매칭에 필요한 Ting을 충전하세요'**
+  String get storeRechargeDesc;
+
+  /// No description provided for @storeBonusPromo.
+  ///
+  /// In ko, this message translates to:
+  /// **'많이 구매할수록 더 많은 보너스!'**
+  String get storeBonusPromo;
+
+  /// No description provided for @storeTingPackages.
+  ///
+  /// In ko, this message translates to:
+  /// **'Ting 패키지'**
+  String get storeTingPackages;
+
+  /// No description provided for @storeBonus.
+  ///
+  /// In ko, this message translates to:
+  /// **'+{amount} 보너스'**
+  String storeBonus(Object amount);
+
+  /// No description provided for @storeSecurePayment.
+  ///
+  /// In ko, this message translates to:
+  /// **'안전한 결제'**
+  String get storeSecurePayment;
+
+  /// No description provided for @storeSecurePaymentDesc.
+  ///
+  /// In ko, this message translates to:
+  /// **'Google Play / App Store를 통한 안전한 결제'**
+  String get storeSecurePaymentDesc;
+
+  /// No description provided for @storePurchaseStart.
+  ///
+  /// In ko, this message translates to:
+  /// **'{amount} Ting 구매를 시작합니다...'**
+  String storePurchaseStart(Object amount);
+
+  /// No description provided for @storePurchase.
+  ///
+  /// In ko, this message translates to:
+  /// **'구매하기'**
+  String get storePurchase;
 }
 
 class _AppLocalizationsDelegate

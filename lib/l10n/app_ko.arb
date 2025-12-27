@@ -504,5 +504,14 @@
   "storeBuyButton": "구매",
   "storeCoins": "코인",
   "storeNoProducts": "상품이 없습니다",
-  "storeNoProductsDesc": "현재 이용 가능한 상품이 없습니다.\n나중에 다시 확인해주세요."
+  "storeNoProductsDesc": "현재 이용 가능한 상품이 없습니다.\n나중에 다시 확인해주세요.",
+  "storeRechargeTitle": "Ting 충전하기",
+  "storeRechargeDesc": "매칭에 필요한 Ting을 충전하세요",
+  "storeBonusPromo": "많이 구매할수록 더 많은 보너스!",
+  "storeTingPackages": "Ting 패키지",
+  "storeBonus": "+{amount} 보너스",
+  "storeSecurePayment": "안전한 결제",
+  "storeSecurePaymentDesc": "Google Play / App Store를 통한 안전한 결제",
+  "storePurchaseStart": "{amount} Ting 구매를 시작합니다...",
+  "storePurchase": "구매하기"
 }

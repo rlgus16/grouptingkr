@@ -483,5 +483,14 @@
   "storeBuyButton": "Buy",
   "storeCoins": "Coins",
   "storeNoProducts": "No products available",
-  "storeNoProductsDesc": "No products are available at this time.\nPlease check back later."
+  "storeNoProductsDesc": "No products are available at this time.\nPlease check back later.",
+  "storeRechargeTitle": "Recharge Ting",
+  "storeRechargeDesc": "Recharge Ting for matching",
+  "storeBonusPromo": "Buy more, get more bonus!",
+  "storeTingPackages": "Ting Packages",
+  "storeBonus": "+{amount} Bonus",
+  "storeSecurePayment": "Secure Payment",
+  "storeSecurePaymentDesc": "Safe payment via Google Play / App Store",
+  "storePurchaseStart": "Starting purchase of {amount} Ting...",
+  "storePurchase": "Purchase"
 }

@@ -1408,4 +1408,35 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get storeNoProductsDesc => '현재 이용 가능한 상품이 없습니다.\n나중에 다시 확인해주세요.';
+
+  @override
+  String get storeRechargeTitle => 'Ting 충전하기';
+
+  @override
+  String get storeRechargeDesc => '매칭에 필요한 Ting을 충전하세요';
+
+  @override
+  String get storeBonusPromo => '많이 구매할수록 더 많은 보너스!';
+
+  @override
+  String get storeTingPackages => 'Ting 패키지';
+
+  @override
+  String storeBonus(Object amount) {
+    return '+$amount 보너스';
+  }
+
+  @override
+  String get storeSecurePayment => '안전한 결제';
+
+  @override
+  String get storeSecurePaymentDesc => 'Google Play / App Store를 통한 안전한 결제';
+
+  @override
+  String storePurchaseStart(Object amount) {
+    return '$amount Ting 구매를 시작합니다...';
+  }
+
+  @override
+  String get storePurchase => '구매하기';
 }

@@ -1445,4 +1445,36 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get storeNoProductsDesc =>
       'No products are available at this time.\nPlease check back later.';
+
+  @override
+  String get storeRechargeTitle => 'Recharge Ting';
+
+  @override
+  String get storeRechargeDesc => 'Recharge Ting for matching';
+
+  @override
+  String get storeBonusPromo => 'Buy more, get more bonus!';
+
+  @override
+  String get storeTingPackages => 'Ting Packages';
+
+  @override
+  String storeBonus(Object amount) {
+    return '+$amount Bonus';
+  }
+
+  @override
+  String get storeSecurePayment => 'Secure Payment';
+
+  @override
+  String get storeSecurePaymentDesc =>
+      'Safe payment via Google Play / App Store';
+
+  @override
+  String storePurchaseStart(Object amount) {
+    return 'Starting purchase of $amount Ting...';
+  }
+
+  @override
+  String get storePurchase => 'Purchase';
 }

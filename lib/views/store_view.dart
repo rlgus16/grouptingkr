@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/app_theme.dart';
+import '../l10n/generated/app_localizations.dart';
 
 class StoreView extends StatefulWidget {
   const StoreView({super.key});
@@ -77,7 +78,7 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
     return Scaffold(
       backgroundColor: AppTheme.gray50,
       appBar: AppBar(
-        title: const Text('스토어'),
+        title: Text(AppLocalizations.of(context)!.storeTitle),
         centerTitle: false,
         elevation: 0,
         backgroundColor: AppTheme.gray50,
@@ -183,23 +184,23 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Ting 충전하기',
-                          style: TextStyle(
+                        Text(
+                          AppLocalizations.of(context)!.storeRechargeTitle,
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
                             letterSpacing: -0.5,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '매칭에 필요한 Ting을 충전하세요',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            fontSize: 14,
-                          ),
-                        ),
+                            const SizedBox(height: 4),
+                            Text(
+                              AppLocalizations.of(context)!.storeRechargeDesc,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.9),
+                                fontSize: 14,
+                              ),
+                            ),
                       ],
                     ),
                   ),
@@ -222,7 +223,7 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '많이 구매할수록 더 많은 보너스!',
+                      AppLocalizations.of(context)!.storeBonusPromo,
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.95),
                         fontSize: 13,
@@ -254,9 +255,9 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
           ),
         ),
         const SizedBox(width: 12),
-        const Text(
-          'Ting 패키지',
-          style: TextStyle(
+        Text(
+          AppLocalizations.of(context)!.storeTingPackages,
+          style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: AppTheme.textPrimary,
@@ -385,7 +386,7 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      '+${package.bonusAmount} 보너스',
+                      AppLocalizations.of(context)!.storeBonus(package.bonusAmount),
                       style: const TextStyle(
                         color: Color(0xFF2E7D32),
                         fontSize: 11,
@@ -438,8 +439,8 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
       children: [
         _buildInfoCard(
           icon: '🔒',
-          title: '안전한 결제',
-          description: 'Google Play / App Store를 통한 안전한 결제',
+          title: AppLocalizations.of(context)!.storeSecurePayment,
+          description: AppLocalizations.of(context)!.storeSecurePaymentDesc,
         ),
       ],
     );
@@ -579,7 +580,7 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                '${package.baseAmount} + ${package.bonusAmount} 보너스',
+                '${package.baseAmount} + ${package.bonusAmount} ${AppLocalizations.of(context)!.storeBonus(0).replaceAll('+0 ', '').trim()}',
                 style: const TextStyle(
                   color: Color(0xFF2E7D32),
                   fontSize: 14,
@@ -607,7 +608,7 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
                 // TODO: Trigger actual in-app purchase
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('$totalAmount Ting 구매를 시작합니다...'),
+                    content: Text(AppLocalizations.of(context)!.storePurchaseStart(totalAmount)),
                     backgroundColor: const Color(0xFFFFB300),
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(
@@ -625,9 +626,9 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
                 ),
                 elevation: 0,
               ),
-              child: const Text(
-                '구매하기',
-                style: TextStyle(
+              child: Text(
+                AppLocalizations.of(context)!.storePurchase,
+                style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
                 ),
@@ -638,9 +639,9 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
           // Cancel Button
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              '취소',
-              style: TextStyle(
+            child: Text(
+              AppLocalizations.of(context)!.commonCancel,
+              style: const TextStyle(
                 color: AppTheme.textSecondary,
                 fontSize: 15,
               ),
