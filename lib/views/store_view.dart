@@ -16,23 +16,33 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
   // Ting packages data
   final List<TingPackage> _packages = [
     TingPackage(
-      baseAmount: 100,
+      baseAmount: 12,
       bonusAmount: 0,
+      price: '₩1,800',
+    ),
+    TingPackage(
+      baseAmount: 25,
+      bonusAmount: 1,
+      price: '₩3,500',
+    ),
+    TingPackage(
+      baseAmount: 100,
+      bonusAmount: 10,
       price: '₩14,000',
     ),
     TingPackage(
       baseAmount: 200,
-      bonusAmount: 20,
+      bonusAmount: 40,
       price: '₩28,000',
     ),
     TingPackage(
       baseAmount: 400,
-      bonusAmount: 80,
+      bonusAmount: 120,
       price: '₩56,000',
     ),
     TingPackage(
       baseAmount: 800,
-      bonusAmount: 240,
+      bonusAmount: 280,
       price: '₩112,000',
     ),
   ];
@@ -276,7 +286,7 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
 
   Widget _buildPackageCard(TingPackage package, int index) {
     final totalAmount = package.baseAmount + package.bonusAmount;
-    final hasBonus = package.bonusAmount > 0;
+    final hasBonus = package.bonusAmount >= 0;
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),

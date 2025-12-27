@@ -223,7 +223,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeNoGroupTitle => 'No Group Yet';
 
   @override
-  String get homeNoGroupDesc => 'Create a new group\nand join with friends!';
+  String get homeNoGroupDesc => 'Create a new group\nand invite your friends!';
 
   @override
   String get homeCreateGroupButton => 'Create New Group';
@@ -610,7 +610,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String chatParticipating(Object count) {
-    return '$count participating';
+    return '$count participants';
   }
 
   @override
@@ -668,25 +668,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeFilterTitle => 'Match Filter Settings';
 
   @override
-  String get homeFilterGender => 'Preferred Group Gender';
+  String get homeFilterGender => 'Preferred Gender';
 
   @override
-  String get homeFilterAge => 'Preferred Group Avg Age';
+  String get homeFilterAge => 'Average Age';
 
   @override
-  String get homeFilterHeight => 'Preferred Group Avg Height';
+  String get homeFilterHeight => 'Average Height';
 
   @override
-  String get homeFilterDistance => 'Distance Range (from leader)';
+  String get homeFilterDistance => 'Distance Range';
 
   @override
   String get homeFilterApply => 'Apply Filter';
 
   @override
-  String get homeFilterSuccess => 'Filter applied successfully.';
+  String get homeFilterSuccess => 'Filters applied successfully.';
 
   @override
-  String get homeFilterFailed => 'Failed to apply filter';
+  String get homeFilterFailed => 'Failed to apply filters';
 
   @override
   String get homeGenderMale => 'Male';
@@ -705,7 +705,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Profile reminder hidden. You can complete your profile anytime in My Page.';
 
   @override
-  String get homeLogoutError => 'An error occurred during logout';
+  String get homeLogoutError => 'Error during logout.';
 
   @override
   String get profileDetailReportTitle => 'Report User';
@@ -1363,7 +1363,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeNewMessage => 'New Message 💬';
 
   @override
-  String get homeCurrentMembers => 'Current Group Members';
+  String get homeCurrentMembers => 'Current Members';
 
   @override
   String homeMemberCount(Object count) {
