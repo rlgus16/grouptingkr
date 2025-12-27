@@ -289,7 +289,7 @@ class _ProfileEditViewState extends State<ProfileEditView> {
                           l10n: l10n,
                         ),
                         // 닉네임 변경 비용 안내 (처음 설정하는 경우는 표시 안함)
-                        if (_originalNickname.isNotEmpty && _nicknameController.text.trim() != _originalNickname && _nicknameController.text.trim().isNotEmpty)
+                        if (_originalNickname.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 6, left: 4),
                             child: Row(
@@ -325,7 +325,7 @@ class _ProfileEditViewState extends State<ProfileEditView> {
                         const SizedBox(height: 20),
                         _buildLocationField(l10n),
                         // 활동지역 변경 비용 안내 (처음 설정하는 경우는 표시 안함)
-                        if (_originalActivityArea.isNotEmpty && _activityAreaController.text != _originalActivityArea && _activityAreaController.text.isNotEmpty)
+                        if (_originalActivityArea.isNotEmpty)
                           Padding(
                             padding: const EdgeInsets.only(top: 6, left: 4),
                             child: Row(
