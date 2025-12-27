@@ -276,8 +276,9 @@
 
   "profileDetailExemptTitle": "매칭 제외",
   "profileDetailExempt": "매칭 제외",
-  "profileDetailExemptConfirm": "이 사용자를 매칭에서 제외하시겠습니까?\n이 사용자가 속한 그룹과는 매칭되지 않습니다.",
-  "profileDetailExempted": "매칭에서 제외되었습니다.",
+  "profileDetailExemptConfirm": "이 사용자를 매칭에서 제외하시겠습니까?\n이 사용자가 속한 그룹과는 매칭되지 않습니다.\n\n5 Ting이 차감됩니다.",
+  "profileDetailExempted": "매칭에서 제외되었습니다. (5 Ting 차감)",
+  "profileDetailExemptCost": "매칭 제외에 5 Ting이 필요합니다.",
   "profileDetailUnexempt": "매칭 제외 해제",
   "profileDetailUnexemptConfirm": "이 사용자의 매칭 제외를 해제하시겠습니까?",
   "profileDetailUnexempted": "매칭 제외가 해제되었습니다.",

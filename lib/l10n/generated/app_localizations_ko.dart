@@ -760,10 +760,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get profileDetailExemptConfirm =>
-      '이 사용자를 매칭에서 제외하시겠습니까?\n이 사용자가 속한 그룹과는 매칭되지 않습니다.';
+      '이 사용자를 매칭에서 제외하시겠습니까?\n이 사용자가 속한 그룹과는 매칭되지 않습니다.\n\n5 Ting이 차감됩니다.';
 
   @override
-  String get profileDetailExempted => '매칭에서 제외되었습니다.';
+  String get profileDetailExempted => '매칭에서 제외되었습니다. (5 Ting 차감)';
+
+  @override
+  String get profileDetailExemptCost => '매칭 제외에 5 Ting이 필요합니다.';
 
   @override
   String get profileDetailUnexempt => '매칭 제외 해제';

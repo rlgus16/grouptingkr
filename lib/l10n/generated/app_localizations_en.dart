@@ -772,10 +772,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileDetailExemptConfirm =>
-      'Exempt this user from matching?\nYou won\'t be matched with groups containing this user.';
+      'Exempt this user from matching?\nYou won\'t be matched with groups containing this user.\n\n5 Ting will be deducted.';
 
   @override
-  String get profileDetailExempted => 'User exempted from matching.';
+  String get profileDetailExempted =>
+      'User exempted from matching. (5 Ting deducted)';
+
+  @override
+  String get profileDetailExemptCost => 'Exempting from matching costs 5 Ting.';
 
   @override
   String get profileDetailUnexempt => 'Remove Exemption';

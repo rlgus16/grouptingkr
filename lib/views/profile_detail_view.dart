@@ -10,6 +10,7 @@ import '../models/user_model.dart';
 import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../controllers/auth_controller.dart';
+import '../services/user_service.dart';
 
 class ProfileDetailView extends StatefulWidget {
   final UserModel user;
@@ -290,6 +291,18 @@ Platform: ${Theme.of(context).platform}
   // Exempt from matching functionality
   void _showExemptFromMatchingDialog(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final currentUser = context.read<AuthController>().currentUserModel;
+    if (currentUser == null) return;
+    
+    // Check Ting balance first
+    const int exemptionCost = 5;
+    if (currentUser.tingBalance < exemptionCost) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.profileEditInsufficientTings)),
+      );
+      return;
+    }
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -304,19 +317,36 @@ Platform: ${Theme.of(context).platform}
           ElevatedButton(
             onPressed: () async {
               try {
-                final currentUser = context.read<AuthController>().currentUserModel;
-                if (currentUser == null) return;
-                final exemptDocId = '${currentUser.uid}_${widget.user.uid}';
+                final authController = context.read<AuthController>();
+                final user = authController.currentUserModel;
+                if (user == null) return;
+                
+                // Deduct Ting first
+                final userService = UserService();
+                final deducted = await userService.deductTings(user.uid, exemptionCost);
+                if (!deducted) {
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.profileEditInsufficientTings)),
+                    );
+                  }
+                  return;
+                }
+                
+                final exemptDocId = '${user.uid}_${widget.user.uid}';
 
                 await FirebaseFirestore.instance.collection('matchExemptions').doc(exemptDocId).set({
-                  'exempterId': currentUser.uid,
-                  'exempterNickname': currentUser.nickname,
+                  'exempterId': user.uid,
+                  'exempterNickname': user.nickname,
                   'exemptedId': widget.user.uid,
                   'exemptedNickname': widget.user.nickname,
                   'createdAt': FieldValue.serverTimestamp(),
                 });
 
                 if (mounted) {
+                  // Refresh user data to update Ting balance
+                  await authController.refreshCurrentUser();
                   setState(() => _isExempted = true);
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -402,7 +432,7 @@ Platform: ${Theme.of(context).platform}
           foregroundColor: Colors.black,
           actions: isMe ? [] : [
             IconButton(
-              icon: const Icon(Icons.more_vert),
+              icon: const Icon(Icons.more_vert, size: 28),
               onPressed: () {
                 showModalBottomSheet(
                   context: context,
@@ -427,6 +457,14 @@ Platform: ${Theme.of(context).platform}
                             color: _isExempted ? AppTheme.primaryColor : Colors.orange,
                           ),
                           title: Text(_isExempted ? l10n.profileDetailUnexempt : l10n.profileDetailExempt),
+                          subtitle: _isExempted ? null : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.info_outline, size: 12, color: AppTheme.warningColor),
+                              SizedBox(width: 4),
+                              Text('5 Ting', style: TextStyle(color: AppTheme.warningColor, fontSize: 12)),
+                            ],
+                          ),
                           onTap: () {
                             Navigator.pop(context);
                             if (_isExempted) {
@@ -521,6 +559,14 @@ Platform: ${Theme.of(context).platform}
                                 color: _isExempted ? AppTheme.primaryColor : Colors.orange,
                               ),
                               title: Text(_isExempted ? l10n.profileDetailUnexempt : l10n.profileDetailExempt),
+                              subtitle: _isExempted ? null : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(Icons.info_outline, size: 12, color: AppTheme.warningColor),
+                                  SizedBox(width: 4),
+                                  Text('5 Ting', style: TextStyle(color: AppTheme.warningColor, fontSize: 12)),
+                                ],
+                              ),
                               onTap: () {
                                 Navigator.pop(context);
                                 if (_isExempted) {
@@ -728,7 +774,7 @@ Platform: ${Theme.of(context).platform}
             BoxShadow(color: Colors.black.withValues(alpha:0.1), blurRadius: 8, offset: const Offset(0, 2)),
           ],
         ),
-        child: Icon(icon, color: AppTheme.textPrimary, size: 20),
+        child: Icon(icon, color: AppTheme.textPrimary, size: 24),
       ),
     );
   }

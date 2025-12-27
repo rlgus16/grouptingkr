@@ -264,8 +264,9 @@
 
   "profileDetailExemptTitle": "Exempt from Matching",
   "profileDetailExempt": "Exempt from Matching",
-  "profileDetailExemptConfirm": "Exempt this user from matching?\nYou won't be matched with groups containing this user.",
-  "profileDetailExempted": "User exempted from matching.",
+  "profileDetailExemptConfirm": "Exempt this user from matching?\nYou won't be matched with groups containing this user.\n\n5 Ting will be deducted.",
+  "profileDetailExempted": "User exempted from matching. (5 Ting deducted)",
+  "profileDetailExemptCost": "Exempting from matching costs 5 Ting.",
   "profileDetailUnexempt": "Remove Exemption",
   "profileDetailUnexemptConfirm": "Remove matching exemption for this user?",
   "profileDetailUnexempted": "Matching exemption removed.",
