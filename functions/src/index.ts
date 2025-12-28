@@ -44,6 +44,40 @@ interface GroupData {
   longitude?: number;
 }
 
+// [WAITING CHATROOM CREATION]
+// Creates a chatroom for the group when the group is first created
+// This ensures the chatroom exists before anyone opens chat_view
+export const onGroupCreated = onDocumentCreated("groups/{groupId}", async (event) => {
+  const snapshot = event.data;
+  if (!snapshot) return;
+
+  const groupId = event.params.groupId;
+  const groupData = snapshot.data();
+  const memberIds = groupData?.memberIds || [];
+
+  console.log(`Creating waiting chatroom for new group: ${groupId}`);
+
+  try {
+    const chatroomRef = db.collection("chatrooms").doc(groupId);
+    const chatroomDoc = await chatroomRef.get();
+
+    // Only create if chatroom doesn't already exist
+    if (!chatroomDoc.exists) {
+      await chatroomRef.set({
+        groupId: groupId,
+        participants: memberIds,
+        messages: [],
+        messageCount: 0,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      console.log(`Waiting chatroom created for group: ${groupId}`);
+    }
+  } catch (error) {
+    console.error(`Error creating waiting chatroom for group ${groupId}:`, error);
+  }
+});
+
 // 매칭 로직
 // Finds a match and updates statuses safely. No notifications are sent here.
 export const handleGroupUpdate = onDocumentUpdated("groups/{groupId}", async (event) => {
@@ -87,12 +121,12 @@ export const handleGroupUpdate = onDocumentUpdated("groups/{groupId}", async (ev
     // ===== EXEMPTION FILTER =====
     // Query exemptions involving my group members
     const myMemberIds = afterData.memberIds;
-    
+
     // 1. Users that my group members have exempted
     const exemptionsFromMeQuery = await db.collection("matchExemptions")
       .where("exempterId", "in", myMemberIds)
       .get();
-      
+
     // 2. Users who have exempted my group members
     const exemptionsAgainstMeQuery = await db.collection("matchExemptions")
       .where("exemptedId", "in", myMemberIds)
@@ -102,7 +136,7 @@ export const handleGroupUpdate = onDocumentUpdated("groups/{groupId}", async (ev
     const exemptedUserIds = new Set<string>();
     exemptionsFromMeQuery.forEach(doc => exemptedUserIds.add(doc.data().exemptedId));
     exemptionsAgainstMeQuery.forEach(doc => exemptedUserIds.add(doc.data().exempterId));
-    
+
     console.log(`Exempted user IDs for group ${groupId}: [${Array.from(exemptedUserIds).join(", ")}]`);
     // ===== END EXEMPTION FILTER =====
 
@@ -288,8 +322,16 @@ export const notifyMatchOnChatroomCreate = onDocumentCreated("chatrooms/{chatroo
   const snapshot = event.data;
   if (!snapshot) return;
 
-  const chatroomData = snapshot.data();
   const chatRoomId = event.params.chatroomId;
+
+  // Only send match notifications for matched chatrooms (format: groupId1_groupId2)
+  // Waiting chatrooms (pre-match group chats) don't have an underscore in their ID
+  if (!chatRoomId.includes('_')) {
+    console.log(`Skipping match notification for waiting chatroom: ${chatRoomId}`);
+    return;
+  }
+
+  const chatroomData = snapshot.data();
   const participantIds = chatroomData?.participants || [];
 
   if (participantIds.length === 0) {

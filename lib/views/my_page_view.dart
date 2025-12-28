@@ -215,9 +215,10 @@ class _MyPageViewState extends State<MyPageView> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildTag(l10n.myPageAge(user.age)),
-            const SizedBox(width: 6),
-            _buildTag(user.gender == '남' ? l10n.myPageMale : l10n.myPageFemale),
+            _buildTag(
+              l10n.myPageAge(user.age),
+              color: user.gender == '남' ? AppTheme.primaryColor : AppTheme.secondaryColor,
+            ),
             const SizedBox(width: 6),
             _buildTingTag(user.tingBalance),
           ],
@@ -226,20 +227,21 @@ class _MyPageViewState extends State<MyPageView> {
     );
   }
 
-  Widget _buildTag(String text) {
+  Widget _buildTag(String text, {Color? color}) {
+    final tagColor = color ?? AppTheme.textSecondary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: tagColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppTheme.gray300),
+        border: Border.all(color: tagColor.withValues(alpha: 0.3)),
       ),
       child: Text(
         text,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 12,
-          color: AppTheme.textSecondary,
-          fontWeight: FontWeight.w500,
+          color: tagColor,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
