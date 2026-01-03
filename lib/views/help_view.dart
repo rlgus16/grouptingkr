@@ -32,8 +32,6 @@ class HelpView extends StatelessWidget {
               child: Column(
                 children: [
                   _buildFAQItem(question: l10n.helpFAQ1Q, answer: l10n.helpFAQ1A),
-                  _buildFAQItem(question: l10n.helpFAQ2Q, answer: l10n.helpFAQ2A),
-                  _buildFAQItem(question: l10n.helpFAQ3Q, answer: l10n.helpFAQ3A),
                   _buildFAQItem(question: l10n.helpFAQ4Q, answer: l10n.helpFAQ4A),
                   _buildFAQItem(question: l10n.helpFAQ5Q, answer: l10n.helpFAQ5A),
                   _buildFAQItem(question: l10n.helpFAQ6Q, answer: l10n.helpFAQ6A),
