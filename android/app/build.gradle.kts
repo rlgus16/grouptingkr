@@ -37,7 +37,7 @@ android {
         versionName = flutter.versionName
     }
 
-    // [FIX] signingConfigs must be INSIDE the android block
+    // signingConfigs must be INSIDE the android block
     signingConfigs {
         create("release") {
             keyAlias = keystoreProperties["keyAlias"] as String
@@ -47,7 +47,7 @@ android {
         }
     }
 
-    // [FIX] buildTypes must be INSIDE the android block
+    // buildTypes must be INSIDE the android block
     buildTypes {
         getByName("release") {
             // Use the 'release' signing config created above

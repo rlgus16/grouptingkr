@@ -286,7 +286,6 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
   }
 
   Widget _buildPackageCard(TingPackage package, int index) {
-    final totalAmount = package.baseAmount + package.bonusAmount;
     final hasBonus = package.bonusAmount >= 0;
 
     return TweenAnimationBuilder<double>(
