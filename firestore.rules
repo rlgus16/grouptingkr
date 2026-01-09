@@ -169,5 +169,21 @@ service cloud.firestore {
       // 삭제(제외 해제): 제외한 사람만 가능
       allow delete: if request.auth != null && request.auth.uid == resource.data.exempterId;
     }
+
+    // 평점 컬렉션 (ID 형식: "평가자UID_평가받는UID")
+    match /ratings/{ratingId} {
+      // 생성: 본인이 다른 사용자를 평가하는 경우만 허용 (자기 자신은 평가 불가)
+      allow create: if request.auth != null && 
+                       request.auth.uid == request.resource.data.raterId &&
+                       request.auth.uid != request.resource.data.ratedUserId;
+      // 읽기: 모든 인증된 사용자가 평점 읽기 가능 (평균 계산 등을 위해)
+      allow read: if request.auth != null;
+      // 수정: 자신이 남긴 평점만 수정 가능 (set with merge 허용)
+      allow update: if request.auth != null && 
+                       request.auth.uid == resource.data.raterId &&
+                       request.auth.uid == request.resource.data.raterId;
+      // 삭제: 자신이 남긴 평점만 삭제 가능
+      allow delete: if request.auth != null && request.auth.uid == resource.data.raterId;
+    }
   }
 }

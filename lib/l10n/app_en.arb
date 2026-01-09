@@ -492,5 +492,11 @@
   "storeSecurePayment": "Secure Payment",
   "storeSecurePaymentDesc": "Safe payment via Google Play / App Store",
   "storePurchaseStart": "Starting purchase of {amount} Ting...",
-  "storePurchase": "Purchase"
+  "storePurchase": "Purchase",
+
+  "ratingDialogTitle": "Rate attractiveness of {nickname}",
+  "ratingDialogPrompt": "Tap a star to rate:",
+  "ratingDialogSubmit": "Submit",
+  "ratingSaved": "Rating saved!",
+  "ratingAlreadyRated": "You have already rated this user"
 }

@@ -513,5 +513,11 @@
   "storeSecurePayment": "안전한 결제",
   "storeSecurePaymentDesc": "Google Play / App Store를 통한 안전한 결제",
   "storePurchaseStart": "{amount} Ting 구매를 시작합니다...",
-  "storePurchase": "구매하기"
+  "storePurchase": "구매하기",
+
+  "ratingDialogTitle": "{nickname}님의 매력점수 평가하기",
+  "ratingDialogPrompt": "별을 눌러서 평가해주세요:",
+  "ratingDialogSubmit": "확인",
+  "ratingSaved": "매력점수가 저장되었습니다!",
+  "ratingAlreadyRated": "이미 이 사용자를 평가하셨습니다"
 }
