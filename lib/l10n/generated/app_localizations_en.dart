@@ -1477,4 +1477,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get storePurchase => 'Purchase';
+
+  @override
+  String ratingDialogTitle(Object nickname) {
+    return 'Rate attractiveness of $nickname';
+  }
+
+  @override
+  String get ratingDialogPrompt => 'Tap a star to rate:';
+
+  @override
+  String get ratingDialogSubmit => 'Submit';
+
+  @override
+  String get ratingSaved => 'Rating saved!';
+
+  @override
+  String get ratingAlreadyRated => 'You have already rated this user';
 }

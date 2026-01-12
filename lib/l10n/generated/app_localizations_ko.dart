@@ -1439,4 +1439,21 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get storePurchase => '구매하기';
+
+  @override
+  String ratingDialogTitle(Object nickname) {
+    return '$nickname님의 매력점수 평가하기';
+  }
+
+  @override
+  String get ratingDialogPrompt => '별을 눌러서 평가해주세요:';
+
+  @override
+  String get ratingDialogSubmit => '확인';
+
+  @override
+  String get ratingSaved => '매력점수가 저장되었습니다!';
+
+  @override
+  String get ratingAlreadyRated => '이미 이 사용자를 평가하셨습니다';
 }

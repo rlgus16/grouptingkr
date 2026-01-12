@@ -2857,6 +2857,36 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'구매하기'**
   String get storePurchase;
+
+  /// No description provided for @ratingDialogTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'{nickname}님의 매력점수 평가하기'**
+  String ratingDialogTitle(Object nickname);
+
+  /// No description provided for @ratingDialogPrompt.
+  ///
+  /// In ko, this message translates to:
+  /// **'별을 눌러서 평가해주세요:'**
+  String get ratingDialogPrompt;
+
+  /// No description provided for @ratingDialogSubmit.
+  ///
+  /// In ko, this message translates to:
+  /// **'확인'**
+  String get ratingDialogSubmit;
+
+  /// No description provided for @ratingSaved.
+  ///
+  /// In ko, this message translates to:
+  /// **'매력점수가 저장되었습니다!'**
+  String get ratingSaved;
+
+  /// No description provided for @ratingAlreadyRated.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미 이 사용자를 평가하셨습니다'**
+  String get ratingAlreadyRated;
 }
 
 class _AppLocalizationsDelegate
