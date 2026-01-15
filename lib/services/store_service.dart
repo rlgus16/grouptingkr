@@ -13,12 +13,12 @@ class StoreService {
 
   /// Product IDs - replace with actual IDs from Play Console / App Store Connect
   static const Set<String> _productIds = {
-    'groupting.12tings',
-    'groupting.25tings',
-    'groupting.100tings',
-    'groupting.200tings',
-    'groupting.400tings',
-    'groupting.800tings',
+    '12ting',
+    '25ting',
+    '100ting',
+    '200ting',
+    '400ting',
+    '800ting',
   };
 
   /// Check if store is available
