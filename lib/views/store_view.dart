@@ -296,7 +296,7 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
         return Transform.scale(
           scale: 0.8 + (0.2 * value),
           child: Opacity(
-            opacity: value,
+            opacity: value.clamp(0.0, 1.0),
             child: child,
           ),
         );
@@ -563,31 +563,29 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
           const SizedBox(height: 20),
           // Amount
           Text(
-            '$totalAmount Ting',
+            '${package.baseAmount} Ting',
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
               color: AppTheme.textPrimary,
             ),
           ),
-          if (package.bonusAmount > 0) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F5E9),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '${package.baseAmount} + ${package.bonusAmount} ${AppLocalizations.of(context)!.storeBonus(0).replaceAll('+0 ', '').trim()}',
-                style: const TextStyle(
-                  color: Color(0xFF2E7D32),
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8F5E9),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '+${package.bonusAmount} ${AppLocalizations.of(context)!.storeBonus(0).replaceAll('+0 ', '').trim()}',
+              style: const TextStyle(
+                color: Color(0xFF2E7D32),
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
               ),
             ),
-          ],
+          ),
           const SizedBox(height: 8),
           Text(
             package.price,
