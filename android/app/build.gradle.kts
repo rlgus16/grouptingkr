@@ -67,3 +67,7 @@ flutter {
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
+
+configurations.all {
+    exclude(group = "com.google.android.gms", module = "play-services-safetynet")
+}
