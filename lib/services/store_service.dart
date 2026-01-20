@@ -79,9 +79,10 @@ class StoreService {
     }
   }
 
-  /// Check if product is consumable (coins)
+  /// Check if product is consumable (Ting)
+  /// All Ting packages are consumable since users can purchase them multiple times
   bool _isConsumable(String productId) {
-    return productId.contains('coins');
+    return productId.contains('ting');
   }
 
   /// Complete a purchase (call after successful verification)

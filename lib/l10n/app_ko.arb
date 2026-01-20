@@ -514,6 +514,8 @@
   "storeSecurePaymentDesc": "Google Play / App Store를 통한 안전한 결제",
   "storePurchaseStart": "{amount} Ting 구매를 시작합니다...",
   "storePurchase": "구매하기",
+  "storePurchaseSuccess": "{amount} Ting이 충전되었습니다! 🎉",
+  "storePurchaseFailed": "구매에 실패했습니다. 다시 시도해주세요.",
 
   "ratingDialogTitle": "{nickname}님의 매력점수 평가하기",
   "ratingDialogPrompt": "별을 눌러서 평가해주세요:",

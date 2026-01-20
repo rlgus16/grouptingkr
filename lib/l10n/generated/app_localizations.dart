@@ -2858,6 +2858,18 @@ abstract class AppLocalizations {
   /// **'구매하기'**
   String get storePurchase;
 
+  /// No description provided for @storePurchaseSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'{amount} Ting이 충전되었습니다! 🎉'**
+  String storePurchaseSuccess(Object amount);
+
+  /// No description provided for @storePurchaseFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'구매에 실패했습니다. 다시 시도해주세요.'**
+  String get storePurchaseFailed;
+
   /// No description provided for @ratingDialogTitle.
   ///
   /// In ko, this message translates to:

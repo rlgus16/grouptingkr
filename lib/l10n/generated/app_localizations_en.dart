@@ -1479,6 +1479,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storePurchase => 'Purchase';
 
   @override
+  String storePurchaseSuccess(Object amount) {
+    return '$amount Ting has been added! 🎉';
+  }
+
+  @override
+  String get storePurchaseFailed => 'Purchase failed. Please try again.';
+
+  @override
   String ratingDialogTitle(Object nickname) {
     return 'Rate attractiveness of $nickname';
   }

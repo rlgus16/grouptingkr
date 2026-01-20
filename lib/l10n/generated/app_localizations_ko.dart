@@ -1441,6 +1441,14 @@ class AppLocalizationsKo extends AppLocalizations {
   String get storePurchase => '구매하기';
 
   @override
+  String storePurchaseSuccess(Object amount) {
+    return '$amount Ting이 충전되었습니다! 🎉';
+  }
+
+  @override
+  String get storePurchaseFailed => '구매에 실패했습니다. 다시 시도해주세요.';
+
+  @override
   String ratingDialogTitle(Object nickname) {
     return '$nickname님의 매력점수 평가하기';
   }

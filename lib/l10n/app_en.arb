@@ -493,6 +493,8 @@
   "storeSecurePaymentDesc": "Safe payment via Google Play / App Store",
   "storePurchaseStart": "Starting purchase of {amount} Ting...",
   "storePurchase": "Purchase",
+  "storePurchaseSuccess": "{amount} Ting has been added! 🎉",
+  "storePurchaseFailed": "Purchase failed. Please try again.",
 
   "ratingDialogTitle": "Rate attractiveness of {nickname}",
   "ratingDialogPrompt": "Tap a star to rate:",

@@ -237,4 +237,23 @@ class UserService {
       throw Exception('Ting 차감에 실패했습니다: $e');
     }
   }
+
+  /// Ting 추가 (구매 등에 사용)
+  /// 성공하면 true, 사용자가 존재하지 않으면 false 반환
+  Future<bool> addTings(String userId, int amount) async {
+    try {
+      // 사용자 존재 확인
+      final doc = await _usersCollection.doc(userId).get();
+      if (!doc.exists) return false;
+      
+      // 원자적 추가
+      await _usersCollection.doc(userId).update({
+        'tingBalance': FieldValue.increment(amount),
+        'updatedAt': Timestamp.fromDate(DateTime.now()),
+      });
+      return true;
+    } catch (e) {
+      throw Exception('Ting 추가에 실패했습니다: $e');
+    }
+  }
 }

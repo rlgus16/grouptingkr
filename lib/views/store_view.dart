@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../services/firebase_service.dart';
+import '../services/user_service.dart';
+import '../controllers/store_controller.dart';
 
 class StoreView extends StatefulWidget {
   const StoreView({super.key});
@@ -13,40 +18,17 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  bool _isInitialized = false;
 
-  // Ting packages data
-  final List<TingPackage> _packages = [
-    TingPackage(
-      baseAmount: 12,
-      bonusAmount: 0,
-      price: '₩1,800',
-    ),
-    TingPackage(
-      baseAmount: 25,
-      bonusAmount: 1,
-      price: '₩3,500',
-    ),
-    TingPackage(
-      baseAmount: 100,
-      bonusAmount: 10,
-      price: '₩14,000',
-    ),
-    TingPackage(
-      baseAmount: 200,
-      bonusAmount: 40,
-      price: '₩28,000',
-    ),
-    TingPackage(
-      baseAmount: 400,
-      bonusAmount: 120,
-      price: '₩56,000',
-    ),
-    TingPackage(
-      baseAmount: 800,
-      bonusAmount: 280,
-      price: '₩112,000',
-    ),
-  ];
+  // Map product IDs to their display information
+  final Map<String, TingPackageInfo> _packageInfo = {
+    '12ting': TingPackageInfo(baseAmount: 12, bonusAmount: 0, price: '₩1,800'),
+    '25ting': TingPackageInfo(baseAmount: 25, bonusAmount: 1, price: '₩3,500'),
+    '100ting': TingPackageInfo(baseAmount: 100, bonusAmount: 10, price: '₩14,000'),
+    '200ting': TingPackageInfo(baseAmount: 200, bonusAmount: 40, price: '₩28,000'),
+    '400ting': TingPackageInfo(baseAmount: 400, bonusAmount: 120, price: '₩56,000'),
+    '800ting': TingPackageInfo(baseAmount: 800, bonusAmount: 280, price: '₩112,000'),
+  };
 
   @override
   void initState() {
@@ -65,6 +47,24 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
       CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic),
     );
     _animationController.forward();
+
+    // Initialize store after frame is rendered
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeStore();
+    });
+  }
+
+  Future<void> _initializeStore() async {
+    if (_isInitialized) return;
+    
+    final storeController = context.read<StoreController>();
+    await storeController.initialize();
+    
+    if (mounted) {
+      setState(() {
+        _isInitialized = true;
+      });
+    }
   }
 
   @override
@@ -84,31 +84,99 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
         backgroundColor: AppTheme.gray50,
         foregroundColor: AppTheme.textPrimary,
       ),
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: SlideTransition(
-          position: _slideAnimation,
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 40),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header Banner
-                _buildHeaderBanner(),
-                const SizedBox(height: 28),
-                // Section Title
-                _buildSectionTitle(),
-                const SizedBox(height: 16),
-                // Ting Packages Grid
-                _buildPackagesGrid(),
-                const SizedBox(height: 24),
-                // Info Cards
-                _buildInfoCards(),
-              ],
+      body: Consumer<StoreController>(
+        builder: (context, storeController, _) {
+          // Show error if any
+          if (storeController.error != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(storeController.error!),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                );
+                storeController.clearError();
+              }
+            });
+          }
+
+          // Show loading state during initial load
+          if (storeController.isLoading && !_isInitialized) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          // Show error state if store is not available
+          if (!storeController.isStoreAvailable) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.store_outlined,
+                      size: 64,
+                      color: AppTheme.textSecondary,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      AppLocalizations.of(context)!.storeUnavailable,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      AppLocalizations.of(context)!.storeUnavailableDesc,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.textSecondary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          return FadeTransition(
+            opacity: _fadeAnimation,
+            child: SlideTransition(
+              position: _slideAnimation,
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 10, 20, 40),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header Banner
+                    _buildHeaderBanner(),
+                    const SizedBox(height: 28),
+                    // Section Title
+                    _buildSectionTitle(),
+                    const SizedBox(height: 16),
+                    // Ting Packages Grid
+                    _buildPackagesGrid(storeController),
+                    const SizedBox(height: 24),
+                    // Info Cards
+                    _buildInfoCards(),
+                  ],
+                ),
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
@@ -268,7 +336,35 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
     );
   }
 
-  Widget _buildPackagesGrid() {
+  Widget _buildPackagesGrid(StoreController storeController) {
+    final tingProducts = storeController.tingProducts;
+
+    // If no products loaded yet, show loading
+    if (tingProducts.isEmpty && storeController.isLoading) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(48.0),
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // If no products available, show message
+    if (tingProducts.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(48.0),
+          child: Text(
+            AppLocalizations.of(context)!.storeNoProducts,
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppTheme.textSecondary,
+            ),
+          ),
+        ),
+      );
+    }
+
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -278,15 +374,28 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
         mainAxisSpacing: 14,
         childAspectRatio: 0.78,
       ),
-      itemCount: _packages.length,
+      itemCount: tingProducts.length,
       itemBuilder: (context, index) {
-        return _buildPackageCard(_packages[index], index);
+        final product = tingProducts[index];
+        final info = _packageInfo[product.id];
+        
+        // Skip if no info for this product
+        if (info == null) return const SizedBox.shrink();
+        
+        return _buildPackageCard(product, info, index, storeController);
       },
     );
   }
 
-  Widget _buildPackageCard(TingPackage package, int index) {
-    final hasBonus = package.bonusAmount >= 0;
+  Widget _buildPackageCard(
+    ProductDetails product,
+    TingPackageInfo info,
+    int index,
+    StoreController storeController,
+  ) {
+    final hasBonus = info.bonusAmount >= 0;
+    final isPurchasing = storeController.isPurchasing && 
+                        storeController.purchasingProductId == product.id;
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -302,7 +411,7 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
         );
       },
       child: GestureDetector(
-        onTap: () => _onPackageTap(package),
+        onTap: isPurchasing ? null : () => _onPackageTap(product, info, storeController),
         child: Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -315,118 +424,135 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
               ),
             ],
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Ting Icon
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFFE082), Color(0xFFFFCA28)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+          child: Stack(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // Ting Icon
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFE082), Color(0xFFFFCA28)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFFCA28).withValues(alpha: 0.4),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Text(
+                        '💎',
+                        style: TextStyle(fontSize: 24),
+                      ),
                     ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFFCA28).withValues(alpha: 0.4),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
+                    const SizedBox(height: 12),
+                    // Amount Display
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${info.baseAmount}',
+                          style: const TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.textPrimary,
+                            letterSpacing: -1,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Padding(
+                          padding: EdgeInsets.only(bottom: 4),
+                          child: Text(
+                            'Ting',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    // Bonus Badge
+                    if (hasBonus) ...[ 
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE8F5E9),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          AppLocalizations.of(context)!.storeBonus(info.bonusAmount),
+                          style: const TextStyle(
+                            color: Color(0xFF2E7D32),
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ],
-                  ),
-                  child: const Text(
-                    '💎',
-                    style: TextStyle(fontSize: 24),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                // Amount Display
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      '${package.baseAmount}',
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
-                        letterSpacing: -1,
+                    const Spacer(),
+                    // Price Button
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFFB300).withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 4),
-                      child: Text(
-                        'Ting',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.textSecondary,
+                      child: Center(
+                        child: Text(
+                          product.price,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),
                   ],
                 ),
-                // Bonus Badge
-                if (hasBonus) ...[
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
+              ),
+              // Loading overlay
+              if (isPurchasing)
+                Positioned.fill(
+                  child: Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE8F5E9),
+                      color: Colors.white.withValues(alpha: 0.8),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Text(
-                      AppLocalizations.of(context)!.storeBonus(package.bonusAmount),
-                      style: const TextStyle(
-                        color: Color(0xFF2E7D32),
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-                const Spacer(),
-                // Price Button
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFFD54F), Color(0xFFFFB300)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFFFFB300).withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      package.price,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    child: const Center(
+                      child: CircularProgressIndicator(),
                     ),
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
         ),
       ),
@@ -505,18 +631,19 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
     );
   }
 
-  void _onPackageTap(TingPackage package) {
-    // TODO: Implement actual purchase logic
+  void _onPackageTap(ProductDetails product, TingPackageInfo info, StoreController storeController) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => _buildPurchaseConfirmSheet(package),
+      builder: (context) => _buildPurchaseConfirmSheet(product, info, storeController),
     );
   }
 
-  Widget _buildPurchaseConfirmSheet(TingPackage package) {
-    final totalAmount = package.baseAmount + package.bonusAmount;
-
+  Widget _buildPurchaseConfirmSheet(
+    ProductDetails product,
+    TingPackageInfo info,
+    StoreController storeController,
+  ) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
@@ -563,7 +690,7 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
           const SizedBox(height: 20),
           // Amount
           Text(
-            '${package.baseAmount} Ting',
+            '${info.baseAmount} Ting',
             style: const TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -578,7 +705,7 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              '+${package.bonusAmount} ${AppLocalizations.of(context)!.storeBonus(0).replaceAll('+0 ', '').trim()}',
+              '+${info.bonusAmount} ${AppLocalizations.of(context)!.storeBonus(0).replaceAll('+0 ', '').trim()}',
               style: const TextStyle(
                 color: Color(0xFF2E7D32),
                 fontSize: 14,
@@ -588,7 +715,7 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
           ),
           const SizedBox(height: 8),
           Text(
-            package.price,
+            product.price,
             style: const TextStyle(
               fontSize: 18,
               color: AppTheme.textSecondary,
@@ -602,17 +729,7 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
             child: ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
-                // TODO: Trigger actual in-app purchase
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(AppLocalizations.of(context)!.storePurchaseStart(totalAmount)),
-                    backgroundColor: const Color(0xFFFFB300),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                );
+                _processPurchase(product, info, storeController);
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFFFB300),
@@ -649,15 +766,124 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
       ),
     );
   }
+
+  Future<void> _processPurchase(
+    ProductDetails product,
+    TingPackageInfo info,
+    StoreController storeController,
+  ) async {
+    // Initiate the purchase through StoreController
+    final success = await storeController.purchaseProduct(product);
+    
+    if (!success && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.storePurchaseFailed),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Listen for purchase completion
+    // The StoreController will handle the purchase stream
+    // We need to listen for when the purchase completes and credit the Ting
+    _listenForPurchaseCompletion(product.id, info);
+  }
+
+  void _listenForPurchaseCompletion(String productId, TingPackageInfo info) {
+    final storeController = context.read<StoreController>();
+    
+    // Create a one-time listener for purchase completion
+    void listener() {
+      if (!storeController.isPurchasing && storeController.purchasingProductId == null) {
+        // Purchase completed (either success or failure)
+        if (storeController.error == null) {
+          // Success - credit the Ting
+          _creditTing(info);
+        }
+        storeController.removeListener(listener);
+      }
+    }
+    
+    storeController.addListener(listener);
+  }
+
+  Future<void> _creditTing(TingPackageInfo info) async {
+    final userId = FirebaseService().currentUserId;
+    
+    if (userId == null) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.commonError),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+      return;
+    }
+
+    final totalAmount = info.baseAmount + info.bonusAmount;
+    
+    try {
+      final success = await UserService().addTings(userId, totalAmount);
+      
+      if (!mounted) return;
+      
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.storePurchaseSuccess(totalAmount)),
+            backgroundColor: const Color(0xFF4CAF50),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.profileEditFailed),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.profileEditFailed),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
+    }
+  }
 }
 
-/// Data model for Ting packages
-class TingPackage {
+/// Data model for Ting package display information
+class TingPackageInfo {
   final int baseAmount;
   final int bonusAmount;
   final String price;
 
-  const TingPackage({
+  const TingPackageInfo({
     required this.baseAmount,
     required this.bonusAmount,
     required this.price,

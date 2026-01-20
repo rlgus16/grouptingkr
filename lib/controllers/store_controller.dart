@@ -29,9 +29,9 @@ class StoreController extends ChangeNotifier {
       .where((p) => p.id.contains('premium'))
       .toList();
 
-  /// Coin products (consumables)
-  List<ProductDetails> get coinProducts => _products
-      .where((p) => p.id.contains('coins'))
+  /// Ting products (consumables)
+  List<ProductDetails> get tingProducts => _products
+      .where((p) => p.id.contains('ting'))
       .toList();
 
   /// Check if user has premium subscription
@@ -113,7 +113,8 @@ class StoreController extends ChangeNotifier {
       // For now, just complete the purchase locally
       
       // Add to purchased products (except consumables - they're used immediately)
-      if (!purchase.productID.contains('coins')) {
+      // Ting products are consumables, so we don't add them to purchased products
+      if (!purchase.productID.contains('ting')) {
         _purchasedProductIds.add(purchase.productID);
       }
 
