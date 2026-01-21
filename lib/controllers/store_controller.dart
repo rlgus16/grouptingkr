@@ -14,6 +14,7 @@ class StoreController extends ChangeNotifier {
   List<ProductDetails> _products = [];
   Set<String> _purchasedProductIds = {};
   String? _purchasingProductId;
+  PurchaseStatus? _lastPurchaseStatus;
 
   // Getters
   bool get isLoading => _isLoading;
@@ -23,6 +24,7 @@ class StoreController extends ChangeNotifier {
   List<ProductDetails> get products => _products;
   Set<String> get purchasedProductIds => _purchasedProductIds;
   String? get purchasingProductId => _purchasingProductId;
+  PurchaseStatus? get lastPurchaseStatus => _lastPurchaseStatus;
 
   /// Premium products (subscriptions)
   List<ProductDetails> get premiumProducts => _products
@@ -79,6 +81,9 @@ class StoreController extends ChangeNotifier {
   /// Handle purchase updates from the stream
   void _handlePurchaseUpdate(List<PurchaseDetails> purchases) {
     for (final PurchaseDetails purchase in purchases) {
+      // Track the purchase status
+      _lastPurchaseStatus = purchase.status;
+      
       switch (purchase.status) {
         case PurchaseStatus.pending:
           _isPurchasing = true;
@@ -142,6 +147,7 @@ class StoreController extends ChangeNotifier {
     _isPurchasing = true;
     _purchasingProductId = product.id;
     _error = null;
+    _lastPurchaseStatus = null; // Reset status for new purchase
     notifyListeners();
 
     final success = await _storeService.purchaseProduct(product);

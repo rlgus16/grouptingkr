@@ -423,20 +423,38 @@ export const notifyInvitation = onDocumentCreated("invitations/{invitationId}", 
     return;
   }
 
-  // Construct the notification payload
+  // Construct the data-only message payload
+  // Note: Using data-only (no notification field) prevents FCM from auto-showing notifications
+  // and allows the app to control notification display via local notifications
   const message = {
     token: fcmToken,
-    notification: {
-      title: "그룹팅",
-      body: `${fromUserNickname}님이 그룹에 초대했습니다.`,
-    },
     data: {
       type: "new_invitation",
       invitationId: invitationId,
       fromUserNickname: fromUserNickname,
       fromUserProfileImage: invitationData?.fromUserProfileImage || "",
+      groupMemberCount: invitationData?.groupMemberCount?.toString() || "1",
+      // Add title and body to data payload for local notification display
+      localNotificationTitle: "그룹팅",
+      localNotificationBody: `${fromUserNickname}님이 그룹에 초대했습니다.`,
       showAsLocalNotification: "true",
       click_action: "FLUTTER_NOTIFICATION_CLICK",
+    },
+    // Android settings - high priority for data-only messages to wake app
+    android: {
+      priority: "high" as const,
+    },
+    // iOS settings - content-available for background processing
+    apns: {
+      payload: {
+        aps: {
+          "content-available": 1,
+          sound: "default",
+        }
+      },
+      headers: {
+        "apns-priority": "10",
+      }
     },
   };
 

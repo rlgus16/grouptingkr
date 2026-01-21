@@ -801,11 +801,16 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
     // Create a one-time listener for purchase completion
     void listener() {
       if (!storeController.isPurchasing && storeController.purchasingProductId == null) {
-        // Purchase completed (either success or failure)
-        if (storeController.error == null) {
-          // Success - credit the Ting
+        // Purchase completed - check the actual status
+        final status = storeController.lastPurchaseStatus;
+        
+        // Only credit Ting if purchase was explicitly successful
+        if (status == PurchaseStatus.purchased || status == PurchaseStatus.restored) {
           _creditTing(info);
         }
+        // Canceled and error cases don't need additional handling
+        // (errors are already shown by the controller's error handling)
+        
         storeController.removeListener(listener);
       }
     }
