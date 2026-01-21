@@ -505,7 +505,7 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
                         ),
                       ),
                     ],
-                    const Spacer(),
+                    const SizedBox(height: 6),
                     // Price Button
                     Container(
                       width: double.infinity,
