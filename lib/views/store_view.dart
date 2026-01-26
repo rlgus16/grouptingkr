@@ -660,10 +660,17 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
     TingPackageInfo info,
     StoreController storeController,
   ) async {
+    // CRITICAL: Attach listener BEFORE initiating purchase to avoid race condition
+    // If we attach after, quick cancellations can be missed
+    _listenForPurchaseCompletion(product.id, info);
+    
     // Initiate the purchase through StoreController
     final success = await storeController.purchaseProduct(product);
     
     if (!success && mounted) {
+      // Purchase failed to initiate - clean up listener
+      _cleanupPurchaseListener();
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(AppLocalizations.of(context)!.storePurchaseFailed),
@@ -676,11 +683,8 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
       );
       return;
     }
-
-    // Listen for purchase completion
-    // The StoreController will handle the purchase stream
-    // We need to listen for when the purchase completes and credit the Ting
-    _listenForPurchaseCompletion(product.id, info);
+    
+    // Listener is already attached and will handle completion/cancellation
   }
 
   void _listenForPurchaseCompletion(String productId, TingPackageInfo info) {
