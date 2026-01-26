@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'dart:async';
 import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../services/firebase_service.dart';
@@ -20,6 +21,10 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   bool _isInitialized = false;
+  
+  // Purchase listener tracking
+  VoidCallback? _activePurchaseListener;
+  Timer? _purchaseTimeoutTimer;
 
   // Map product IDs to their display information
   final Map<String, TingPackageInfo> _packageInfo = {
@@ -70,6 +75,7 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
 
   @override
   void dispose() {
+    _cleanupPurchaseListener();
     _animationController.dispose();
     super.dispose();
   }
@@ -637,6 +643,18 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
     _processPurchase(product, info, storeController);
   }
 
+  /// Clean up purchase listener and timeout timer
+  void _cleanupPurchaseListener() {
+    if (_activePurchaseListener != null) {
+      final storeController = context.read<StoreController>();
+      storeController.removeListener(_activePurchaseListener!);
+      _activePurchaseListener = null;
+    }
+    
+    _purchaseTimeoutTimer?.cancel();
+    _purchaseTimeoutTimer = null;
+  }
+
   Future<void> _processPurchase(
     ProductDetails product,
     TingPackageInfo info,
@@ -666,11 +684,15 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
   }
 
   void _listenForPurchaseCompletion(String productId, TingPackageInfo info) {
+    // Clean up any existing listener first
+    _cleanupPurchaseListener();
+    
     final storeController = context.read<StoreController>();
     
     // Create a one-time listener for purchase completion
     void listener() {
-      if (!storeController.isPurchasing && storeController.purchasingProductId == null) {
+      // Simplified condition: just check if purchase is no longer in progress
+      if (!storeController.isPurchasing) {
         // Purchase completed - check the actual status
         final status = storeController.lastPurchaseStatus;
         
@@ -681,11 +703,22 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
         // Canceled and error cases don't need additional handling
         // (errors are already shown by the controller's error handling)
         
-        storeController.removeListener(listener);
+        // Clean up the listener
+        _cleanupPurchaseListener();
       }
     }
     
+    // Store the listener reference for cleanup
+    _activePurchaseListener = listener;
     storeController.addListener(listener);
+    
+    // Add a safety timeout to prevent stuck loading states
+    _purchaseTimeoutTimer = Timer(const Duration(seconds: 30), () {
+      if (mounted) {
+        debugPrint('Purchase listener timeout - cleaning up');
+        _cleanupPurchaseListener();
+      }
+    });
   }
 
   Future<void> _creditTing(TingPackageInfo info) async {
