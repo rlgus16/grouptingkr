@@ -722,9 +722,10 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
     storeController.addListener(listener);
     
     // Add a safety timeout to prevent stuck loading states
-    _purchaseTimeoutTimer = Timer(const Duration(seconds: 30), () {
+    // Reduced to 10s since iOS often doesn't send cancel events
+    _purchaseTimeoutTimer = Timer(const Duration(seconds: 10), () {
       if (mounted) {
-        debugPrint('[StoreView] ⚠️ TIMEOUT after 30s - cleaning up');
+        debugPrint('[StoreView] ⚠️ TIMEOUT after 10s - cleaning up');
         _cleanupPurchaseListener();
       }
     });

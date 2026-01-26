@@ -68,6 +68,14 @@ class StoreController extends ChangeNotifier {
         if (!a.id.contains('premium') && b.id.contains('premium')) return 1;
         return a.rawPrice.compareTo(b.rawPrice);
       });
+      
+      // IMPORTANT: Reset any stuck purchase state on init
+      // This handles cases where iOS didn't send cancel event
+      if (_isPurchasing) {
+        debugPrint('[StoreController] Found stuck purchase state on init - resetting');
+        _isPurchasing = false;
+        _purchasingProductId = null;
+      }
 
     } catch (e) {
       _error = e.toString();
@@ -186,6 +194,16 @@ class StoreController extends ChangeNotifier {
   /// Clear error
   void clearError() {
     _error = null;
+    notifyListeners();
+  }
+  
+  /// Manually reset purchase state (for stuck purchases)
+  /// Call this if purchase dialog was canceled but state is stuck
+  void resetPurchaseState() {
+    debugPrint('[StoreController] Manual reset purchase state');
+    _isPurchasing = false;
+    _purchasingProductId = null;
+    _lastPurchaseStatus = null;
     notifyListeners();
   }
 
