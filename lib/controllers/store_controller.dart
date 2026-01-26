@@ -83,6 +83,7 @@ class StoreController extends ChangeNotifier {
     for (final PurchaseDetails purchase in purchases) {
       // Track the purchase status
       _lastPurchaseStatus = purchase.status;
+      debugPrint('[StoreController] Purchase update: ${purchase.productID} status=${purchase.status}');
       
       switch (purchase.status) {
         case PurchaseStatus.pending:
@@ -96,6 +97,7 @@ class StoreController extends ChangeNotifier {
           break;
 
         case PurchaseStatus.error:
+          debugPrint('[StoreController] ERROR: ${purchase.error?.message}');
           _error = purchase.error?.message ?? 'Purchase failed';
           _isPurchasing = false;
           _purchasingProductId = null;
@@ -103,9 +105,12 @@ class StoreController extends ChangeNotifier {
           break;
 
         case PurchaseStatus.canceled:
+          debugPrint('[StoreController] ⚠️ CANCELED - User cancelled purchase');
+          debugPrint('[StoreController] Setting isPurchasing=false, purchasingProductId=null');
           _isPurchasing = false;
           _purchasingProductId = null;
           notifyListeners();
+          debugPrint('[StoreController] notifyListeners() called after cancel');
           break;
       }
     }

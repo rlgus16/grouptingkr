@@ -692,11 +692,16 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
     _cleanupPurchaseListener();
     
     final storeController = context.read<StoreController>();
+    debugPrint('[StoreView] Listener attached for $productId');
     
     // Create a one-time listener for purchase completion
     void listener() {
+      debugPrint('[StoreView] Listener fired! isPurchasing=${storeController.isPurchasing}, status=${storeController.lastPurchaseStatus}');
+      
       // Simplified condition: just check if purchase is no longer in progress
       if (!storeController.isPurchasing) {
+        debugPrint('[StoreView] Purchase completed or canceled');
+        
         // Purchase completed - check the actual status
         final status = storeController.lastPurchaseStatus;
         
@@ -719,7 +724,7 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
     // Add a safety timeout to prevent stuck loading states
     _purchaseTimeoutTimer = Timer(const Duration(seconds: 30), () {
       if (mounted) {
-        debugPrint('Purchase listener timeout - cleaning up');
+        debugPrint('[StoreView] ⚠️ TIMEOUT after 30s - cleaning up');
         _cleanupPurchaseListener();
       }
     });

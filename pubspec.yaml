@@ -3,7 +3,7 @@ description: "친구들과 함께 즐기는 신개념 소개팅"
 
 publish_to: "none"
 
-version: 1.0.5+22
+version: 1.0.5+24
 
 environment:
   sdk: ^3.8.1
