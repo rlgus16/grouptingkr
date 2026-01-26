@@ -6,6 +6,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../services/firebase_service.dart';
 import '../services/user_service.dart';
 import '../controllers/store_controller.dart';
+import '../controllers/auth_controller.dart';
 
 class StoreView extends StatefulWidget {
   const StoreView({super.key});
@@ -713,6 +714,10 @@ class _StoreViewState extends State<StoreView> with SingleTickerProviderStateMix
       if (!mounted) return;
       
       if (success) {
+        // Refresh AuthController to update UI with new balance
+        final authController = context.read<AuthController>();
+        await authController.refreshCurrentUser();
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(AppLocalizations.of(context)!.storePurchaseSuccess(totalAmount)),
