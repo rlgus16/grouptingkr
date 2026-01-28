@@ -14,6 +14,7 @@ import 'profile_detail_view.dart';
 import 'my_page_view.dart';
 import 'chat_view.dart';
 import 'profile_edit_view.dart';
+import 'openting_view.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/chatroom_service.dart';
 import '../models/chatroom_model.dart';
@@ -973,8 +974,13 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
               );
               break;
             case 3:
-            // 더보기 (로그아웃 등)
-              _showMoreOptions();
+            // 오픈팅 (Open Chatrooms)
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const OpentingView(),
+                ),
+              );
               break;
           }
         },
@@ -1012,8 +1018,8 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
             label: AppLocalizations.of(context)!.homeNavMyPage,
           ),
           BottomNavigationBarItem(
-            icon: const Icon(Icons.more_horiz),
-            label: AppLocalizations.of(context)!.homeNavMore,
+            icon: const Icon(Icons.chat_bubble_outline_rounded),
+            label: '오픈팅',
           ),
         ],
       ),
@@ -1728,7 +1734,16 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
             spacing: 20.0,
             runSpacing: 20.0,
             children: [
-              ...groupController.groupMembers.map((member) {
+              // 오너를 먼저 배치하고 나머지 멤버 배치
+              ...(groupController.groupMembers.toList()
+                ..sort((a, b) {
+                  final aIsOwner = groupController.currentGroup!.isOwner(a.uid);
+                  final bIsOwner = groupController.currentGroup!.isOwner(b.uid);
+                  if (aIsOwner && !bIsOwner) return -1;
+                  if (!aIsOwner && bIsOwner) return 1;
+                  return 0;
+                }))
+                .map((member) {
                 final isBlocked = authController.blockedUserIds.contains(member.uid);
                 final isOwner = groupController.currentGroup!.isOwner(member.uid);
 

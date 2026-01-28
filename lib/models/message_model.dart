@@ -50,6 +50,28 @@ class MessageModel {
     );
   }
 
+  // Factory for Map (used in open chatrooms)
+  factory MessageModel.fromMap(String id, Map<String, dynamic> data) {
+    return MessageModel(
+      id: id,
+      groupId: data['groupId'] ?? '',
+      senderId: data['senderId'] ?? '',
+      senderNickname: data['senderNickname'] ?? '',
+      content: data['content'] ?? '',
+      type: MessageType.values.firstWhere(
+            (e) => e.toString().split('.').last == data['type'],
+        orElse: () => MessageType.text,
+      ),
+      createdAt: data['createdAt'] is Timestamp 
+          ? (data['createdAt'] as Timestamp).toDate()
+          : DateTime.now(),
+      readBy: List<String>.from(data['readBy'] ?? []),
+      imageUrl: data['imageUrl'],
+      senderProfileImage: data['senderProfileImage'],
+      metadata: data['metadata'],
+    );
+  }
+
   // To Firestore
   Map<String, dynamic> toFirestore() {
     return {

@@ -98,6 +98,31 @@ service cloud.firestore {
       );
     }
 
+    // 오픈 채팅방 컬렉션
+    match /openChatrooms/{chatroomId} {
+      // 읽기: 모든 인증된 사용자가 활성 채팅방 조회 가능
+      allow read: if request.auth != null;
+      // 생성: 인증된 사용자가 본인을 생성자로 하는 채팅방 생성 가능
+      allow create: if request.auth != null && 
+                       request.auth.uid == request.resource.data.creatorId &&
+                       request.resource.data.participants.hasOnly([request.auth.uid]) &&
+                       request.resource.data.participantCount == 1;
+      // 업데이트: 참가자 추가 (조인), 메시지 전송, 또는 생성자가 업데이트
+      allow update: if request.auth != null && (
+        // 참가자 추가 (본인을 participants에 추가)
+        (request.auth.uid in request.resource.data.participants &&
+         !(request.auth.uid in resource.data.participants) &&
+         request.resource.data.participants.size() == resource.data.participants.size() + 1 &&
+         request.resource.data.participantCount == resource.data.participantCount + 1) ||
+        // 참가자가 메시지 전송 (messages 배열에 추가)
+        (request.auth.uid in resource.data.participants) ||
+        // 생성자가 채팅방 정보 수정
+        (request.auth.uid == resource.data.creatorId)
+      );
+      // 삭제: 생성자만 가능
+      allow delete: if request.auth != null && request.auth.uid == resource.data.creatorId;
+    }
+
     // 메시지 컬렉션
     match /messages/{messageId} {
       allow create: if request.auth != null && request.auth.uid == request.resource.data.senderId;
