@@ -503,7 +503,35 @@ class _OpentingViewState extends State<OpentingView> {
     return Scaffold(
       backgroundColor: AppTheme.gray50,
       appBar: AppBar(
-        title: const Text('오픈팅'),
+        title: _currentChatroomId != null
+            ? Column(
+                children: [
+                  const Text(
+                    '오픈팅',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.group_outlined,
+                        size: 13,
+                        color: AppTheme.textSecondary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${_currentChatroomData?['participantCount'] ?? 0}/${_currentChatroomData?['maxParticipants'] ?? 10}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary.withValues(alpha: 0.8),
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+            : const Text('오픈팅'),
         backgroundColor: AppTheme.gray50,
         scrolledUnderElevation: 0,
       ),
