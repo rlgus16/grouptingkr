@@ -298,21 +298,36 @@ class _OpentingViewState extends State<OpentingView> {
     if (currentUserId == null) return;
 
     try {
-      final snapshot = await _firestore
+      // Use snapshots() for real-time updates
+      _firestore
           .collection('openChatrooms')
           .where('participants', arrayContains: currentUserId)
           .where('isActive', isEqualTo: true)
-          .get();
-
-      if (snapshot.docs.isNotEmpty && mounted) {
-        final doc = snapshot.docs.first;
-        setState(() {
-          _currentChatroomId = doc.id;
-          _currentChatroomData = doc.data();
-        });
-        await _loadChatroomMembers();
-        _listenToMessages(); // Start listening to messages
-      }
+          .snapshots()
+          .listen((snapshot) {
+        if (snapshot.docs.isNotEmpty && mounted) {
+          final doc = snapshot.docs.first;
+          setState(() {
+            _currentChatroomId = doc.id;
+            _currentChatroomData = doc.data();
+          });
+          // Reload members when chatroom data changes
+          _loadChatroomMembers();
+          // Start listening to messages only once
+          if (_messages.isEmpty) {
+            _listenToMessages();
+          }
+        } else if (snapshot.docs.isEmpty && mounted) {
+          // No active chatroom, clear state
+          setState(() {
+            _currentChatroomId = null;
+            _currentChatroomData = null;
+            _chatroomMembers = [];
+            _messages = [];
+            _userProfiles = {};
+          });
+        }
+      });
     } catch (e) {
       // Ignore errors
     }
@@ -494,6 +509,37 @@ class _OpentingViewState extends State<OpentingView> {
     }
   }
 
+  void _showChatroomOptionsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          contentPadding: EdgeInsets.zero,
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.exit_to_app, color: AppTheme.errorColor),
+                title: const Text(
+                  'Leave Open Chat',
+                  style: TextStyle(
+                    color: AppTheme.errorColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _leaveChatroom();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -534,6 +580,14 @@ class _OpentingViewState extends State<OpentingView> {
             : const Text('오픈팅'),
         backgroundColor: AppTheme.gray50,
         scrolledUnderElevation: 0,
+        actions: _currentChatroomId != null
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.more_vert),
+                  onPressed: _showChatroomOptionsDialog,
+                ),
+              ]
+            : null,
       ),
       body: _currentChatroomId != null
           ? _buildCurrentChatroomView(l10n, authController)
@@ -765,59 +819,6 @@ class _OpentingViewState extends State<OpentingView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(
-                      Icons.chat_bubble,
-                      color: AppTheme.primaryColor,
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppTheme.textPrimary,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        Text(
-                          '$participantCount/$maxParticipants participants',
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppTheme.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  OutlinedButton(
-                    onPressed: _leaveChatroom,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppTheme.errorColor,
-                      side: const BorderSide(color: AppTheme.errorColor),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text('Leave', style: TextStyle(fontSize: 13)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
               // Compact horizontal members list
               SizedBox(
                 height: 60,
