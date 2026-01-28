@@ -307,14 +307,27 @@ class _OpentingViewState extends State<OpentingView> {
           .listen((snapshot) {
         if (snapshot.docs.isNotEmpty && mounted) {
           final doc = snapshot.docs.first;
+          final newChatroomId = doc.id;
+          
+          // Check if chatroom changed - if so, clear old messages
+          final chatroomChanged = _currentChatroomId != null && _currentChatroomId != newChatroomId;
+          
           setState(() {
-            _currentChatroomId = doc.id;
+            _currentChatroomId = newChatroomId;
             _currentChatroomData = doc.data();
+            
+            // Clear messages when switching to a different chatroom
+            if (chatroomChanged) {
+              _messages = [];
+              _userProfiles = {};
+            }
           });
+          
           // Reload members when chatroom data changes
           _loadChatroomMembers();
-          // Start listening to messages only once
-          if (_messages.isEmpty) {
+          
+          // Start listening to messages (restart if chatroom changed)
+          if (_messages.isEmpty || chatroomChanged) {
             _listenToMessages();
           }
         } else if (snapshot.docs.isEmpty && mounted) {
@@ -906,7 +919,7 @@ class _OpentingViewState extends State<OpentingView> {
                                     MemberAvatar(
                                       imageUrl: isBlocked ? null : member.mainProfileImage,
                                       name: member.nickname,
-                                      isOwner: false,
+                                      isOwner: member.uid == _currentChatroomData?['creatorId'],
                                       size: 40,
                                     ),
                                     const SizedBox(height: 4),
