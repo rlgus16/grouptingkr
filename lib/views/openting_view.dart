@@ -484,12 +484,40 @@ class _OpentingViewState extends State<OpentingView> {
       if (participantCount <= 1) {
         await chatroomRef.delete();
       } else {
-        // Otherwise, just remove the user from participants
-        await chatroomRef.update({
+        // Check if the leaving user is the owner
+        final creatorId = data['creatorId'];
+        final participants = List<dynamic>.from(data['participants'] ?? []);
+        
+        // Remove current user from participants list
+        participants.remove(currentUserId);
+        
+        // Prepare update data
+        final Map<String, dynamic> updateData = {
           'participants': FieldValue.arrayRemove([currentUserId]),
           'participantCount': FieldValue.increment(-1),
           'updatedAt': FieldValue.serverTimestamp(),
-        });
+        };
+        
+        // If the leaving user is the owner, transfer ownership
+        if (creatorId == currentUserId && participants.isNotEmpty) {
+          // Transfer to the first remaining participant
+          final newOwnerId = participants.first;
+          
+          // Fetch new owner's profile to get nickname
+          try {
+            final newOwnerDoc = await _firestore.collection('users').doc(newOwnerId).get();
+            if (newOwnerDoc.exists) {
+              final newOwnerData = newOwnerDoc.data()!;
+              updateData['creatorId'] = newOwnerId;
+              updateData['creatorNickname'] = newOwnerData['nickname'] ?? 'Unknown';
+            }
+          } catch (e) {
+            // Failed to fetch new owner, just update creatorId
+            updateData['creatorId'] = newOwnerId;
+          }
+        }
+        
+        await chatroomRef.update(updateData);
       }
 
       if (mounted) {
@@ -736,49 +764,6 @@ class _OpentingViewState extends State<OpentingView> {
                               );
                             },
                           ),
-                          const SizedBox(width: 12),
-                          // Other participants (stacked, smaller)
-                          if (otherParticipants.isNotEmpty)
-                            FutureBuilder<List<UserModel>>(
-                              future: _fetchParticipantProfiles(otherParticipants),
-                              builder: (context, snapshot) {
-                                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                                  return const SizedBox.shrink();
-                                }
-                                
-                                final profiles = snapshot.data!;
-                                return SizedBox(
-                                  width: profiles.length == 1 ? 32 : (profiles.length == 2 ? 44 : 56),
-                                  height: 32,
-                                  child: Stack(
-                                    children: List.generate(
-                                      profiles.length > 3 ? 3 : profiles.length,
-                                      (i) {
-                                        final profile = profiles[i];
-                                        return Positioned(
-                                          left: i * 12.0,
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              border: Border.all(
-                                                color: Colors.white,
-                                                width: 2,
-                                              ),
-                                            ),
-                                            child: MemberAvatar(
-                                              imageUrl: profile.mainProfileImage,
-                                              name: profile.nickname,
-                                              isOwner: false,
-                                              size: 28,
-                                            ),
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
                           const SizedBox(width: 14),
                           Expanded(
                             child: Column(
