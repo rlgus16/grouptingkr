@@ -102,13 +102,24 @@ class _ChatViewState extends State<ChatView> with WidgetsBindingObserver {
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                 ),
                 if (!groupController.isMatched)
-                  Text(
-                    l10n.chatParticipating(groupController.groupMembers.length),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textSecondary.withValues(alpha:0.8),
-                      fontWeight: FontWeight.normal,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.group_outlined,
+                        size: 13,
+                        color: AppTheme.textSecondary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${groupController.groupMembers.length}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary.withValues(alpha: 0.8),
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                    ],
                   ),
               ],
             );

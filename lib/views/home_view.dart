@@ -1715,13 +1715,24 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
                   color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  AppLocalizations.of(context)!.homeMemberCount(groupController.groupMembers.length),
-                  style: const TextStyle(
-                    color: AppTheme.primaryColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.group_outlined,
+                      size: 13,
+                      color: AppTheme.primaryColor,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${groupController.groupMembers.length}',
+                      style: const TextStyle(
+                        color: AppTheme.primaryColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
