@@ -1546,9 +1546,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get opentingCreateFailed => 'Failed to create chatroom';
 
   @override
-  String opentingRoomFull(Object count) {
-    return 'Chatroom is full ($count/$count)';
-  }
+  String get opentingRoomFull => 'Chatroom is full';
 
   @override
   String get opentingJoinSuccess => 'Joined chatroom successfully!';

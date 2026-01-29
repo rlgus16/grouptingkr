@@ -213,7 +213,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
     // Check if chatroom is full
     if (participantCount >= maxParticipants) {
       if (mounted) {
-        CustomToast.showError(context, AppLocalizations.of(context)!.opentingRoomFull(maxParticipants));
+        CustomToast.showError(context, AppLocalizations.of(context)!.opentingRoomFull);
       }
       return;
     }
@@ -330,29 +330,53 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Handle bar
+                  // Modern handle bar
                   Center(
                     child: Container(
-                      width: 40,
-                      height: 4,
+                      width: 48,
+                      height: 5,
                       decoration: BoxDecoration(
-                        color: AppTheme.gray300,
-                        borderRadius: BorderRadius.circular(2),
+                        gradient: LinearGradient(
+                          colors: [
+                            AppTheme.gray400,
+                            AppTheme.gray300,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(3),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
 
-                  // Header
+                  // Modern Header with icon
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppTheme.primaryColor.withValues(alpha: 0.15),
+                              AppTheme.primaryColor.withValues(alpha: 0.08),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          Icons.tune_rounded,
+                          size: 22,
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
                       Text(
                         l10n.opentingDistanceFilter,
                         style: const TextStyle(
-                          fontSize: 20,
+                          fontSize: 22,
                           fontWeight: FontWeight.w800,
-                          color: AppTheme.gray800,
+                          color: AppTheme.textPrimary,
+                          fontFamily: 'Pretendard',
+                          letterSpacing: -0.5,
                         ),
                       ),
                     ],
@@ -381,14 +405,19 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 10),
                   SliderTheme(
                     data: SliderThemeData(
-                      trackHeight: 6,
+                      trackHeight: 8,
                       activeTrackColor: AppTheme.primaryColor,
                       inactiveTrackColor: AppTheme.gray200,
-                      thumbColor: Colors.white,
-                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10, elevation: 4),
+                      thumbColor: AppTheme.primaryColor,
+                      overlayColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 12,
+                        elevation: 3,
+                      ),
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
                     ),
                     child: Slider(
                       value: currentDistance,
@@ -401,30 +430,51 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                     ),
                   ),
 
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 36),
 
-                  // Apply Button
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _maxDistance = currentDistance;
-                      });
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 0,
+                  // Modern Apply Button
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    child: Text(
-                      l10n.homeFilterApply,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _maxDistance = currentDistance;
+                        });
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.check_circle_rounded, size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            l10n.homeFilterApply,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'Pretendard',
+                              letterSpacing: -0.2,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -556,20 +606,43 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
 
               return Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: AppTheme.softShadow,
-                  border: Border.all(color: AppTheme.gray100),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white,
+                      AppTheme.gray50.withValues(alpha: 0.3),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, 4),
+                      spreadRadius: 0,
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 12,
+                      offset: const Offset(0, 2),
+                      spreadRadius: -2,
+                    ),
+                  ],
+                  border: Border.all(
+                    color: AppTheme.gray200.withValues(alpha: 0.5),
+                    width: 1.5,
+                  ),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Owner's avatar (larger, tappable)
+                          // Owner's avatar with modern badge
                           FutureBuilder<UserModel?>(
                             future: _fetchSingleProfile(creatorId),
                             builder: (context, snapshot) {
@@ -585,54 +658,137 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                                         );
                                       }
                                     : null,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                                      width: 2,
+                                child: Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(3),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            AppTheme.primaryColor,
+                                            AppTheme.primaryColor.withValues(alpha: 0.6),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Container(
+                                        decoration: const BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: Colors.white,
+                                        ),
+                                        child: MemberAvatar(
+                                          imageUrl: ownerProfile?.mainProfileImage ?? '',
+                                          name: creatorNickname,
+                                          isOwner: true,
+                                          size: 52,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                  child: MemberAvatar(
-                                    imageUrl: ownerProfile?.mainProfileImage ?? '',
-                                    name: creatorNickname,
-                                    isOwner: true,
-                                    size: 48,
-                                  ),
+                                    Positioned(
+                                      bottom: -2,
+                                      right: -2,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.primaryColor,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: Colors.white,
+                                            width: 2,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.1),
+                                              blurRadius: 4,
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Icon(
+                                          Icons.star_rounded,
+                                          size: 12,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               );
                             },
                           ),
-                          const SizedBox(width: 14),
+                          const SizedBox(width: 16),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  title,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: AppTheme.textPrimary,
-                                    fontFamily: 'Pretendard',
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 2,
-                                ),
-                                const SizedBox(height: 4),
                                 Row(
                                   children: [
-                                    const Icon(
-                                      Icons.group_outlined,
-                                      size: 14,
-                                      color: AppTheme.gray500,
+                                    Expanded(
+                                      child: Text(
+                                        title,
+                                        style: const TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w800,
+                                          color: AppTheme.textPrimary,
+                                          fontFamily: 'Pretendard',
+                                          letterSpacing: -0.3,
+                                          height: 1.3,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 2,
+                                      ),
                                     ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      '$participantCount/$maxParticipants',
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        color: AppTheme.textSecondary,
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: participantCount >= maxParticipants
+                                            ? AppTheme.errorColor.withValues(alpha: 0.1)
+                                            : AppTheme.primaryColor.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color: participantCount >= maxParticipants
+                                              ? AppTheme.errorColor.withValues(alpha: 0.3)
+                                              : AppTheme.primaryColor.withValues(alpha: 0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.people_rounded,
+                                            size: 14,
+                                            color: participantCount >= maxParticipants
+                                                ? AppTheme.errorColor
+                                                : AppTheme.primaryColor,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            '$participantCount/$maxParticipants',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                              color: participantCount >= maxParticipants
+                                                  ? AppTheme.errorColor
+                                                  : AppTheme.primaryColor,
+                                              fontFamily: 'Pretendard',
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ],
@@ -642,10 +798,10 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
                       SizedBox(
                         width: double.infinity,
-                        height: 48,
+                        height: 52,
                         child: ElevatedButton(
                           onPressed: (hasJoined || isJoining)
                               ? null
@@ -657,26 +813,41 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                             foregroundColor: Colors.white,
                             elevation: 0,
                             shadowColor: Colors.transparent,
+                            disabledBackgroundColor: hasJoined
+                                ? AppTheme.successColor.withValues(alpha: 0.7)
+                                : AppTheme.gray300,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(16),
                             ),
                           ),
                           child: isJoining
                               ? const SizedBox(
-                                  height: 20,
-                                  width: 20,
+                                  height: 22,
+                                  width: 22,
                                   child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+                                    strokeWidth: 2.5,
                                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                                   ),
                                 )
-                              : Text(
-                                  hasJoined ? l10n.opentingJoined : l10n.opentingJoinRoom,
-                                  style: const TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w600,
-                                    fontFamily: 'Pretendard',
-                                  ),
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      hasJoined ? Icons.check_circle_rounded : Icons.login_rounded,
+                                      size: 20,
+                                      color: Colors.white,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      hasJoined ? l10n.opentingJoined : l10n.opentingJoinRoom,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
+                                        fontFamily: 'Pretendard',
+                                        letterSpacing: -0.2,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                         ),
                       ),
@@ -690,17 +861,39 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
       );
     },
   ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showCreateRoomDialog,
-        backgroundColor: AppTheme.primaryColor,
-        elevation: 4,
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: Text(
-          l10n.opentingCreateRoom,
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'Pretendard',
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primaryColor.withValues(alpha: 0.4),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+              spreadRadius: 0,
+            ),
+          ],
+        ),
+        child: FloatingActionButton.extended(
+          onPressed: _showCreateRoomDialog,
+          backgroundColor: AppTheme.primaryColor,
+          elevation: 0,
+          icon: Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
+          ),
+          label: Text(
+            l10n.opentingCreateRoom,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'Pretendard',
+              fontSize: 15,
+              letterSpacing: -0.2,
+            ),
           ),
         ),
       ),
@@ -709,41 +902,65 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
 
   Widget _buildEmptyState(AppLocalizations l10n) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    AppTheme.primaryColor.withValues(alpha: 0.1),
+                    AppTheme.primaryColor.withValues(alpha: 0.05),
+                  ],
+                ),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
+                  width: 2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                    blurRadius: 24,
+                    offset: const Offset(0, 8),
+                  )
+                ],
+              ),
+              child: Icon(
+                Icons.forum_rounded,
+                size: 56,
+                color: AppTheme.primaryColor.withValues(alpha: 0.8),
+              ),
             ),
-            child: const Icon(
-              Icons.chat_bubble_outline_rounded,
-              size: 48,
-              color: AppTheme.primaryColor,
+            const SizedBox(height: 32),
+            Text(
+              l10n.opentingNoRooms,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: AppTheme.textPrimary,
+                fontFamily: 'Pretendard',
+                letterSpacing: -0.5,
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            l10n.opentingNoRooms,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: AppTheme.textPrimary,
-              fontFamily: 'Pretendard',
+            const SizedBox(height: 12),
+            Text(
+              l10n.opentingBeFirst,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+                color: AppTheme.textSecondary,
+                height: 1.5,
+                fontFamily: 'Pretendard',
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            l10n.opentingBeFirst,
-            style: TextStyle(
-              fontSize: 14,
-              color: AppTheme.textSecondary,
-              fontFamily: 'Pretendard',
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

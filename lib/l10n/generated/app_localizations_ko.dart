@@ -1507,9 +1507,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get opentingCreateFailed => '채팅방 생성에 실패했습니다';
 
   @override
-  String opentingRoomFull(Object count) {
-    return '채팅방이 가득 찼습니다 ($count/$count)';
-  }
+  String get opentingRoomFull => '채팅방이 가득 찼습니다';
 
   @override
   String get opentingJoinSuccess => '채팅방에 참여했습니다!';

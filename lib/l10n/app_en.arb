@@ -516,7 +516,7 @@
   "opentingEnterRoomTitle": "Please enter a room title",
   "opentingCreateSuccess": "Open chatroom created successfully!",
   "opentingCreateFailed": "Failed to create chatroom",
-  "opentingRoomFull": "Chatroom is full ({count}/{count})",
+  "opentingRoomFull": "Chatroom is full",
   "opentingJoinSuccess": "Joined chatroom successfully!",
   "opentingJoinFailed": "Failed to join chatroom",
   "opentingDistanceFilter": "Distance Filter",

@@ -2981,8 +2981,8 @@ abstract class AppLocalizations {
   /// No description provided for @opentingRoomFull.
   ///
   /// In ko, this message translates to:
-  /// **'채팅방이 가득 찼습니다 ({count}/{count})'**
-  String opentingRoomFull(Object count);
+  /// **'채팅방이 가득 찼습니다'**
+  String get opentingRoomFull;
 
   /// No description provided for @opentingJoinSuccess.
   ///
