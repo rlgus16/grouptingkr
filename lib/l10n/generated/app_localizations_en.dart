@@ -1502,4 +1502,89 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ratingAlreadyRated => 'You have already rated this user';
+
+  @override
+  String get opentingTitle => 'Open Chat';
+
+  @override
+  String get opentingLeaveChat => 'Leave Open Chat';
+
+  @override
+  String get opentingNoMembers => 'No members';
+
+  @override
+  String get opentingWelcome => 'Welcome to the chatroom!';
+
+  @override
+  String get opentingStartConversation =>
+      'Start a conversation with other participants';
+
+  @override
+  String get opentingCreateRoomTitle => 'Create Open Chatroom';
+
+  @override
+  String get opentingRoomTitle => 'Room Title';
+
+  @override
+  String get opentingRoomTitleHint => 'Enter room title';
+
+  @override
+  String get opentingMaxParticipants => 'Max Participants';
+
+  @override
+  String opentingParticipantsCount(Object count) {
+    return '$count participants';
+  }
+
+  @override
+  String get opentingEnterRoomTitle => 'Please enter a room title';
+
+  @override
+  String get opentingCreateSuccess => 'Open chatroom created successfully!';
+
+  @override
+  String get opentingCreateFailed => 'Failed to create chatroom';
+
+  @override
+  String opentingRoomFull(Object count) {
+    return 'Chatroom is full ($count/$count)';
+  }
+
+  @override
+  String get opentingJoinSuccess => 'Joined chatroom successfully!';
+
+  @override
+  String get opentingJoinFailed => 'Failed to join chatroom';
+
+  @override
+  String get opentingDistanceFilter => 'Distance Filter';
+
+  @override
+  String get opentingMaxDistance => 'Maximum Distance';
+
+  @override
+  String get opentingLoadError => 'Error loading chatrooms';
+
+  @override
+  String get opentingNoRoomsFound => 'No Chatrooms Found';
+
+  @override
+  String opentingAdjustFilter(Object distance) {
+    return 'Try adjusting your distance filter (${distance}km)';
+  }
+
+  @override
+  String get opentingJoined => 'Joined';
+
+  @override
+  String get opentingJoinRoom => 'Join Room';
+
+  @override
+  String get opentingCreateRoom => 'Create Room';
+
+  @override
+  String get opentingNoRooms => 'No Open Chatrooms';
+
+  @override
+  String get opentingBeFirst => 'Be the first to create an open chatroom!';
 }

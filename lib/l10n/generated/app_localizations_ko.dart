@@ -1464,4 +1464,88 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get ratingAlreadyRated => '이미 이 사용자를 평가하셨습니다';
+
+  @override
+  String get opentingTitle => '오픈 채팅';
+
+  @override
+  String get opentingLeaveChat => '오픈 채팅 나가기';
+
+  @override
+  String get opentingNoMembers => '멤버가 없습니다';
+
+  @override
+  String get opentingWelcome => '채팅방에 오신 것을 환영합니다!';
+
+  @override
+  String get opentingStartConversation => '다른 참가자들과 대화를 시작해보세요';
+
+  @override
+  String get opentingCreateRoomTitle => '오픈 채팅방 만들기';
+
+  @override
+  String get opentingRoomTitle => '방 제목';
+
+  @override
+  String get opentingRoomTitleHint => '방 제목을 입력하세요';
+
+  @override
+  String get opentingMaxParticipants => '최대 인원';
+
+  @override
+  String opentingParticipantsCount(Object count) {
+    return '$count명';
+  }
+
+  @override
+  String get opentingEnterRoomTitle => '방 제목을 입력해주세요';
+
+  @override
+  String get opentingCreateSuccess => '오픈 채팅방이 생성되었습니다!';
+
+  @override
+  String get opentingCreateFailed => '채팅방 생성에 실패했습니다';
+
+  @override
+  String opentingRoomFull(Object count) {
+    return '채팅방이 가득 찼습니다 ($count/$count)';
+  }
+
+  @override
+  String get opentingJoinSuccess => '채팅방에 참여했습니다!';
+
+  @override
+  String get opentingJoinFailed => '채팅방 참여에 실패했습니다';
+
+  @override
+  String get opentingDistanceFilter => '거리 필터';
+
+  @override
+  String get opentingMaxDistance => '최대 거리';
+
+  @override
+  String get opentingLoadError => '채팅방 로딩 중 오류';
+
+  @override
+  String get opentingNoRoomsFound => '채팅방을 찾을 수 없습니다';
+
+  @override
+  String opentingAdjustFilter(Object distance) {
+    return '거리 필터를 조정해보세요 (${distance}km)';
+  }
+
+  @override
+  String get opentingJoined => '참여 완료';
+
+  @override
+  String get opentingJoinRoom => '참여하기';
+
+  @override
+  String get opentingCreateRoom => '방 만들기';
+
+  @override
+  String get opentingNoRooms => '오픈 채팅방이 없습니다';
+
+  @override
+  String get opentingBeFirst => '첫 번째로 오픈 채팅방을 만들어보세요!';
 }

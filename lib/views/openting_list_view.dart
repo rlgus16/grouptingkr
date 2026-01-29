@@ -39,14 +39,14 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
           builder: (context, setState) {
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              title: const Text('Create Open Chatroom'),
+              title: Text(l10n.opentingCreateRoomTitle),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Room Title',
+                      l10n.opentingRoomTitle,
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -57,7 +57,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                     TextField(
                       controller: _titleController,
                       decoration: InputDecoration(
-                        hintText: 'Enter room title',
+                        hintText: l10n.opentingRoomTitleHint,
                         hintStyle: const TextStyle(color: AppTheme.gray400),
                         filled: true,
                         fillColor: AppTheme.gray50,
@@ -73,7 +73,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Max Participants',
+                      l10n.opentingMaxParticipants,
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -96,7 +96,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                               .map((number) => DropdownMenuItem<int>(
                                     value: number,
                                     child: Text(
-                                      '$number participants',
+                                      l10n.opentingParticipantsCount(number),
                                       style: const TextStyle(
                                         fontSize: 15,
                                         color: AppTheme.textPrimary,
@@ -130,7 +130,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                 TextButton(
                   onPressed: () async {
                     if (_titleController.text.trim().isEmpty) {
-                      CustomToast.showError(context, 'Please enter a room title');
+                      CustomToast.showError(context, l10n.opentingEnterRoomTitle);
                       return;
                     }
                     Navigator.pop(context);
@@ -159,7 +159,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
 
     if (currentUser == null) {
       if (mounted) {
-        CustomToast.showError(context, 'Please login first');
+        CustomToast.showError(context, AppLocalizations.of(context)!.chatInputHint);
       }
       return;
     }
@@ -183,11 +183,11 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
       _titleController.clear();
 
       if (mounted) {
-        CustomToast.showSuccess(context, 'Open chatroom created successfully!');
+        CustomToast.showSuccess(context, AppLocalizations.of(context)!.opentingCreateSuccess);
       }
     } catch (e) {
       if (mounted) {
-        CustomToast.showError(context, 'Failed to create chatroom: $e');
+        CustomToast.showError(context, AppLocalizations.of(context)!.opentingCreateFailed);
       }
     }
   }
@@ -200,7 +200,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
 
     if (currentUser == null) {
       if (mounted) {
-        CustomToast.showError(context, 'Please login first');
+        CustomToast.showError(context, AppLocalizations.of(context)!.chatInputHint);
       }
       return;
     }
@@ -213,7 +213,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
     // Check if chatroom is full
     if (participantCount >= maxParticipants) {
       if (mounted) {
-        CustomToast.showError(context, 'Chatroom is full ($maxParticipants/$maxParticipants)');
+        CustomToast.showError(context, AppLocalizations.of(context)!.opentingRoomFull(maxParticipants));
       }
       return;
     }
@@ -230,11 +230,11 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
       });
 
       if (mounted) {
-        CustomToast.showSuccess(context, 'Joined chatroom successfully!');
+        CustomToast.showSuccess(context, AppLocalizations.of(context)!.opentingJoinSuccess);
       }
     } catch (e) {
       if (mounted) {
-        CustomToast.showError(context, 'Failed to join chatroom: $e');
+        CustomToast.showError(context, AppLocalizations.of(context)!.opentingJoinFailed);
       }
     } finally {
       if (mounted) {
@@ -306,6 +306,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
   }
 
   void _showDistanceFilterSheet() {
+    final l10n = AppLocalizations.of(context)!;
     double currentDistance = _maxDistance;
 
     showModalBottomSheet(
@@ -343,12 +344,12 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                   const SizedBox(height: 20),
 
                   // Header
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Distance Filter',
-                        style: TextStyle(
+                        l10n.opentingDistanceFilter,
+                        style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
                           color: AppTheme.gray800,
@@ -362,8 +363,8 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Maximum Distance',
+                      Text(
+                        l10n.opentingMaxDistance,
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -419,8 +420,8 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                       ),
                       elevation: 0,
                     ),
-                    child: const Text(
-                      'Apply Filter',
+                    child: Text(
+                      l10n.homeFilterApply,
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -453,7 +454,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
           IconButton(
             icon: const Icon(Icons.tune),
             iconSize: 28,
-            tooltip: 'Distance Filter',
+            tooltip: l10n.opentingDistanceFilter,
             onPressed: _showDistanceFilterSheet,
           ),
         ],
@@ -466,7 +467,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return _buildErrorState('Error loading chatrooms');
+            return _buildErrorState(l10n.opentingLoadError);
           }
 
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -515,8 +516,8 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      const Text(
-                        'No Chatrooms Found',
+                      Text(
+                        l10n.opentingNoRoomsFound,
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -525,7 +526,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Try adjusting your distance filter (${_maxDistance.round()}km)',
+                        l10n.opentingAdjustFilter(_maxDistance.round()),
                         style: const TextStyle(
                           fontSize: 14,
                           color: AppTheme.textSecondary,
@@ -670,7 +671,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                                   ),
                                 )
                               : Text(
-                                  hasJoined ? 'Joined' : 'Join Room',
+                                  hasJoined ? l10n.opentingJoined : l10n.opentingJoinRoom,
                                   style: const TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w600,
@@ -694,8 +695,8 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
         backgroundColor: AppTheme.primaryColor,
         elevation: 4,
         icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text(
-          'Create Room',
+        label: Text(
+          l10n.opentingCreateRoom,
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.w600,
@@ -724,8 +725,8 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
-            'No Open Chatrooms',
+          Text(
+            l10n.opentingNoRooms,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -734,8 +735,8 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Be the first to create an open chatroom!',
+          Text(
+            l10n.opentingBeFirst,
             style: TextStyle(
               fontSize: 14,
               color: AppTheme.textSecondary,

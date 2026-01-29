@@ -2899,6 +2899,162 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'이미 이 사용자를 평가하셨습니다'**
   String get ratingAlreadyRated;
+
+  /// No description provided for @opentingTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'오픈 채팅'**
+  String get opentingTitle;
+
+  /// No description provided for @opentingLeaveChat.
+  ///
+  /// In ko, this message translates to:
+  /// **'오픈 채팅 나가기'**
+  String get opentingLeaveChat;
+
+  /// No description provided for @opentingNoMembers.
+  ///
+  /// In ko, this message translates to:
+  /// **'멤버가 없습니다'**
+  String get opentingNoMembers;
+
+  /// No description provided for @opentingWelcome.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방에 오신 것을 환영합니다!'**
+  String get opentingWelcome;
+
+  /// No description provided for @opentingStartConversation.
+  ///
+  /// In ko, this message translates to:
+  /// **'다른 참가자들과 대화를 시작해보세요'**
+  String get opentingStartConversation;
+
+  /// No description provided for @opentingCreateRoomTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'오픈 채팅방 만들기'**
+  String get opentingCreateRoomTitle;
+
+  /// No description provided for @opentingRoomTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'방 제목'**
+  String get opentingRoomTitle;
+
+  /// No description provided for @opentingRoomTitleHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'방 제목을 입력하세요'**
+  String get opentingRoomTitleHint;
+
+  /// No description provided for @opentingMaxParticipants.
+  ///
+  /// In ko, this message translates to:
+  /// **'최대 인원'**
+  String get opentingMaxParticipants;
+
+  /// No description provided for @opentingParticipantsCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}명'**
+  String opentingParticipantsCount(Object count);
+
+  /// No description provided for @opentingEnterRoomTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'방 제목을 입력해주세요'**
+  String get opentingEnterRoomTitle;
+
+  /// No description provided for @opentingCreateSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'오픈 채팅방이 생성되었습니다!'**
+  String get opentingCreateSuccess;
+
+  /// No description provided for @opentingCreateFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방 생성에 실패했습니다'**
+  String get opentingCreateFailed;
+
+  /// No description provided for @opentingRoomFull.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방이 가득 찼습니다 ({count}/{count})'**
+  String opentingRoomFull(Object count);
+
+  /// No description provided for @opentingJoinSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방에 참여했습니다!'**
+  String get opentingJoinSuccess;
+
+  /// No description provided for @opentingJoinFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방 참여에 실패했습니다'**
+  String get opentingJoinFailed;
+
+  /// No description provided for @opentingDistanceFilter.
+  ///
+  /// In ko, this message translates to:
+  /// **'거리 필터'**
+  String get opentingDistanceFilter;
+
+  /// No description provided for @opentingMaxDistance.
+  ///
+  /// In ko, this message translates to:
+  /// **'최대 거리'**
+  String get opentingMaxDistance;
+
+  /// No description provided for @opentingLoadError.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방 로딩 중 오류'**
+  String get opentingLoadError;
+
+  /// No description provided for @opentingNoRoomsFound.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방을 찾을 수 없습니다'**
+  String get opentingNoRoomsFound;
+
+  /// No description provided for @opentingAdjustFilter.
+  ///
+  /// In ko, this message translates to:
+  /// **'거리 필터를 조정해보세요 ({distance}km)'**
+  String opentingAdjustFilter(Object distance);
+
+  /// No description provided for @opentingJoined.
+  ///
+  /// In ko, this message translates to:
+  /// **'참여 완료'**
+  String get opentingJoined;
+
+  /// No description provided for @opentingJoinRoom.
+  ///
+  /// In ko, this message translates to:
+  /// **'참여하기'**
+  String get opentingJoinRoom;
+
+  /// No description provided for @opentingCreateRoom.
+  ///
+  /// In ko, this message translates to:
+  /// **'방 만들기'**
+  String get opentingCreateRoom;
+
+  /// No description provided for @opentingNoRooms.
+  ///
+  /// In ko, this message translates to:
+  /// **'오픈 채팅방이 없습니다'**
+  String get opentingNoRooms;
+
+  /// No description provided for @opentingBeFirst.
+  ///
+  /// In ko, this message translates to:
+  /// **'첫 번째로 오픈 채팅방을 만들어보세요!'**
+  String get opentingBeFirst;
 }
 
 class _AppLocalizationsDelegate

@@ -297,6 +297,7 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
   }
 
   void _showChatroomOptionsDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) {
@@ -308,9 +309,9 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
             children: [
               ListTile(
                 leading: const Icon(Icons.exit_to_app, color: AppTheme.errorColor),
-                title: const Text(
-                  'Leave Open Chat',
-                  style: TextStyle(
+                title: Text(
+                  l10n.opentingLeaveChat,
+                  style: const TextStyle(
                     color: AppTheme.errorColor,
                     fontWeight: FontWeight.w500,
                   ),
@@ -352,9 +353,9 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
       appBar: AppBar(
         title: Column(
           children: [
-            const Text(
-              '오픈팅',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+            Text(
+              l10n.opentingTitle,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
             ),
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -405,7 +406,7 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
                   child: _isLoadingMembers
                       ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
                       : _chatroomMembers.isEmpty
-                          ? const Center(child: Text('No members', style: TextStyle(fontSize: 12)))
+                          ? Center(child: Text(l10n.opentingNoMembers, style: const TextStyle(fontSize: 12)))
                           : ListView.separated(
                               scrollDirection: Axis.horizontal,
                               itemCount: _chatroomMembers.length,
@@ -586,19 +587,19 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
                 ),
               ),
               const SizedBox(height: 24),
-              const Text(
-                'Welcome to the chatroom!',
-                style: TextStyle(
+              Text(
+                l10n.opentingWelcome,
+                style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   color: AppTheme.textPrimary,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Start a conversation with other participants',
+              Text(
+                l10n.opentingStartConversation,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppTheme.textSecondary,
                   fontSize: 15,
                   height: 1.5,
