@@ -1528,9 +1528,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get opentingNoRoomsFound => '채팅방을 찾을 수 없습니다';
 
   @override
-  String opentingAdjustFilter(Object distance) {
-    return '거리 필터를 조정해보세요 (${distance}km)';
-  }
+  String get opentingAdjustFilter => '필터를 조정해보세요';
 
   @override
   String get opentingJoined => '참여 완료';
@@ -1549,4 +1547,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get opentingHideFullRooms => '만석인 방 숨기기';
+
+  @override
+  String get opentingUnknown => '알 수 없음';
 }

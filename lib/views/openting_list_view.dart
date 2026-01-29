@@ -646,7 +646,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        l10n.opentingAdjustFilter(_maxDistance.round()),
+                        l10n.opentingAdjustFilter,
                         style: const TextStyle(
                           fontSize: 14,
                           color: AppTheme.textSecondary,
@@ -717,22 +717,25 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                             future: _fetchSingleProfile(creatorId),
                             builder: (context, snapshot) {
                               final ownerProfile = snapshot.data;
+                              final isBlocked = authController.blockedUserIds.contains(creatorId);
+                              final profileImage = isBlocked ? null : ownerProfile?.mainProfileImage;
+
                               return GestureDetector(
-                                onTap: ownerProfile != null
-                                    ? () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) => ProfileDetailView(user: ownerProfile),
-                                          ),
-                                        );
-                                      }
-                                    : null,
+                                onTap: () {
+                                  if (ownerProfile != null) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ProfileDetailView(user: ownerProfile),
+                                      ),
+                                    );
+                                  }
+                                },
                                 child: Stack(
                                   clipBehavior: Clip.none,
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.all(3),
+                                      padding: const EdgeInsets.all(2.5),
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         gradient: LinearGradient(
@@ -753,12 +756,12 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                                       ),
                                       child: Container(
                                         decoration: const BoxDecoration(
-                                          shape: BoxShape.circle,
+                                           shape: BoxShape.circle,
                                           color: Colors.white,
                                         ),
                                         child: MemberAvatar(
-                                          imageUrl: ownerProfile?.mainProfileImage ?? '',
-                                          name: creatorNickname,
+                                          imageUrl: profileImage,
+                                          name: '',
                                           isOwner: true,
                                           size: 52,
                                         ),

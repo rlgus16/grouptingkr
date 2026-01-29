@@ -465,6 +465,13 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
                         final message = _messages[_messages.length - 1 - index];
                         final isMe = message.senderId == currentUserId;
                         final senderProfile = _userProfiles[message.senderId];
+                        
+                        // Hide messages from blocked users
+                        final authController = context.read<AuthController>();
+                        final isBlocked = authController.blockedUserIds.contains(message.senderId);
+                        if (isBlocked && !isMe) {
+                          return const SizedBox.shrink();
+                        }
 
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 4.0),

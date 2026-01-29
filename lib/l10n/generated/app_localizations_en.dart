@@ -1567,9 +1567,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get opentingNoRoomsFound => 'No Chatrooms Found';
 
   @override
-  String opentingAdjustFilter(Object distance) {
-    return 'Try adjusting your distance filter (${distance}km)';
-  }
+  String get opentingAdjustFilter => 'Try adjusting filter';
 
   @override
   String get opentingJoined => 'Joined';
@@ -1588,4 +1586,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get opentingHideFullRooms => 'Hide full rooms';
+
+  @override
+  String get opentingUnknown => 'Unknown';
 }

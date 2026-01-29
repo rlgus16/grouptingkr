@@ -523,11 +523,12 @@
   "opentingMaxDistance": "Maximum Distance",
   "opentingLoadError": "Error loading chatrooms",
   "opentingNoRoomsFound": "No Chatrooms Found",
-  "opentingAdjustFilter": "Try adjusting your distance filter ({distance}km)",
+  "opentingAdjustFilter": "Try adjusting filter",
   "opentingJoined": "Joined",
   "opentingJoinRoom": "Join Room",
   "opentingCreateRoom": "Create Room",
   "opentingNoRooms": "No Open Chatrooms",
   "opentingBeFirst": "Be the first to create an open chatroom!",
-  "opentingHideFullRooms": "Hide full rooms"
+  "opentingHideFullRooms": "Hide full rooms",
+  "opentingUnknown": "Unknown"
 }

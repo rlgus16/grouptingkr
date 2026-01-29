@@ -3023,8 +3023,8 @@ abstract class AppLocalizations {
   /// No description provided for @opentingAdjustFilter.
   ///
   /// In ko, this message translates to:
-  /// **'거리 필터를 조정해보세요 ({distance}km)'**
-  String opentingAdjustFilter(Object distance);
+  /// **'필터를 조정해보세요'**
+  String get opentingAdjustFilter;
 
   /// No description provided for @opentingJoined.
   ///
@@ -3061,6 +3061,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'만석인 방 숨기기'**
   String get opentingHideFullRooms;
+
+  /// No description provided for @opentingUnknown.
+  ///
+  /// In ko, this message translates to:
+  /// **'알 수 없음'**
+  String get opentingUnknown;
 }
 
 class _AppLocalizationsDelegate
