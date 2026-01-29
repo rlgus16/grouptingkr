@@ -1018,7 +1018,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
             label: AppLocalizations.of(context)!.homeNavMyPage,
           ),
           BottomNavigationBarItem(
-            icon: const Icon(Icons.chat_bubble_outline_rounded),
+            icon: const Icon(Icons.forum_outlined),
             label: '오픈팅',
           ),
         ],
