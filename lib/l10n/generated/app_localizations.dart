@@ -1397,7 +1397,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeFilterApply.
   ///
   /// In ko, this message translates to:
-  /// **'필터 적용하기'**
+  /// **'적용하기'**
   String get homeFilterApply;
 
   /// No description provided for @homeFilterSuccess.
@@ -2177,7 +2177,7 @@ abstract class AppLocalizations {
   /// No description provided for @helpGuideFilter.
   ///
   /// In ko, this message translates to:
-  /// **'필터 적용하기'**
+  /// **'적용하기'**
   String get helpGuideFilter;
 
   /// No description provided for @helpGuideFilterDesc.
@@ -3055,6 +3055,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'첫 번째로 오픈 채팅방을 만들어보세요!'**
   String get opentingBeFirst;
+
+  /// No description provided for @opentingHideFullRooms.
+  ///
+  /// In ko, this message translates to:
+  /// **'만석인 방 숨기기'**
+  String get opentingHideFullRooms;
 }
 
 class _AppLocalizationsDelegate

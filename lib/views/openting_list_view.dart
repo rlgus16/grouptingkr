@@ -23,6 +23,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
   final Set<String> _joiningRooms = <String>{};
   int _selectedMaxParticipants = 10;
   double _maxDistance = 100.0; // Distance filter in km
+  bool _hideFullRooms = false; // Hide full rooms filter
 
   @override
   void dispose() {
@@ -259,6 +260,26 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
   }
 
   Future<List<QueryDocumentSnapshot>> _filterChatroomsByDistance(
+      List<QueryDocumentSnapshot> chatrooms) async {
+    final authController = context.read<AuthController>();
+    final currentUser = authController.currentUserModel;
+
+    final filteredByDistance = await _filterByDistance(chatrooms, currentUser);
+    
+    // Apply hide full rooms filter if enabled
+    if (_hideFullRooms) {
+      return filteredByDistance.where((chatroom) {
+        final data = chatroom.data() as Map<String, dynamic>;
+        final participantCount = data['participantCount'] ?? 0;
+        final maxParticipants = data['maxParticipants'] ?? 10;
+        return participantCount < maxParticipants;
+      }).toList();
+    }
+    
+    return filteredByDistance;
+  }
+
+  Future<List<QueryDocumentSnapshot>> _filterByDistance(
     List<QueryDocumentSnapshot> chatrooms,
     UserModel? currentUser,
   ) async {
@@ -430,6 +451,55 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                     ),
                   ),
 
+                  const SizedBox(height: 28),
+
+                  // Hide Full Rooms Toggle
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.gray50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppTheme.gray200,
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.visibility_off_rounded,
+                              size: 20,
+                              color: AppTheme.gray600,
+                            ),
+                            const SizedBox(width: 12),
+                            Text(
+                              l10n.opentingHideFullRooms,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textPrimary,
+                                fontFamily: 'Pretendard',
+                              ),
+                            ),
+                          ],
+                        ),
+                        Switch(
+                          value: _hideFullRooms,
+                          onChanged: (value) {
+                            setState(() {
+                              _hideFullRooms = value;
+                            });
+                            setModalState(() {});
+                          },
+                          activeColor: AppTheme.primaryColor,
+                        ),
+                      ],
+                    ),
+                  ),
+
                   const SizedBox(height: 36),
 
                   // Modern Apply Button
@@ -536,7 +606,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
 
           // Filter chatrooms by distance
           return FutureBuilder<List<QueryDocumentSnapshot>>(
-            future: _filterChatroomsByDistance(chatrooms, authController.currentUserModel),
+            future: _filterChatroomsByDistance(chatrooms),
             builder: (context, distanceSnapshot) {
               if (distanceSnapshot.connectionState == ConnectionState.waiting) {
                 return const Center(

@@ -668,7 +668,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get homeFilterDistance => '거리 범위 (방장 기준)';
 
   @override
-  String get homeFilterApply => '필터 적용하기';
+  String get homeFilterApply => '적용하기';
 
   @override
   String get homeFilterSuccess => '필터가 성공적으로 적용되었습니다.';
@@ -1083,7 +1083,7 @@ class AppLocalizationsKo extends AppLocalizations {
       '1. 홈 화면에서 \"그룹 만들기\" 버튼을 누르세요\n2. \"친구 초대하기\"를 통해 친구들을 초대하세요\n3. 친구들이 초대를 수락하면 그룹이 구성됩니다\n4. 최대 5명까지 그룹을 구성할 수 있습니다';
 
   @override
-  String get helpGuideFilter => '필터 적용하기';
+  String get helpGuideFilter => '적용하기';
 
   @override
   String get helpGuideFilterDesc => '내가 원하는 그룹과 매칭되세요';
@@ -1546,4 +1546,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get opentingBeFirst => '첫 번째로 오픈 채팅방을 만들어보세요!';
+
+  @override
+  String get opentingHideFullRooms => '만석인 방 숨기기';
 }

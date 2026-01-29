@@ -244,7 +244,7 @@
   "homeFilterAge": "상대 그룹 평균 나이",
   "homeFilterHeight": "상대 그룹 평균 키",
   "homeFilterDistance": "거리 범위 (방장 기준)",
-  "homeFilterApply": "필터 적용하기",
+  "homeFilterApply": "적용하기",
   "homeFilterSuccess": "필터가 성공적으로 적용되었습니다.",
   "homeFilterFailed": "필터 적용 실패",
   "homeGenderMale": "남자",
@@ -382,7 +382,7 @@
   "helpGuideGroup": "그룹 만들기",
   "helpGuideGroupDesc": "친구들을 초대해서 그룹을 구성하세요",
   "helpGuideGroupContent": "1. 홈 화면에서 \"\uadf8룹 만들기\" 버튼을 누르세요\n2. \"\uce5c구 초대하기\"를 통해 친구들을 초대하세요\n3. 친구들이 초대를 수락하면 그룹이 구성됩니다\n4. 최대 5명까지 그룹을 구성할 수 있습니다",
-  "helpGuideFilter": "필터 적용하기",
+  "helpGuideFilter": "적용하기",
   "helpGuideFilterDesc": "내가 원하는 그룹과 매칭되세요",
   "helpGuideFilterContent": "1. 그룹을 만든 후, 상단 우측 필터 버튼을 누르세요\n2. 필터를 조절 하세요\n3. 적용하기를 누르세요",
   "helpGuideMatch": "매칭하기",
@@ -441,7 +441,7 @@
   "homeFilterHeight": "상대 그룹 평균 키",
   "homeFilterDistance": "거리 범위 (방장 기준)",
   "homeFilterDistanceValue": "{km}km 이내",
-  "homeFilterApply": "필터 적용하기",
+  "homeFilterApply": "적용하기",
   "homeFilterSuccess": "필터가 성공적으로 적용되었습니다.",
   "homeFilterFailed": "필터 적용 실패",
   "homeProfileCardHidden": "프로필 완성하기 알림을 숨겼습니다. 마이페이지에서 언제든 프로필을 완성할 수 있습니다.",
@@ -549,5 +549,6 @@
   "opentingJoinRoom": "참여하기",
   "opentingCreateRoom": "방 만들기",
   "opentingNoRooms": "오픈 채팅방이 없습니다",
-  "opentingBeFirst": "첫 번째로 오픈 채팅방을 만들어보세요!"
+  "opentingBeFirst": "첫 번째로 오픈 채팅방을 만들어보세요!",
+  "opentingHideFullRooms": "만석인 방 숨기기"
 }

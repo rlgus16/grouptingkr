@@ -680,7 +680,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeFilterDistance => 'Distance Range';
 
   @override
-  String get homeFilterApply => 'Apply Filter';
+  String get homeFilterApply => 'Apply';
 
   @override
   String get homeFilterSuccess => 'Filters applied successfully.';
@@ -1585,4 +1585,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get opentingBeFirst => 'Be the first to create an open chatroom!';
+
+  @override
+  String get opentingHideFullRooms => 'Hide full rooms';
 }

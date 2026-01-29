@@ -232,7 +232,7 @@
   "homeFilterAge": "Average Age",
   "homeFilterHeight": "Average Height",
   "homeFilterDistance": "Distance Range",
-  "homeFilterApply": "Apply Filter",
+  "homeFilterApply": "Apply",
   "homeFilterSuccess": "Filters applied successfully.",
   "homeFilterFailed": "Failed to apply filters",
   "homeGenderMale": "Male",
@@ -528,5 +528,6 @@
   "opentingJoinRoom": "Join Room",
   "opentingCreateRoom": "Create Room",
   "opentingNoRooms": "No Open Chatrooms",
-  "opentingBeFirst": "Be the first to create an open chatroom!"
+  "opentingBeFirst": "Be the first to create an open chatroom!",
+  "opentingHideFullRooms": "Hide full rooms"
 }
