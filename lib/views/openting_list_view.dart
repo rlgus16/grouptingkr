@@ -476,7 +476,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                             });
                             setModalState(() {});
                           },
-                          activeColor: AppTheme.primaryColor,
+                          activeTrackColor: AppTheme.primaryColor,
                         ),
                       ],
                     ),
