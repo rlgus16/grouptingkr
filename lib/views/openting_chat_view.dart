@@ -328,17 +328,7 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
     );
   }
 
-  String _formatTime(DateTime date, AppLocalizations l10n) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final messageDate = DateTime(date.year, date.month, date.day);
 
-    if (messageDate == today) {
-      return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
-    } else {
-      return '${date.month}/${date.day}';
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -361,7 +351,7 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(
-                  Icons.group_outlined,
+                  Icons.group_rounded,
                   size: 13,
                   color: AppTheme.textSecondary,
                 ),

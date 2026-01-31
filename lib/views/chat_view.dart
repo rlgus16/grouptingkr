@@ -106,7 +106,7 @@ class _ChatViewState extends State<ChatView> with WidgetsBindingObserver {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(
-                        Icons.group_outlined,
+                        Icons.group_rounded,
                         size: 13,
                         color: AppTheme.textSecondary,
                       ),

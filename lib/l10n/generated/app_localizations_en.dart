@@ -665,7 +665,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeLeftGroup => 'Left the group.';
 
   @override
-  String get homeFilterTitle => 'Match Filter Settings';
+  String get homeFilterTitle => 'Filter Settings';
 
   @override
   String get homeFilterGender => 'Preferred Gender';
@@ -1504,7 +1504,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ratingAlreadyRated => 'You have already rated this user';
 
   @override
-  String get opentingTitle => 'Open Chat';
+  String get opentingTitle => 'Openting';
 
   @override
   String get opentingLeaveChat => 'Leave Open Chat';

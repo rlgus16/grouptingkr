@@ -418,7 +418,7 @@
   "homeMatchSuccessDesc": "You've been matched!\nSay hello in the chat room \ud83d\udc4b",
   "homeLater": "Later",
   "homeGoToChat": "Go to Chat",
-  "homeFilterTitle": "Match Filter Settings",
+  "homeFilterTitle": "Filter Settings",
   "homeFilterMale": "Male",
   "homeFilterFemale": "Female",
   "homeFilterMixed": "Mixed",
@@ -502,7 +502,7 @@
   "ratingSaved": "Rating saved!",
   "ratingAlreadyRated": "You have already rated this user",
 
-  "opentingTitle": "Open Chat",
+  "opentingTitle": "Openting",
   "opentingLeaveChat": "Leave Open Chat",
   "opentingNoMembers": "No members",
   "opentingWelcome": "Welcome to the chatroom!",

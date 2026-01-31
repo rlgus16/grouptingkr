@@ -170,7 +170,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
       final chatroomData = {
         'title': _titleController.text.trim(),
         'creatorId': currentUser.uid,
-        'creatorNickname': currentUser.nickname ?? 'Unknown',
+        'creatorNickname': currentUser.nickname,
         'participants': [currentUser.uid],
         'participantCount': 1,
         'maxParticipants': _selectedMaxParticipants,
@@ -372,26 +372,8 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                   // Modern Header with icon
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppTheme.primaryColor.withValues(alpha: 0.15),
-                              AppTheme.primaryColor.withValues(alpha: 0.08),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(
-                          Icons.tune_rounded,
-                          size: 22,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
                       Text(
-                        l10n.opentingDistanceFilter,
+                        l10n.homeFilterTitle,
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
@@ -533,8 +515,6 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.check_circle_rounded, size: 20),
-                          const SizedBox(width: 8),
                           Text(
                             l10n.homeFilterApply,
                             style: const TextStyle(
@@ -567,7 +547,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
     return Scaffold(
       backgroundColor: AppTheme.gray50,
       appBar: AppBar(
-        title: const Text('오픈팅'),
+        title: Text(l10n.opentingTitle),
         backgroundColor: AppTheme.gray50,
         scrolledUnderElevation: 0,
         actions: [
@@ -667,7 +647,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
               final roomId = chatroom.id;
               final title = data['title'] ?? 'Untitled';
               final creatorId = data['creatorId'] ?? '';
-              final creatorNickname = data['creatorNickname'] ?? 'Unknown';
+
               final participantCount = data['participantCount'] ?? 0;
               final maxParticipants = data['maxParticipants'] ?? 10;
               final participants = List<dynamic>.from(data['participants'] ?? []);
@@ -830,12 +810,12 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                                       decoration: BoxDecoration(
                                         color: participantCount >= maxParticipants
                                             ? AppTheme.errorColor.withValues(alpha: 0.1)
-                                            : AppTheme.primaryColor.withValues(alpha: 0.1),
+                                            : AppTheme.successColor.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(8),
                                         border: Border.all(
                                           color: participantCount >= maxParticipants
                                               ? AppTheme.errorColor.withValues(alpha: 0.3)
-                                              : AppTheme.primaryColor.withValues(alpha: 0.3),
+                                              : AppTheme.successColor.withValues(alpha: 0.3),
                                           width: 1,
                                         ),
                                       ),
@@ -847,7 +827,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                                             size: 14,
                                             color: participantCount >= maxParticipants
                                                 ? AppTheme.errorColor
-                                                : AppTheme.primaryColor,
+                                                : AppTheme.successColor,
                                           ),
                                           const SizedBox(width: 4),
                                           Text(
@@ -857,7 +837,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                                               fontWeight: FontWeight.w700,
                                               color: participantCount >= maxParticipants
                                                   ? AppTheme.errorColor
-                                                  : AppTheme.primaryColor,
+                                                  : AppTheme.successColor,
                                               fontFamily: 'Pretendard',
                                             ),
                                           ),
@@ -905,12 +885,6 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                               : Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(
-                                      hasJoined ? Icons.check_circle_rounded : Icons.login_rounded,
-                                      size: 20,
-                                      color: Colors.white,
-                                    ),
-                                    const SizedBox(width: 8),
                                     Text(
                                       hasJoined ? l10n.opentingJoined : l10n.opentingJoinRoom,
                                       style: const TextStyle(

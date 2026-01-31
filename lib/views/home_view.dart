@@ -974,7 +974,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
               );
               break;
             case 3:
-            // 오픈팅 (Open Chatrooms)
+            // 오픈팅
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -1019,7 +1019,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.forum_outlined),
-            label: '오픈팅',
+            label: AppLocalizations.of(context)!.opentingTitle,
           ),
         ],
       ),
@@ -1719,7 +1719,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(
-                      Icons.group_outlined,
+                      Icons.group_rounded,
                       size: 13,
                       color: AppTheme.primaryColor,
                     ),
