@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -20,11 +21,14 @@ class MyPageView extends StatefulWidget {
 }
 
 class _MyPageViewState extends State<MyPageView> {
+  double _averageRating = 0.0;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkAuthenticationStatus();
+      _fetchAverageRating();
     });
   }
 
@@ -35,6 +39,49 @@ class _MyPageViewState extends State<MyPageView> {
         '/login',
             (route) => false,
       );
+    }
+  }
+
+  Future<void> _fetchAverageRating() async {
+    final authController = context.read<AuthController>();
+    final user = authController.currentUserModel;
+    if (user == null) return;
+
+    try {
+      final ratingsQuery = await FirebaseFirestore.instance
+          .collection('ratings')
+          .where('ratedUserId', isEqualTo: user.uid)
+          .get();
+
+      if (ratingsQuery.docs.isEmpty) {
+        if (mounted) {
+          setState(() => _averageRating = 0.0);
+        }
+        return;
+      }
+
+      final ratings = ratingsQuery.docs;
+      ratings.sort((a, b) {
+        final aTime = a.data()['updatedAt'] as Timestamp?;
+        final bTime = b.data()['updatedAt'] as Timestamp?;
+        if (aTime == null || bTime == null) return 0;
+        return bTime.compareTo(aTime);
+      });
+
+      final last50Ratings = ratings.take(50).toList();
+      double sum = 0.0;
+      for (var doc in last50Ratings) {
+        final data = doc.data();
+        sum += (data['rating'] ?? 0).toDouble();
+      }
+
+      final average = sum / last50Ratings.length;
+
+      if (mounted) {
+        setState(() => _averageRating = average);
+      }
+    } catch (e) {
+      debugPrint('Error fetching average rating: $e');
     }
   }
 
@@ -220,10 +267,40 @@ class _MyPageViewState extends State<MyPageView> {
               color: user.gender == '남' ? AppTheme.primaryColor : AppTheme.secondaryColor,
             ),
             const SizedBox(width: 6),
+            _buildScoreTag(_averageRating),
+            const SizedBox(width: 6),
             _buildTingTag(user.tingBalance),
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildScoreTag(double score) {
+    if (score <= 0) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.pink.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.pink.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.star_rounded, size: 14, color: Colors.pink),
+          const SizedBox(width: 4),
+          Text(
+            score.toStringAsFixed(1),
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.pink,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

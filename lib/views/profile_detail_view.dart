@@ -147,7 +147,7 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
                       child: Icon(
                         starValue <= tempRating ? Icons.star : Icons.star_border,
                         size: 40,
-                        color: starValue <= tempRating ? Colors.amber : AppTheme.gray400,
+                        color: starValue <= tempRating ? Colors.pink : AppTheme.gray400,
                       ),
                     ),
                   );
@@ -877,21 +877,21 @@ Platform: ${Theme.of(context).platform}
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: Colors.amber.withValues(alpha: 0.1),
+                              color: Colors.pink.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                              border: Border.all(color: Colors.pink.withValues(alpha: 0.3)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.star, size: 20, color: Colors.amber),
+                                const Icon(Icons.star, size: 20, color: Colors.pink),
                                 const SizedBox(width: 4),
                                 Text(
                                   _averageRating > 0 ? '${_averageRating.toStringAsFixed(1)}/5' : '0.0/5',
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
-                                    color: AppTheme.textPrimary,
+                                    color: Colors.pink,
                                   ),
                                 ),
                               ],
