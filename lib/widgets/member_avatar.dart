@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:io';
 import '../models/user_model.dart';
 import '../utils/app_theme.dart';
+import 'owner_badge.dart';
 
 class MemberAvatar extends StatelessWidget {
   // 기존 방식 (UserModel 사용)
@@ -57,7 +58,7 @@ class MemberAvatar extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppTheme.gray200,
-              border: showMatchedBadge
+              border: (showMatchedBadge || showOwnerBadge)
                   ? Border.all(color: AppTheme.primaryColor, width: 2)
                   : null,
             ),
@@ -75,17 +76,9 @@ class MemberAvatar extends StatelessWidget {
           // 방장 뱃지
           if (showOwnerBadge)
             Positioned(
-              right: 0,
-              bottom: 0,
-              child: Container(
-                width: size * 0.3,
-                height: size * 0.3,
-                decoration: const BoxDecoration(
-                  color: AppTheme.primaryColor,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.star, size: size * 0.2, color: Colors.white),
-              ),
+              right: -2,
+              bottom: -2,
+              child: OwnerBadge(size: size * 0.35),
             ),
 
           // 매칭된 그룹 표시

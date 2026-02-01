@@ -1771,47 +1771,14 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
                     children: [
                       Stack(
                         children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isOwner ? AppTheme.primaryColor : Colors.transparent,
-                                width: 2,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: MemberAvatar(
+                            MemberAvatar(
                               imageUrl: isBlocked ? null : member.mainProfileImage,
                               name: member.nickname,
-                              isOwner: false, // 아래 뱃지로 대체
-                              size: 56, // 사이즈 키움
+                              isOwner: isOwner,
+                              size: 56,
                             ),
-                          ),
-                          if (isOwner)
-                            Positioned(
-                              bottom: 0,
-                              right: 0,
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
-                                  color: AppTheme.primaryColor,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.star,
-                                  size: 10,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
+                          ],
+                        ),
                       const SizedBox(height: 8),
                       Text(
                         member.nickname,

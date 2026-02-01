@@ -714,64 +714,11 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                                 child: Stack(
                                   clipBehavior: Clip.none,
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(2.5),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            AppTheme.primaryColor,
-                                            AppTheme.primaryColor.withValues(alpha: 0.6),
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Container(
-                                        decoration: const BoxDecoration(
-                                           shape: BoxShape.circle,
-                                          color: Colors.white,
-                                        ),
-                                        child: MemberAvatar(
-                                          imageUrl: profileImage,
-                                          name: '',
-                                          isOwner: true,
-                                          size: 52,
-                                        ),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      bottom: -2,
-                                      right: -2,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: BoxDecoration(
-                                          color: AppTheme.primaryColor,
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                            color: Colors.white,
-                                            width: 2,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: Colors.black.withValues(alpha: 0.1),
-                                              blurRadius: 4,
-                                            ),
-                                          ],
-                                        ),
-                                        child: const Icon(
-                                          Icons.star_rounded,
-                                          size: 12,
-                                          color: Colors.white,
-                                        ),
-                                      ),
+                                    MemberAvatar(
+                                      imageUrl: profileImage,
+                                      name: '',
+                                      isOwner: true,
+                                      size: 52,
                                     ),
                                   ],
                                 ),
