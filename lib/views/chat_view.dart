@@ -164,6 +164,7 @@ class _ChatViewState extends State<ChatView> with WidgetsBindingObserver {
                     ? _buildEmptyMessageView(groupController, l10n)
                     : ListView.builder(
                   reverse: true,
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                   itemCount: chatController.messages.length,
                   itemBuilder: (context, index) {

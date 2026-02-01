@@ -449,6 +449,7 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
                   : ListView.builder(
                       controller: _scrollController,
                       reverse: true,
+                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                       itemCount: _messages.length,
                       itemBuilder: (context, index) {
