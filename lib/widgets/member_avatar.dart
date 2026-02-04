@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:io';
 import '../models/user_model.dart';
 import '../utils/app_theme.dart';
-import 'owner_badge.dart';
+
 
 class MemberAvatar extends StatelessWidget {
   // 기존 방식 (UserModel 사용)
@@ -87,7 +87,7 @@ class MemberAvatar extends StatelessWidget {
             Positioned(
               right: -2,
               bottom: -2,
-              child: OwnerBadge(
+              child: _OwnerBadge(
                 size: size * 0.35,
                 gender: userGender,
               ),
@@ -157,5 +157,58 @@ class MemberAvatar extends StatelessWidget {
             Icon(Icons.person, size: size * 0.6, color: AppTheme.textSecondary),
       );
     }
+  }
+}
+
+class _OwnerBadge extends StatelessWidget {
+  final double size;
+  final double? iconSize;
+  final Color backgroundColor;
+  final Color iconColor;
+  final Color borderColor;
+  final double borderWidth;
+  final String? gender;
+
+  const _OwnerBadge({
+    this.size = 20,
+    this.iconSize,
+    this.backgroundColor = AppTheme.primaryColor,
+    this.iconColor = Colors.white,
+    this.borderColor = Colors.white,
+    this.borderWidth = 2.0,
+    this.gender,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // 성별이 '여'이면 secondaryColor, 아니면 기본 backgroundColor(primaryColor) 사용
+    final Color badgeColor = (gender == '여') 
+        ? AppTheme.secondaryColor 
+        : backgroundColor;
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: badgeColor,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: borderColor,
+          width: borderWidth,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Icon(
+        Icons.star,
+        size: iconSize ?? (size * 0.5),
+        color: iconColor,
+      ),
+    );
   }
 }
