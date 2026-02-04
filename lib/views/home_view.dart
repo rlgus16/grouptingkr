@@ -1775,6 +1775,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
                               imageUrl: isBlocked ? null : member.mainProfileImage,
                               name: member.nickname,
                               isOwner: isOwner,
+                              gender: member.gender,
                               size: 56,
                             ),
                           ],

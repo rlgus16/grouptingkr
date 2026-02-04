@@ -16,6 +16,7 @@ class MemberAvatar extends StatelessWidget {
   final bool? isOwner;
   final bool? isMatched;
 
+  final String? gender;
   final double size;
   final VoidCallback? onTap;
 
@@ -26,6 +27,7 @@ class MemberAvatar extends StatelessWidget {
     this.name,
     this.isOwner,
     this.isMatched,
+    this.gender,
     this.size = 50,
     this.onTap,
   });
@@ -40,13 +42,15 @@ class MemberAvatar extends StatelessWidget {
        imageUrl = null,
        name = null,
        isOwner = null,
-       isMatched = null;
+       isMatched = null,
+       gender = null;
 
   @override
   Widget build(BuildContext context) {
     final profileImage = user?.mainProfileImage ?? imageUrl;
     final showOwnerBadge = isOwner ?? false;
     final showMatchedBadge = isMatched ?? false;
+    final userGender = user?.gender ?? gender;
 
     return GestureDetector(
       onTap: onTap,
@@ -59,7 +63,12 @@ class MemberAvatar extends StatelessWidget {
               shape: BoxShape.circle,
               color: AppTheme.gray200,
               border: (showMatchedBadge || showOwnerBadge)
-                  ? Border.all(color: AppTheme.primaryColor, width: 2)
+                  ? Border.all(
+                      color: (showOwnerBadge && userGender == '여')
+                          ? AppTheme.secondaryColor
+                          : AppTheme.primaryColor,
+                      width: 2,
+                    )
                   : null,
             ),
             child: ClipOval(
@@ -78,7 +87,10 @@ class MemberAvatar extends StatelessWidget {
             Positioned(
               right: -2,
               bottom: -2,
-              child: OwnerBadge(size: size * 0.35),
+              child: OwnerBadge(
+                size: size * 0.35,
+                gender: userGender,
+              ),
             ),
 
           // 매칭된 그룹 표시

@@ -419,6 +419,7 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
                                         imageUrl: isBlocked ? null : member.mainProfileImage,
                                         name: member.nickname,
                                         isOwner: member.uid == _currentChatroomData?['creatorId'],
+                                        gender: member.gender,
                                         size: 40,
                                       ),
                                       const SizedBox(height: 4),

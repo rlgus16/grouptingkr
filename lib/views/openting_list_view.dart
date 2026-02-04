@@ -718,6 +718,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                                       imageUrl: profileImage,
                                       name: '',
                                       isOwner: true,
+                                      gender: ownerProfile?.gender,
                                       size: 52,
                                     ),
                                   ],
@@ -807,15 +808,12 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                               ? null
                               : () => _joinChatroom(roomId, participants, participantCount, maxParticipants),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: hasJoined
-                                ? AppTheme.successColor
-                                : AppTheme.primaryColor,
-                            foregroundColor: Colors.white,
+                            backgroundColor: Colors.white,
+                            foregroundColor: AppTheme.gray700,
                             elevation: 0,
                             shadowColor: Colors.transparent,
-                            disabledBackgroundColor: hasJoined
-                                ? AppTheme.successColor.withValues(alpha: 0.7)
-                                : AppTheme.gray300,
+                            side: const BorderSide(color: AppTheme.gray300),
+                            disabledBackgroundColor: AppTheme.gray200,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -826,14 +824,14 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                                   width: 22,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2.5,
-                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
                                   ),
                                 )
                               : Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      hasJoined ? l10n.opentingJoined : l10n.opentingJoinRoom,
+                                      l10n.homeEnterChat,
                                       style: const TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w700,

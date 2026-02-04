@@ -8,6 +8,7 @@ class OwnerBadge extends StatelessWidget {
   final Color iconColor;
   final Color borderColor;
   final double borderWidth;
+  final String? gender;
 
   const OwnerBadge({
     super.key,
@@ -17,15 +18,21 @@ class OwnerBadge extends StatelessWidget {
     this.iconColor = Colors.white,
     this.borderColor = Colors.white,
     this.borderWidth = 2.0,
+    this.gender,
   });
 
   @override
   Widget build(BuildContext context) {
+    // 성별이 '여'이면 secondaryColor, 아니면 기본 backgroundColor(primaryColor) 사용
+    final Color badgeColor = (gender == '여') 
+        ? AppTheme.secondaryColor 
+        : backgroundColor;
+
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: badgeColor,
         shape: BoxShape.circle,
         border: Border.all(
           color: borderColor,
