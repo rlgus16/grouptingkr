@@ -530,5 +530,7 @@
   "opentingNoRooms": "No Open Chatrooms",
   "opentingBeFirst": "Be the first to create an open chatroom!",
   "opentingHideFullRooms": "Hide full rooms",
-  "opentingUnknown": "Unknown"
+  "opentingUnknown": "Unknown",
+  "errorUserNotFound": "User not found.",
+  "errorLoadProfile": "Failed to load profile."
 }

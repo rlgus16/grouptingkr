@@ -3067,6 +3067,18 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'알 수 없음'**
   String get opentingUnknown;
+
+  /// No description provided for @errorUserNotFound.
+  ///
+  /// In ko, this message translates to:
+  /// **'사용자를 찾을 수 없습니다.'**
+  String get errorUserNotFound;
+
+  /// No description provided for @errorLoadProfile.
+  ///
+  /// In ko, this message translates to:
+  /// **'프로필을 불러오는데 실패했습니다.'**
+  String get errorLoadProfile;
 }
 
 class _AppLocalizationsDelegate

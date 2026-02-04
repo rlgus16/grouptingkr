@@ -1550,4 +1550,10 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get opentingUnknown => '알 수 없음';
+
+  @override
+  String get errorUserNotFound => '사용자를 찾을 수 없습니다.';
+
+  @override
+  String get errorLoadProfile => '프로필을 불러오는데 실패했습니다.';
 }

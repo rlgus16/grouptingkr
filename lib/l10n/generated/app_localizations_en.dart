@@ -1589,4 +1589,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get opentingUnknown => 'Unknown';
+
+  @override
+  String get errorUserNotFound => 'User not found.';
+
+  @override
+  String get errorLoadProfile => 'Failed to load profile.';
 }

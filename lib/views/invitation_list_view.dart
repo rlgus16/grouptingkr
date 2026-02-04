@@ -4,6 +4,9 @@ import '../controllers/group_controller.dart';
 import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../widgets/member_avatar.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/user_model.dart';
+import '../views/profile_detail_view.dart';
 import '../widgets/custom_toast.dart';
 
 class InvitationListView extends StatefulWidget {
@@ -90,6 +93,31 @@ class _InvitationListViewState extends State<InvitationListView> {
       }
     }
   }
+  
+  Future<void> _navigateToUserProfile(String userId) async {
+    if (userId.isEmpty) return;
+
+    try {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      if (userDoc.exists && mounted) {
+        final user = UserModel.fromFirestore(userDoc);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProfileDetailView(user: user),
+          ),
+        );
+      } else {
+        if (mounted) {
+           CustomToast.showError(context, AppLocalizations.of(context)!.errorUserNotFound);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        CustomToast.showError(context, AppLocalizations.of(context)!.errorLoadProfile);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -135,6 +163,7 @@ class _InvitationListViewState extends State<InvitationListView> {
                             imageUrl: invitation.fromUserProfileImage,
                             name: invitation.fromUserNickname,
                             size: 52,
+                            onTap: () => _navigateToUserProfile(invitation.fromUserId),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
