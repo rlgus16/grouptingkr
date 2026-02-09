@@ -33,6 +33,7 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
   Map<String, dynamic>? _currentChatroomData;
   List<UserModel> _chatroomMembers = [];
   bool _isLoadingMembers = false;
+  bool _isLeaving = false;
 
   List<ChatMessage> _messages = [];
   Map<String, UserModel> _userProfiles = {};
@@ -63,9 +64,31 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
         .doc(widget.chatroomId)
         .snapshots()
         .listen((snapshot) {
-      if (snapshot.exists && mounted) {
+      if (!mounted) return;
+
+      if (snapshot.exists) {
+        final data = snapshot.data();
+        final authController = context.read<AuthController>();
+        final currentUserId = authController.currentUserModel?.uid;
+
+        // Check if user is still a participant
+        final participants = List<String>.from(data?['participants'] ?? []);
+        if (currentUserId != null &&
+            !participants.contains(currentUserId) &&
+            !_isLeaving) {
+          
+          // Navigator.of(context).pop(); // Exit chatroom - Handled by OpentingView
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('채팅방에서 내보내졌습니다.'), // TODO: Add to l10n
+              backgroundColor: AppTheme.errorColor,
+            ),
+          );
+          return;
+        }
+
         setState(() {
-          _currentChatroomData = snapshot.data();
+          _currentChatroomData = data;
         });
         _loadChatroomMembers();
       }
@@ -254,26 +277,27 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
 
         // Remove current user from participants list
         participants.remove(currentUserId);
+        
+        // Prevent removal notification
+        _isLeaving = true;
 
-        // Prepare update data
-        final Map<String, dynamic> updateData = {
-          'participants': FieldValue.arrayRemove([currentUserId]),
+        final updateData = <String, dynamic>{
+          'participants': participants,
           'participantCount': FieldValue.increment(-1),
           'updatedAt': FieldValue.serverTimestamp(),
         };
 
-        // If the leaving user is the owner, transfer ownership
+        // If owner is leaving, assign new owner
         if (creatorId == currentUserId && participants.isNotEmpty) {
-          // Transfer to the first remaining participant
-          final newOwnerId = participants.first;
-
-          // Fetch new owner's profile to get nickname
+          final newOwnerId = participants.first; // Simple strategy: first remaining user
+          
+          // Try to get nickname for toast message
           try {
-            final newOwnerDoc = await _firestore.collection('users').doc(newOwnerId).get();
-            if (newOwnerDoc.exists) {
-              final newOwnerData = newOwnerDoc.data()!;
+            final userDoc = await _firestore.collection('users').doc(newOwnerId).get();
+            if (userDoc.exists) {
+              final newOwnerName = userDoc.data()?['nickname'] ?? 'Someone';
               updateData['creatorId'] = newOwnerId;
-              updateData['creatorNickname'] = newOwnerData['nickname'] ?? 'Unknown';
+              updateData['creatorNickname'] = newOwnerName;
             }
           } catch (e) {
             // Failed to fetch new owner, just update creatorId
@@ -286,8 +310,7 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
 
       if (mounted) {
         CustomToast.showSuccess(context, 'Left chatroom successfully!');
-        // Pop back to list view (OpentingView will handle navigation)
-        Navigator.pop(context);
+        // Navigator.pop(context); // Handled by OpentingView
       }
     } catch (e) {
       if (mounted) {
