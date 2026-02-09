@@ -14,6 +14,7 @@ class MessageBubble extends StatelessWidget {
   final String? openChatroomId;
   final bool isChatRoomOwner;
   final bool isSenderInChatroom;
+  final VoidCallback? onAvatarLongPress;
 
   const MessageBubble({
     super.key,
@@ -24,6 +25,7 @@ class MessageBubble extends StatelessWidget {
     this.openChatroomId,
     this.isChatRoomOwner = false,
     this.isSenderInChatroom = true,
+    this.onAvatarLongPress,
   });
 
   @override
@@ -38,6 +40,7 @@ class MessageBubble extends StatelessWidget {
           if (!isMe) ...[
             // 상대방 메시지일 때 프로필 이미지
             GestureDetector(
+              onLongPress: onAvatarLongPress,
               onTap: () {
                 if (senderProfile != null) {
                   Navigator.push(
