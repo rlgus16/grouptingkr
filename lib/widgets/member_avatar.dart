@@ -162,20 +162,10 @@ class MemberAvatar extends StatelessWidget {
 
 class _OwnerBadge extends StatelessWidget {
   final double size;
-  final double? iconSize;
-  final Color backgroundColor;
-  final Color iconColor;
-  final Color borderColor;
-  final double borderWidth;
   final String? gender;
 
   const _OwnerBadge({
     this.size = 20,
-    this.iconSize,
-    this.backgroundColor = AppTheme.primaryColor,
-    this.iconColor = Colors.white,
-    this.borderColor = Colors.white,
-    this.borderWidth = 2.0,
     this.gender,
   });
 
@@ -184,7 +174,7 @@ class _OwnerBadge extends StatelessWidget {
     // 성별이 '여'이면 secondaryColor, 아니면 기본 backgroundColor(primaryColor) 사용
     final Color badgeColor = (gender == '여') 
         ? AppTheme.secondaryColor 
-        : backgroundColor;
+        : AppTheme.primaryColor;
 
     return Container(
       width: size,
@@ -193,8 +183,8 @@ class _OwnerBadge extends StatelessWidget {
         color: badgeColor,
         shape: BoxShape.circle,
         border: Border.all(
-          color: borderColor,
-          width: borderWidth,
+          color: Colors.white,
+          width: 2.0,
         ),
         boxShadow: [
           BoxShadow(
@@ -206,8 +196,8 @@ class _OwnerBadge extends StatelessWidget {
       ),
       child: Icon(
         Icons.star,
-        size: iconSize ?? (size * 0.5),
-        color: iconColor,
+        size: size * 0.5,
+        color: Colors.white,
       ),
     );
   }

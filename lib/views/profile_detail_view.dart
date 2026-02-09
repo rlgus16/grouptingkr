@@ -14,8 +14,17 @@ import '../services/user_service.dart';
 
 class ProfileDetailView extends StatefulWidget {
   final UserModel user;
+  final String? openChatroomId;
+  final bool isChatRoomOwner;
+  final bool isTargetUserInChatroom;
 
-  const ProfileDetailView({super.key, required this.user});
+  const ProfileDetailView({
+    super.key, 
+    required this.user,
+    this.openChatroomId,
+    this.isChatRoomOwner = false,
+    this.isTargetUserInChatroom = true,
+  });
 
   @override
   State<ProfileDetailView> createState() => _ProfileDetailViewState();
@@ -204,6 +213,64 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
       await _fetchAverageRating();
     }
   }
+
+  // Remove user from chatroom functionality
+  void _showRemoveFromChatroomDialog(BuildContext context) {
+    if (widget.openChatroomId == null) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('강퇴하기'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Text('${widget.user.nickname}님을 내보내시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소', style: TextStyle(color: AppTheme.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                // Implement removal logic here
+                final chatroomRef = FirebaseFirestore.instance
+                    .collection('openChatrooms')
+                    .doc(widget.openChatroomId);
+
+                await chatroomRef.update({
+                  'participants': FieldValue.arrayRemove([widget.user.uid]),
+                  'participantCount': FieldValue.increment(-1),
+                  'updatedAt': FieldValue.serverTimestamp(),
+                });
+
+                if (mounted) {
+                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(context); // Close profile view
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${widget.user.nickname}님을 내보냈습니다.')),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('오류가 발생했습니다: $e')),
+                  );
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.errorColor,
+              foregroundColor: Colors.white,
+              elevation: 0,
+            ),
+            child: const Text('강퇴'),
+          ),
+        ],
+      ),
+    );
+  }
+
 
 
   // Report user functionality
@@ -701,6 +768,18 @@ Platform: ${Theme.of(context).platform}
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            if (widget.isChatRoomOwner && widget.openChatroomId != null && widget.isTargetUserInChatroom)
+                              ListTile(
+                                leading: const Icon(Icons.remove_circle_outline, color: AppTheme.errorColor),
+                                title: Text(
+                                  '강퇴하기', // TODO: Add to l10n
+                                  style: const TextStyle(color: AppTheme.errorColor),
+                                ),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  _showRemoveFromChatroomDialog(context);
+                                },
+                              ),
                             ListTile(
                               leading: const Icon(Icons.report_problem_outlined, color: Colors.orange),
                               title: Text(l10n.profileDetailReport),

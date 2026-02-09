@@ -335,6 +335,7 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
     final l10n = AppLocalizations.of(context)!;
     final authController = context.watch<AuthController>();
     final currentUserId = authController.currentUserModel?.uid;
+    final isOwner = _currentChatroomData?['creatorId'] == currentUserId;
     final mediaQuery = MediaQuery.of(context);
     final isKeyboardVisible = mediaQuery.viewInsets.bottom > 0;
 
@@ -409,7 +410,11 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => ProfileDetailView(user: member),
+                                        builder: (context) => ProfileDetailView(
+                                          user: member,
+                                          openChatroomId: widget.chatroomId,
+                                          isChatRoomOwner: currentUserId == _currentChatroomData?['creatorId'],
+                                        ),
                                       ),
                                     );
                                   },
@@ -471,12 +476,20 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
                             message: message,
                             isMe: isMe,
                             senderProfile: senderProfile,
+                            openChatroomId: widget.chatroomId,
+                            isChatRoomOwner: isOwner,
+                            isSenderInChatroom: _currentChatroomData?['participants']?.contains(message.senderId) ?? false,
                             onTap: message.senderId != 'system' && senderProfile != null
                                 ? () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => ProfileDetailView(user: senderProfile),
+                                        builder: (context) => ProfileDetailView(
+                                          user: senderProfile,
+                                          openChatroomId: widget.chatroomId,
+                                          isChatRoomOwner: isOwner,
+                                          isTargetUserInChatroom: _currentChatroomData?['participants']?.contains(message.senderId) ?? false,
+                                        ),
                                       ),
                                     );
                                   }

@@ -11,6 +11,9 @@ class MessageBubble extends StatelessWidget {
   final bool isMe;
   final UserModel? senderProfile;
   final VoidCallback? onTap;
+  final String? openChatroomId;
+  final bool isChatRoomOwner;
+  final bool isSenderInChatroom;
 
   const MessageBubble({
     super.key,
@@ -18,6 +21,9 @@ class MessageBubble extends StatelessWidget {
     required this.isMe,
     this.senderProfile,
     this.onTap,
+    this.openChatroomId,
+    this.isChatRoomOwner = false,
+    this.isSenderInChatroom = true,
   });
 
   @override
@@ -37,8 +43,12 @@ class MessageBubble extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) =>
-                          ProfileDetailView(user: senderProfile!),
+                      builder: (context) => ProfileDetailView(
+                        user: senderProfile!,
+                        openChatroomId: openChatroomId,
+                        isChatRoomOwner: isChatRoomOwner,
+                        isTargetUserInChatroom: isSenderInChatroom,
+                      ),
                     ),
                   );
                 }
