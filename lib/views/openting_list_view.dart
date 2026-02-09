@@ -224,7 +224,41 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
     });
 
     try {
-      await _firestore.collection('openChatrooms').doc(roomId).update({
+      final chatroomRef = _firestore.collection('openChatrooms').doc(roomId);
+      final chatroomDoc = await chatroomRef.get();
+
+      if (!chatroomDoc.exists) {
+        if (mounted) {
+          CustomToast.showError(context, AppLocalizations.of(context)!.opentingLoadError);
+        }
+        return;
+      }
+
+      final data = chatroomDoc.data()!;
+      final currentParticipants = List<dynamic>.from(data['participants'] ?? []);
+      final currentParticipantCount = data['participantCount'] ?? 0;
+      final bannedUsers = List<dynamic>.from(data['bannedUsers'] ?? []);
+
+      // Check if user is banned
+      if (bannedUsers.contains(currentUser.uid)) {
+        if (mounted) {
+          CustomToast.showError(context, '참여할 수 없습니다.'); // TODO: Add to l10n
+        }
+        return;
+      }
+
+      if (currentParticipants.contains(currentUser.uid)) {
+        return;
+      }
+
+      if (currentParticipantCount >= maxParticipants) {
+        if (mounted) {
+          CustomToast.showError(context, AppLocalizations.of(context)!.opentingRoomFull);
+        }
+        return;
+      }
+
+      await chatroomRef.update({
         'participants': FieldValue.arrayUnion([currentUser.uid]),
         'participantCount': FieldValue.increment(1),
         'updatedAt': FieldValue.serverTimestamp(),

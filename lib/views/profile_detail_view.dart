@@ -239,6 +239,7 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
 
                 await chatroomRef.update({
                   'participants': FieldValue.arrayRemove([widget.user.uid]),
+                  'bannedUsers': FieldValue.arrayUnion([widget.user.uid]),
                   'participantCount': FieldValue.increment(-1),
                   'updatedAt': FieldValue.serverTimestamp(),
                 });
