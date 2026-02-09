@@ -4,13 +4,12 @@ import 'package:flutter/foundation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
-import 'package:image_picker/image_picker.dart';
-import 'package:flutter_email_sender/flutter_email_sender.dart';
 import '../models/user_model.dart';
 import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../controllers/auth_controller.dart';
 import '../services/user_service.dart';
+import '../utils/user_action_helper.dart';
 
 class ProfileDetailView extends StatefulWidget {
   final UserModel user;
@@ -214,430 +213,7 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
     }
   }
 
-  // Remove user from chatroom functionality
-  void _showRemoveFromChatroomDialog(BuildContext context) {
-    if (widget.openChatroomId == null) return;
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('강퇴하기'),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Text('${widget.user.nickname}님을 내보내시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소', style: TextStyle(color: AppTheme.textSecondary)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              try {
-                // Implement removal logic here
-                final chatroomRef = FirebaseFirestore.instance
-                    .collection('openChatrooms')
-                    .doc(widget.openChatroomId);
-
-                await chatroomRef.update({
-                  'participants': FieldValue.arrayRemove([widget.user.uid]),
-                  'bannedUsers': FieldValue.arrayUnion([widget.user.uid]),
-                  'participantCount': FieldValue.increment(-1),
-                  'updatedAt': FieldValue.serverTimestamp(),
-                });
-
-                if (mounted) {
-                  Navigator.pop(context); // Close dialog
-                  Navigator.pop(context); // Close profile view
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${widget.user.nickname}님을 내보냈습니다.')),
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('오류가 발생했습니다: $e')),
-                  );
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.errorColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-            ),
-            child: const Text('강퇴'),
-          ),
-        ],
-      ),
-    );
-  }
-
-
-
-  // Report user functionality
-  void _showReportDialog(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final reasonController = TextEditingController();
-    final reasons = [
-      l10n.profileDetailReasonBadPhoto,
-      l10n.profileDetailReasonAbuse,
-      l10n.profileDetailReasonSpam,
-      l10n.profileDetailReasonFraud,
-      l10n.profileDetailReasonOther,
-    ];
-    String selectedReason = reasons[0];
-    final ImagePicker picker = ImagePicker();
-    XFile? attachedImage;
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(l10n.profileDetailReportTitle),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(l10n.profileDetailReportReason, style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 12),
-
-                RadioGroup<String>(
-                  groupValue: selectedReason,
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() => selectedReason = value);
-                    }
-                  },
-                  child: Column(
-                    children: reasons.map((reason) => RadioListTile<String>(
-                      title: Text(reason, style: const TextStyle(fontSize: 14)),
-                      value: reason,
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
-                      activeColor: AppTheme.errorColor,
-                    )).toList(),
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-                TextField(
-                  controller: reasonController,
-                  decoration: InputDecoration(
-                    hintText: l10n.profileDetailReportContent,
-                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    contentPadding: const EdgeInsets.all(12),
-                  ),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 16),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    try {
-                      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-                      if (image != null) setState(() => attachedImage = image);
-                    } catch (e) {
-                      debugPrint('Image selection error: $e');
-                    }
-                  },
-                  icon: const Icon(Icons.camera_alt_outlined, size: 16),
-                  label: Text(attachedImage == null ? l10n.profileDetailReportPhoto : l10n.profileDetailReportPhotoChange),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.textSecondary,
-                    side: const BorderSide(color: AppTheme.gray300),
-                  ),
-                ),
-                if (attachedImage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8.0),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.check_circle, color: AppTheme.successColor, size: 14),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            attachedImage!.name,
-                            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(l10n.commonCancel, style: const TextStyle(color: AppTheme.textSecondary)),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (reasonController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.profileDetailReportEnterContent)),
-                  );
-                  return;
-                }
-                try {
-                  final currentUser = context.read<AuthController>().currentUserModel;
-                  if (currentUser == null) return;
-                  Navigator.pop(context);
-
-                  await FirebaseFirestore.instance.collection('reports').add({
-                    'reporterId': currentUser.uid,
-                    'reportedUserId': widget.user.uid,
-                    'category': selectedReason,
-                    'description': reasonController.text.trim(),
-                    'hasImage': attachedImage != null,
-                    'createdAt': FieldValue.serverTimestamp(),
-                    'status': 'pending',
-                  });
-
-                  await _sendReportEmail(
-                    reporter: currentUser,
-                    targetUser: widget.user,
-                    category: selectedReason,
-                    description: reasonController.text.trim(),
-                    imagePath: attachedImage?.path,
-                  );
-                } catch (e) {
-                  debugPrint('Report failed: $e');
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.errorColor,
-                foregroundColor: Colors.white,
-                elevation: 0,
-              ),
-              child: Text(l10n.profileDetailReportSubmit),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _sendReportEmail({
-    required UserModel reporter,
-    required UserModel targetUser,
-    required String category,
-    required String description,
-    String? imagePath,
-  }) async {
-    final l10n = AppLocalizations.of(context)!;
-    const String developerEmail = 'sprt.groupting@gmail.com';
-    final String body = '''
-[User Report]
-- Reporter: ${reporter.nickname} (${reporter.uid})
-- Target: ${targetUser.nickname} (${targetUser.uid})
-- Reason: $category
-- Content: $description
---------------------------------
-App Version: 1.0.0
-Platform: ${Theme.of(context).platform}
-''';
-
-    final Email email = Email(
-      body: body,
-      subject: '[Groupting Report] ${targetUser.nickname} User Report',
-      recipients: [developerEmail],
-      attachmentPaths: imagePath != null ? [imagePath] : null,
-      isHTML: false,
-    );
-
-    try {
-      await FlutterEmailSender.send(email);
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.profileDetailEmailFailed)),
-        );
-      }
-    }
-  }
-
-  // Block user functionality
-  void _showBlockDialog(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.profileDetailBlockTitle),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Text(l10n.profileDetailBlockConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.commonCancel, style: const TextStyle(color: AppTheme.textSecondary)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              try {
-                final currentUser = context.read<AuthController>().currentUserModel;
-                if (currentUser == null) return;
-                final blockDocId = '${currentUser.uid}_${widget.user.uid}';
-
-                await FirebaseFirestore.instance.collection('blocks').doc(blockDocId).set({
-                  'blockerId': currentUser.uid,
-                  'blockerNickname': currentUser.nickname,
-                  'blockedId': widget.user.uid,
-                  'blockedNickname': widget.user.nickname,
-                  'createdAt': FieldValue.serverTimestamp(),
-                });
-
-                if (mounted) {
-                  Navigator.pop(context);
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.profileDetailBlocked)),
-                  );
-                }
-              } catch (e) {
-                debugPrint('Block failed: $e');
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.errorColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-            ),
-            child: Text(l10n.profileDetailBlock),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Exempt from matching functionality
-  void _showExemptFromMatchingDialog(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final currentUser = context.read<AuthController>().currentUserModel;
-    if (currentUser == null) return;
-    
-    // Check Ting balance first
-    const int exemptionCost = 5;
-    if (currentUser.tingBalance < exemptionCost) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.profileEditInsufficientTings)),
-      );
-      return;
-    }
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.profileDetailExemptTitle),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Text(l10n.profileDetailExemptConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.commonCancel, style: const TextStyle(color: AppTheme.textSecondary)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              try {
-                final authController = context.read<AuthController>();
-                final user = authController.currentUserModel;
-                if (user == null) return;
-                
-                // Deduct Ting first
-                final userService = UserService();
-                final deducted = await userService.deductTings(user.uid, exemptionCost);
-                if (!deducted) {
-                  if (mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.profileEditInsufficientTings)),
-                    );
-                  }
-                  return;
-                }
-                
-                final exemptDocId = '${user.uid}_${widget.user.uid}';
-
-                await FirebaseFirestore.instance.collection('matchExemptions').doc(exemptDocId).set({
-                  'exempterId': user.uid,
-                  'exempterNickname': user.nickname,
-                  'exemptedId': widget.user.uid,
-                  'exemptedNickname': widget.user.nickname,
-                  'createdAt': FieldValue.serverTimestamp(),
-                });
-
-                if (mounted) {
-                  // Refresh user data to update Ting balance
-                  await authController.refreshCurrentUser();
-                  setState(() => _isExempted = true);
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.profileDetailExempted)),
-                  );
-                }
-              } catch (e) {
-                debugPrint('Exempt from matching failed: $e');
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.warningColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-            ),
-            child: Text(l10n.profileDetailExempt),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Unexempt from matching functionality
-  void _showUnexemptDialog(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.profileDetailUnexempt),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Text(l10n.profileDetailUnexemptConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.commonCancel, style: const TextStyle(color: AppTheme.textSecondary)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              try {
-                final currentUser = context.read<AuthController>().currentUserModel;
-                if (currentUser == null) return;
-                final exemptDocId = '${currentUser.uid}_${widget.user.uid}';
-
-                await FirebaseFirestore.instance.collection('matchExemptions').doc(exemptDocId).delete();
-
-                if (mounted) {
-                  setState(() => _isExempted = false);
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(l10n.profileDetailUnexempted)),
-                  );
-                }
-              } catch (e) {
-                debugPrint('Unexempt failed: $e');
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-            ),
-            child: Text(l10n.profileDetailUnexempt),
-          ),
-        ],
-      ),
-    );
-  }
 
 
   @override
@@ -655,72 +231,24 @@ Platform: ${Theme.of(context).platform}
           backgroundColor: Colors.white, 
           foregroundColor: Colors.black,
           actions: isMe ? [] : [
-            IconButton(
-              icon: const Icon(Icons.more_vert, size: 28),
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                  ),
-                  builder: (context) => SafeArea(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ListTile(
-                          leading: const Icon(Icons.report_problem_outlined, color: Colors.orange),
-                          title: Text(l10n.profileDetailReport),
-                          onTap: () {
-                            Navigator.pop(context);
-                            _showReportDialog(context);
-                          },
-                        ),
-                        ListTile(
-                          leading: Icon(
-                            _isExempted ? Icons.person_add_outlined : Icons.person_off_outlined, 
-                            color: _isExempted ? AppTheme.primaryColor : Colors.orange,
-                          ),
-                          title: Text(_isExempted ? l10n.profileDetailUnexempt : l10n.profileDetailExempt),
-                          subtitle: _isExempted ? null : Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.info_outline, size: 12, color: AppTheme.warningColor),
-                              SizedBox(width: 4),
-                              Text('5 Ting', style: TextStyle(color: AppTheme.warningColor, fontSize: 12)),
-                            ],
-                          ),
-                          onTap: () {
-                            Navigator.pop(context);
-                            if (_isExempted) {
-                              _showUnexemptDialog(context);
-                            } else {
-                              _showExemptFromMatchingDialog(context);
-                            }
-                          },
-                        ),
-                        ListTile(
-                          leading: const Icon(Icons.block_outlined, color: AppTheme.primaryColor),
-                          title: Text(l10n.settingsUnblock),
-                          onTap: () async {
-                            final currentUser = context.read<AuthController>().currentUserModel;
-                            if (currentUser == null) return;
-                            final blockDocId = '${currentUser.uid}_${widget.user.uid}';
-                            await FirebaseFirestore.instance.collection('blocks').doc(blockDocId).delete();
-                            if (mounted) {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(l10n.profileDetailUnblocked)),
-                              );
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+              IconButton(
+                icon: const Icon(Icons.more_vert, size: 28),
+                onPressed: () {
+                  UserActionHelper.showUserOptionsBottomSheet(
+                    context: context,
+                    targetUser: widget.user,
+                    openChatroomId: widget.openChatroomId,
+                    isChatRoomOwner: widget.isChatRoomOwner,
+                    isTargetUserInChatroom: widget.isTargetUserInChatroom,
+                    onExemptionChanged: (isExempted) {
+                      if (mounted) setState(() => _isExempted = isExempted);
+                    },
+                    onBlockChanged: (isBlocked) {
+                       if (mounted) setState(() {});
+                    }
+                  );
+                },
+              ),
           ],
         ),
         body: Center(
@@ -760,70 +288,18 @@ Platform: ${Theme.of(context).platform}
                 child: _buildCircleButton(
                   icon: Icons.more_vert,
                   onTap: () {
-                    showModalBottomSheet(
+                    UserActionHelper.showUserOptionsBottomSheet(
                       context: context,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                      ),
-                      builder: (context) => SafeArea(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (widget.isChatRoomOwner && widget.openChatroomId != null && widget.isTargetUserInChatroom)
-                              ListTile(
-                                leading: const Icon(Icons.remove_circle_outline, color: AppTheme.errorColor),
-                                title: Text(
-                                  '강퇴하기', // TODO: Add to l10n
-                                  style: const TextStyle(color: AppTheme.errorColor),
-                                ),
-                                onTap: () {
-                                  Navigator.pop(context);
-                                  _showRemoveFromChatroomDialog(context);
-                                },
-                              ),
-                            ListTile(
-                              leading: const Icon(Icons.report_problem_outlined, color: Colors.orange),
-                              title: Text(l10n.profileDetailReport),
-                              onTap: () {
-                                Navigator.pop(context);
-                                _showReportDialog(context);
-                              },
-                            ),
-                            ListTile(
-                              leading: Icon(
-                                _isExempted ? Icons.person_add_outlined : Icons.person_off_outlined, 
-                                color: _isExempted ? AppTheme.primaryColor : Colors.orange,
-                              ),
-                              title: Text(_isExempted ? l10n.profileDetailUnexempt : l10n.profileDetailExempt),
-                              subtitle: _isExempted ? null : Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: const [
-                                  Icon(Icons.info_outline, size: 12, color: AppTheme.warningColor),
-                                  SizedBox(width: 4),
-                                  Text('5 Ting', style: TextStyle(color: AppTheme.warningColor, fontSize: 12)),
-                                ],
-                              ),
-                              onTap: () {
-                                Navigator.pop(context);
-                                if (_isExempted) {
-                                  _showUnexemptDialog(context);
-                                } else {
-                                  _showExemptFromMatchingDialog(context);
-                                }
-                              },
-                            ),
-                            ListTile(
-                              leading: const Icon(Icons.block, color: Colors.red),
-                              title: Text(l10n.profileDetailBlock),
-                              onTap: () {
-                                Navigator.pop(context);
-                                _showBlockDialog(context);
-                              },
-                            ),
-                            const SizedBox(height: 12),
-                          ],
-                        ),
-                      ),
+                      targetUser: widget.user,
+                      openChatroomId: widget.openChatroomId,
+                      isChatRoomOwner: widget.isChatRoomOwner,
+                      isTargetUserInChatroom: widget.isTargetUserInChatroom,
+                      onExemptionChanged: (isExempted) {
+                        if (mounted) setState(() => _isExempted = isExempted);
+                      },
+                      onBlockChanged: (isBlocked) {
+                         if (mounted) setState(() {});
+                      }
                     );
                   },
                 ),
