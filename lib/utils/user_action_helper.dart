@@ -3,8 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-
 import '../models/user_model.dart';
 import '../controllers/auth_controller.dart';
 import '../services/user_service.dart';
@@ -55,7 +53,7 @@ class UserActionHelper {
                 if (isChatRoomOwner && isTargetUserInChatroom && openChatroomId != null)
                   ListTile(
                     leading: const Icon(Icons.remove_circle_outline, color: AppTheme.errorColor),
-                    title: Text('강퇴하기', style: const TextStyle(color: AppTheme.errorColor)),
+                    title: Text(l10n.userActionRemove, style: const TextStyle(color: AppTheme.errorColor)),
                     onTap: () {
                       Navigator.pop(context);
                       showRemoveFromChatroomDialog(context, targetUser, openChatroomId);
@@ -77,10 +75,10 @@ class UserActionHelper {
                   title: Text(isExempted ? l10n.profileDetailUnexempt : l10n.profileDetailExempt),
                   subtitle: isExempted ? null : Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Icon(Icons.info_outline, size: 12, color: AppTheme.warningColor),
-                      SizedBox(width: 4),
-                      Text('5 Ting', style: TextStyle(color: AppTheme.warningColor, fontSize: 12)),
+                    children: [
+                      const Icon(Icons.info_outline, size: 12, color: AppTheme.warningColor),
+                      const SizedBox(width: 4),
+                      Text(l10n.costFiveTing, style: const TextStyle(color: AppTheme.warningColor, fontSize: 12)),
                     ],
                   ),
                   onTap: () {
@@ -125,16 +123,17 @@ class UserActionHelper {
   }
 
   static void showRemoveFromChatroomDialog(BuildContext context, UserModel user, String chatroomId) {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('강퇴하기'),
+        title: Text(l10n.userActionRemove),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Text('${user.nickname}님을 내보내시겠습니까?'),
+        content: Text(l10n.userActionRemoveConfirm(user.nickname)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('취소', style: TextStyle(color: AppTheme.textSecondary)),
+            child: Text(l10n.commonCancel, style: const TextStyle(color: AppTheme.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -153,14 +152,14 @@ class UserActionHelper {
                   // Check if we need to close another screen (like ProfileDetailView) - handled by caller if needed
                   // or just show snackbar
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('${user.nickname}님을 내보냈습니다.')),
+                    SnackBar(content: Text(l10n.userActionRemoveSuccess(user.nickname))),
                   );
                 }
               } catch (e) {
                 if (context.mounted) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('오류가 발생했습니다: $e')),
+                    SnackBar(content: Text(l10n.commonErrorWithValue(e.toString()))),
                   );
                 }
               }
@@ -170,7 +169,7 @@ class UserActionHelper {
               foregroundColor: Colors.white,
               elevation: 0,
             ),
-            child: const Text('강퇴'),
+            child: Text(l10n.userActionBan),
           ),
         ],
       ),

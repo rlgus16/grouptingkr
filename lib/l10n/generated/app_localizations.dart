@@ -3079,6 +3079,72 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'프로필을 불러오는데 실패했습니다.'**
   String get errorLoadProfile;
+
+  /// No description provided for @userActionRemove.
+  ///
+  /// In ko, this message translates to:
+  /// **'강퇴하기'**
+  String get userActionRemove;
+
+  /// No description provided for @userActionRemoveConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'{nickname}님을 강퇴 하시겠습니까?'**
+  String userActionRemoveConfirm(Object nickname);
+
+  /// No description provided for @userActionRemoveSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'{nickname}님을 강퇴했습니다.'**
+  String userActionRemoveSuccess(Object nickname);
+
+  /// No description provided for @userActionBan.
+  ///
+  /// In ko, this message translates to:
+  /// **'강퇴'**
+  String get userActionBan;
+
+  /// No description provided for @commonErrorWithValue.
+  ///
+  /// In ko, this message translates to:
+  /// **'오류가 발생했습니다: {error}'**
+  String commonErrorWithValue(Object error);
+
+  /// No description provided for @costFiveTing.
+  ///
+  /// In ko, this message translates to:
+  /// **'5 Ting'**
+  String get costFiveTing;
+
+  /// No description provided for @opentingBannedMessage.
+  ///
+  /// In ko, this message translates to:
+  /// **'강퇴 당하셨습니다.'**
+  String get opentingBannedMessage;
+
+  /// No description provided for @opentingSendMessageFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지 전송 실패'**
+  String get opentingSendMessageFailed;
+
+  /// No description provided for @opentingLeaveSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방에서 나갔습니다!'**
+  String get opentingLeaveSuccess;
+
+  /// No description provided for @opentingLeaveFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방 나가기 실패'**
+  String get opentingLeaveFailed;
+
+  /// No description provided for @opentingCannotJoinBanned.
+  ///
+  /// In ko, this message translates to:
+  /// **'참여할 수 없습니다.'**
+  String get opentingCannotJoinBanned;
 }
 
 class _AppLocalizationsDelegate

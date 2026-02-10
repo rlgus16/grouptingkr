@@ -242,7 +242,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
       // Check if user is banned
       if (bannedUsers.contains(currentUser.uid)) {
         if (mounted) {
-          CustomToast.showError(context, '참여할 수 없습니다.'); // TODO: Add to l10n
+          CustomToast.showError(context, AppLocalizations.of(context)!.opentingCannotJoinBanned);
         }
         return;
       }

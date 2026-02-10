@@ -8,7 +8,6 @@ import '../models/user_model.dart';
 import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../controllers/auth_controller.dart';
-import '../services/user_service.dart';
 import '../utils/user_action_helper.dart';
 
 class ProfileDetailView extends StatefulWidget {
@@ -32,14 +31,14 @@ class ProfileDetailView extends StatefulWidget {
 class _ProfileDetailViewState extends State<ProfileDetailView> {
   int _currentImageIndex = 0;
   final ScrollController _scrollController = ScrollController();
-  bool _isExempted = false;
+
   int _userRating = 0; // 0 means no rating, 1-5 are actual ratings
   double _averageRating = 0.0; // Average rating from last 50 ratings
 
   @override
   void initState() {
     super.initState();
-    _checkExemptionStatus();
+
     _fetchUserRating();
     _fetchAverageRating();
   }
@@ -90,22 +89,7 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
     }
   }
 
-  Future<void> _checkExemptionStatus() async {
-    final currentUser = context.read<AuthController>().currentUserModel;
-    if (currentUser == null) return;
-    
-    final exemptDocId = '${currentUser.uid}_${widget.user.uid}';
-    final doc = await FirebaseFirestore.instance
-        .collection('matchExemptions')
-        .doc(exemptDocId)
-        .get();
-    
-    if (mounted) {
-      setState(() {
-        _isExempted = doc.exists;
-      });
-    }
-  }
+
 
   // Fetch user's rating for this profile
   Future<void> _fetchUserRating() async {
@@ -240,9 +224,7 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
                     openChatroomId: widget.openChatroomId,
                     isChatRoomOwner: widget.isChatRoomOwner,
                     isTargetUserInChatroom: widget.isTargetUserInChatroom,
-                    onExemptionChanged: (isExempted) {
-                      if (mounted) setState(() => _isExempted = isExempted);
-                    },
+                    onExemptionChanged: (isExempted) {},
                     onBlockChanged: (isBlocked) {
                        if (mounted) setState(() {});
                     }
@@ -294,9 +276,7 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
                       openChatroomId: widget.openChatroomId,
                       isChatRoomOwner: widget.isChatRoomOwner,
                       isTargetUserInChatroom: widget.isTargetUserInChatroom,
-                      onExemptionChanged: (isExempted) {
-                        if (mounted) setState(() => _isExempted = isExempted);
-                      },
+                      onExemptionChanged: (isExempted) {},
                       onBlockChanged: (isBlocked) {
                          if (mounted) setState(() {});
                       }

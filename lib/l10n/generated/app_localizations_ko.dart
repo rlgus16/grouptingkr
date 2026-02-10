@@ -1556,4 +1556,43 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get errorLoadProfile => '프로필을 불러오는데 실패했습니다.';
+
+  @override
+  String get userActionRemove => '강퇴하기';
+
+  @override
+  String userActionRemoveConfirm(Object nickname) {
+    return '$nickname님을 강퇴 하시겠습니까?';
+  }
+
+  @override
+  String userActionRemoveSuccess(Object nickname) {
+    return '$nickname님을 강퇴했습니다.';
+  }
+
+  @override
+  String get userActionBan => '강퇴';
+
+  @override
+  String commonErrorWithValue(Object error) {
+    return '오류가 발생했습니다: $error';
+  }
+
+  @override
+  String get costFiveTing => '5 Ting';
+
+  @override
+  String get opentingBannedMessage => '강퇴 당하셨습니다.';
+
+  @override
+  String get opentingSendMessageFailed => '메시지 전송 실패';
+
+  @override
+  String get opentingLeaveSuccess => '채팅방에서 나갔습니다!';
+
+  @override
+  String get opentingLeaveFailed => '채팅방 나가기 실패';
+
+  @override
+  String get opentingCannotJoinBanned => '참여할 수 없습니다.';
 }

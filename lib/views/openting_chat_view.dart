@@ -12,8 +12,6 @@ import '../models/user_model.dart';
 import '../models/chatroom_model.dart';
 import '../models/message_model.dart';
 import 'profile_detail_view.dart';
-import 'package:provider/provider.dart';
-import '../services/user_service.dart';
 import '../utils/user_action_helper.dart';
 
 class OpenChatroomChatView extends StatefulWidget {
@@ -82,8 +80,8 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
           
           // Navigator.of(context).pop(); // Exit chatroom - Handled by OpentingView
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('채팅방에서 내보내졌습니다.'), // TODO: Add to l10n
+            SnackBar(
+              content: Text(AppLocalizations.of(context)!.opentingBannedMessage),
               backgroundColor: AppTheme.errorColor,
             ),
           );
@@ -250,7 +248,7 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
       _messageController.clear();
     } catch (e) {
       if (mounted) {
-        CustomToast.showError(context, 'Failed to send message: $e');
+        CustomToast.showError(context, AppLocalizations.of(context)!.opentingSendMessageFailed);
       }
     }
   }
@@ -312,12 +310,12 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
       }
 
       if (mounted) {
-        CustomToast.showSuccess(context, 'Left chatroom successfully!');
+        CustomToast.showSuccess(context, AppLocalizations.of(context)!.opentingLeaveSuccess);
         // Navigator.pop(context); // Handled by OpentingView
       }
     } catch (e) {
       if (mounted) {
-        CustomToast.showError(context, 'Failed to leave chatroom: $e');
+        CustomToast.showError(context, AppLocalizations.of(context)!.opentingLeaveFailed);
       }
     }
   }

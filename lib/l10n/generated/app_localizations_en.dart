@@ -1595,4 +1595,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorLoadProfile => 'Failed to load profile.';
+
+  @override
+  String get userActionRemove => 'Remove';
+
+  @override
+  String userActionRemoveConfirm(Object nickname) {
+    return 'Are you sure you want to remove $nickname?';
+  }
+
+  @override
+  String userActionRemoveSuccess(Object nickname) {
+    return 'Removed $nickname.';
+  }
+
+  @override
+  String get userActionBan => 'Remove';
+
+  @override
+  String commonErrorWithValue(Object error) {
+    return 'Error occurred: $error';
+  }
+
+  @override
+  String get costFiveTing => '5 Ting';
+
+  @override
+  String get opentingBannedMessage =>
+      'You have been removed from the chatroom.';
+
+  @override
+  String get opentingSendMessageFailed => 'Failed to send message';
+
+  @override
+  String get opentingLeaveSuccess => 'Left chatroom successfully!';
+
+  @override
+  String get opentingLeaveFailed => 'Failed to leave chatroom';
+
+  @override
+  String get opentingCannotJoinBanned => 'You cannot join this chatroom.';
 }

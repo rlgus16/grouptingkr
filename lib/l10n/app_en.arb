@@ -532,5 +532,16 @@
   "opentingHideFullRooms": "Hide full rooms",
   "opentingUnknown": "Unknown",
   "errorUserNotFound": "User not found.",
-  "errorLoadProfile": "Failed to load profile."
+  "errorLoadProfile": "Failed to load profile.",
+  "userActionRemove": "Remove",
+  "userActionRemoveConfirm": "Are you sure you want to remove {nickname}?",
+  "userActionRemoveSuccess": "Removed {nickname}.",
+  "userActionBan": "Remove",
+  "commonErrorWithValue": "Error occurred: {error}",
+  "costFiveTing": "5 Ting",
+  "opentingBannedMessage": "You have been removed from the chatroom.",
+  "opentingSendMessageFailed": "Failed to send message",
+  "opentingLeaveSuccess": "Left chatroom successfully!",
+  "opentingLeaveFailed": "Failed to leave chatroom",
+  "opentingCannotJoinBanned": "You cannot join this chatroom."
 }
