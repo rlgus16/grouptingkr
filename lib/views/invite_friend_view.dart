@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:country_code_picker/country_code_picker.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 import '../controllers/group_controller.dart';
 import '../models/invitation_model.dart';
 import '../utils/app_theme.dart';
@@ -15,14 +17,60 @@ class InviteFriendView extends StatefulWidget {
 
 class _InviteFriendViewState extends State<InviteFriendView> {
   final _formKey = GlobalKey<FormState>();
-  final _nicknameController = TextEditingController();
+  final _phoneNumberController = TextEditingController(); // Chanaged from _nicknameController
   final _messageController = TextEditingController();
+  String _selectedCountryCode = '+82';
 
   @override
   void dispose() {
-    _nicknameController.dispose();
+    _phoneNumberController.dispose();
     _messageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickContact() async {
+    final l10n = AppLocalizations.of(context)!;
+    
+    // 권한 요청
+    if (!await FlutterContacts.requestPermission(readonly: true)) {
+      if (mounted) {
+        CustomToast.showError(context, '연락처 접근 권한이 필요합니다.');
+      }
+      return;
+    }
+
+    // 연락처 선택 화면 열기
+    final contact = await FlutterContacts.openExternalPick();
+    
+    if (contact != null && contact.phones.isNotEmpty) {
+      String phoneNumber = contact.phones.first.number;
+      
+      // 특수문자 제거 (숫자만 남김)
+      phoneNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+      
+      // 국가코드 처리 (+82 등)
+      String cleanCountryCode = _selectedCountryCode.replaceAll('+', '');
+      
+      if (phoneNumber.startsWith(_selectedCountryCode)) {
+        phoneNumber = phoneNumber.substring(_selectedCountryCode.length);
+      } else if (phoneNumber.startsWith(cleanCountryCode)) {
+        phoneNumber = phoneNumber.substring(cleanCountryCode.length);
+      } else if (phoneNumber.startsWith('+')) {
+         // 다른 국가코드인 경우, 현재 선택된 국가코드로 변경하거나 경고?
+         // 일단은 그대로 입력 필드에 넣지만, 사용자 경험상 
+         // 현재 선택된 국가코드와 다르면 알림을 주는 것이 좋을 수 있음
+         // 여기서는 단순화하여 입력 필드에 넣음
+         phoneNumber = phoneNumber.replaceAll('+', '');
+      }
+
+      // 맨 앞 0 처리 (이미 한국 010 형식이면 그대로 둠, 
+      // 하지만 이 앱의 로직에서는 +82가 선택되어 있으면 나중에 0을 뗌, 
+      // 즉 입력 필드에는 010...으로 들어가야 자연스러움)
+      
+       setState(() {
+        _phoneNumberController.text = phoneNumber;
+      });
+    }
   }
 
   Future<void> _inviteFriend() async {
@@ -31,9 +79,18 @@ class _InviteFriendViewState extends State<InviteFriendView> {
     final l10n = AppLocalizations.of(context)!;
     final groupController = context.read<GroupController>();
 
+    String phoneNumber = _phoneNumberController.text.trim();
+    
+    // 한국 번호인 경우 맨 앞의 0 제거
+    if (_selectedCountryCode == '+82' && phoneNumber.startsWith('0')) {
+      phoneNumber = phoneNumber.substring(1);
+    }
+    
+    final fullPhoneNumber = '$_selectedCountryCode$phoneNumber';
+
     try {
       await groupController.inviteFriend(
-        nickname: _nicknameController.text.trim(),
+        phoneNumber: fullPhoneNumber, // Changed parameter
         message: _messageController.text.trim().isNotEmpty
             ? _messageController.text.trim()
             : null,
@@ -41,7 +98,7 @@ class _InviteFriendViewState extends State<InviteFriendView> {
 
       if (mounted) {
         CustomToast.showSuccess(context, l10n.inviteSentSuccess);
-        _nicknameController.clear();
+        _phoneNumberController.clear();
         _messageController.clear();
         FocusScope.of(context).unfocus();
       }
@@ -86,20 +143,73 @@ class _InviteFriendViewState extends State<InviteFriendView> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
-                  controller: _nicknameController,
-                  decoration: InputDecoration(
-                    labelText: l10n.inviteNicknameLabel,
-                    hintText: l10n.inviteNicknameHint,
-                    prefixIcon: const Icon(Icons.person_search_rounded),
-                    floatingLabelBehavior: FloatingLabelBehavior.always,
+                // Phone Number Label
+                Padding(
+                  padding: const EdgeInsets.only(left: 4, bottom: 8),
+                  child: Text(
+                    l10n.invitePhoneLabel,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppTheme.textPrimary,
+                    ),
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return l10n.inviteNicknameEmpty;
-                    }
-                    return null;
-                  },
+                ),
+                Row(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.gray100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      margin: const EdgeInsets.only(right: 8),
+                      child: CountryCodePicker(
+                        onChanged: (country) {
+                          setState(() {
+                            _selectedCountryCode = country.dialCode!;
+                          });
+                        },
+                        initialSelection: 'KR',
+                        favorite: const ['KR'],
+                        showFlag: false,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        textStyle: const TextStyle(fontSize: 14, color: AppTheme.textPrimary),
+                      ),
+                    ),
+                    Expanded(
+                      child: TextFormField(
+                        controller: _phoneNumberController,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          hintText: l10n.invitePhoneHint,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return l10n.invitePhoneEmpty;
+                          }
+                          // Simple phone number validation
+                          final phoneRegex = RegExp(r'^\d{9,11}$');
+                          if (!phoneRegex.hasMatch(value.trim())) {
+                            return l10n.invitePhoneInvalid;
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: AppTheme.gray100,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.contacts_rounded, color: AppTheme.textPrimary),
+                        onPressed: _pickContact,
+                        tooltip: '연락처에서 가져오기',
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 TextFormField(

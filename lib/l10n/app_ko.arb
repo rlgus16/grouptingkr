@@ -176,6 +176,11 @@
   "inviteStatusRejected": "거절됨",
   "inviteStatusExpired": "만료됨",
 
+  "invitePhoneLabel": "전화번호",
+  "invitePhoneHint": "전화번호를 입력해주세요 (- 없이 입력)",
+  "invitePhoneEmpty": "전화번호를 입력해주세요.",
+  "invitePhoneInvalid": "올바른 전화번호 형식이 아닙니다.",
+
   "invitationListTitle": "받은 초대",
   "invitationEmpty": "받은 초대가 없습니다",
   "invitationFrom": "{name}님의 초대",

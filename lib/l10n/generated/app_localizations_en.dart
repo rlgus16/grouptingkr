@@ -494,6 +494,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inviteStatusExpired => 'Expired';
 
   @override
+  String get invitePhoneLabel => 'Phone Number';
+
+  @override
+  String get invitePhoneHint => 'Enter phone number (without -)';
+
+  @override
+  String get invitePhoneEmpty => 'Please enter a phone number.';
+
+  @override
+  String get invitePhoneInvalid => 'Invalid phone number format.';
+
+  @override
   String get invitationListTitle => 'Received Invites';
 
   @override

@@ -485,6 +485,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get inviteStatusExpired => '만료됨';
 
   @override
+  String get invitePhoneLabel => '전화번호';
+
+  @override
+  String get invitePhoneHint => '전화번호를 입력해주세요 (- 없이 입력)';
+
+  @override
+  String get invitePhoneEmpty => '전화번호를 입력해주세요.';
+
+  @override
+  String get invitePhoneInvalid => '올바른 전화번호 형식이 아닙니다.';
+
+  @override
   String get invitationListTitle => '받은 초대';
 
   @override

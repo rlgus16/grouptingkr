@@ -62,7 +62,7 @@ class InvitationService {
 
   // 초대 보내기
   Future<void> sendInvitation({
-    required String toUserNickname,
+    required String toUserPhoneNumber,
     required String groupId,
     String? message,
   }) async {
@@ -78,10 +78,10 @@ class InvitationService {
         throw ('사용자 정보를 찾을 수 없습니다.');
       }
 
-      // 대상 사용자 찾기 (정확한 닉네임 매칭)
-      final toUser = await _userService.getUserByExactNickname(toUserNickname);
+      // 대상 사용자 찾기 (전화번호 매칭)
+      final toUser = await _userService.getUserByPhoneNumber(toUserPhoneNumber);
       if (toUser == null) {
-        throw ('해당 닉네임의 사용자를 찾을 수 없습니다.');
+        throw ('해당 전화번호의 사용자를 찾을 수 없습니다.');
       }
 
       // 자기 자신에게 초대 방지

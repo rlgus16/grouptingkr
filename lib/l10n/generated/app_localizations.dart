@@ -1046,6 +1046,30 @@ abstract class AppLocalizations {
   /// **'만료됨'**
   String get inviteStatusExpired;
 
+  /// No description provided for @invitePhoneLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'전화번호'**
+  String get invitePhoneLabel;
+
+  /// No description provided for @invitePhoneHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'전화번호를 입력해주세요 (- 없이 입력)'**
+  String get invitePhoneHint;
+
+  /// No description provided for @invitePhoneEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'전화번호를 입력해주세요.'**
+  String get invitePhoneEmpty;
+
+  /// No description provided for @invitePhoneInvalid.
+  ///
+  /// In ko, this message translates to:
+  /// **'올바른 전화번호 형식이 아닙니다.'**
+  String get invitePhoneInvalid;
+
   /// No description provided for @invitationListTitle.
   ///
   /// In ko, this message translates to:

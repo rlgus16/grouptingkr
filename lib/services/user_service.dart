@@ -66,6 +66,21 @@ class UserService {
     }
   }
 
+  // 전화번호로 사용자 검색
+  Future<UserModel?> getUserByPhoneNumber(String phoneNumber) async {
+    try {
+      final query = await _usersCollection
+          .where('phoneNumber', isEqualTo: phoneNumber)
+          .limit(1)
+          .get();
+
+      if (query.docs.isEmpty) return null;
+      return UserModel.fromFirestore(query.docs.first);
+    } catch (e) {
+      throw Exception('사용자 검색에 실패했습니다: $e');
+    }
+  }
+
   // 사용자 정보 업데이트
   Future<void> updateUser(UserModel user) async {
     try {

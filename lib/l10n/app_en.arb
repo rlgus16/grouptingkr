@@ -165,6 +165,11 @@
   "inviteStatusRejected": "Rejected",
   "inviteStatusExpired": "Expired",
 
+  "invitePhoneLabel": "Phone Number",
+  "invitePhoneHint": "Enter phone number (without -)",
+  "invitePhoneEmpty": "Please enter a phone number.",
+  "invitePhoneInvalid": "Invalid phone number format.",
+
   "invitationListTitle": "Received Invites",
   "invitationEmpty": "No invitations received",
   "invitationFrom": "Invite from {name}",
