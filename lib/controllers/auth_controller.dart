@@ -45,6 +45,10 @@ class AuthController extends ChangeNotifier {
   List<String> _blockedUserIds = [];
   List<String> get blockedUserIds => _blockedUserIds;
 
+  // 내가 차단한 사용자 목록 (UI 표시용)
+  List<String> _myBlockedUserIds = [];
+  List<String> get myBlockedUserIds => _myBlockedUserIds;
+
   // 양방향 차단 구독 변수
   StreamSubscription? _sub1; // 내가 차단한 목록 구독
   StreamSubscription? _sub2; // 나를 차단한 목록 구독
@@ -791,6 +795,7 @@ class AuthController extends ChangeNotifier {
         .snapshots()
         .listen((snapshot) {
       myBlocks = snapshot.docs.map((doc) => doc['blockedId'] as String).toList();
+      _myBlockedUserIds = List.from(myBlocks); // 내 차단 목록 업데이트
       updateCombinedList();
     });
 

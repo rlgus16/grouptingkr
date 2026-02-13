@@ -24,7 +24,7 @@ class UserActionHelper {
 
     // Check exemption and block status
     final authController = context.read<AuthController>();
-    bool isBlocked = authController.blockedUserIds.contains(targetUser.uid);
+    bool isBlocked = authController.myBlockedUserIds.contains(targetUser.uid);
     bool isExempted = false;
 
     try {
