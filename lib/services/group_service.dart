@@ -253,6 +253,7 @@ class GroupService {
               'participants': participants,
               'messages': FieldValue.arrayUnion([systemMessage.toFirestore()]),
               'lastMessage': systemMessage.toFirestore(),
+              'lastMessageId': systemMessage.id,
               'messageCount': FieldValue.increment(1),
               'updatedAt': FieldValue.serverTimestamp(),
             });
@@ -296,10 +297,33 @@ class GroupService {
 
             transaction.update(groupRef, updates);
 
+            // [FIX] Also update the participants list in the corresponding chatroom document
+            // This ensures notifications are not sent to the user who left
+            // AND send the system message atomically (avoids permission issues if rules require participation)
+            final chatroomRef = _chatroomsCollection.doc(groupId);
+
+            var systemMessage = MessageModel.createSystemMessage(
+              groupId: groupId,
+              content: '$nickname님이 나갔습니다.',
+            );
+            // Ensure ID is set (createSystemMessage makes empty ID)
+            systemMessage = systemMessage.copyWith(
+              id: DateTime.now().millisecondsSinceEpoch.toString(),
+            );
+
+            transaction.update(chatroomRef, {
+              'participants': newMemberIds,
+              'messages': FieldValue.arrayUnion([systemMessage.toFirestore()]),
+              'lastMessage': systemMessage.toFirestore(),
+              'lastMessageId': systemMessage.id,
+              'messageCount': FieldValue.increment(1),
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
           }
         }
       });
 
+      /*
       if (!groupDeleted) {
         try {
           // [FIX] Use ChatroomService to update the chatroom/messages
@@ -313,6 +337,7 @@ class GroupService {
           debugPrint('Failed to send system message for pre-match group: $e');
         }
       }
+      */
 
       await _userService.updateCurrentGroupId(userId, null);
     }

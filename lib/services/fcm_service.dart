@@ -12,6 +12,7 @@ import 'package:path_provider/path_provider.dart';
 import 'firebase_service.dart';
 import '../main.dart' as main_file;
 import '../views/chat_view.dart';
+import '../views/invitation_list_view.dart';
 
 class FCMService {
   static final FCMService _instance = FCMService._internal();
@@ -466,32 +467,9 @@ class FCMService {
       final data = message.data;
       final title = data['localNotificationTitle'] ?? message.notification?.title ?? '새로운 초대';
       final body = data['localNotificationBody'] ?? message.notification?.body ?? '초대가 도착했습니다';
-      final fromUserNickname = data['fromUserNickname'] ?? '알 수 없는 사용자';
-      final groupMemberCount = data['groupMemberCount'] ?? '1';
-      final fromUserProfileImage = data['fromUserProfileImage'];
       final invitationId = data['invitationId'] ?? '';
       
       debugPrint('초대 로컬 알림 표시 시작: $title');
-      debugPrint('초대한 사람: $fromUserNickname');
-      debugPrint('그룹 인원: ${groupMemberCount}명');
-      
-      // 프로필 이미지가 있으면 다운로드
-      FilePathAndroidBitmap? profileBitmap;
-      if (fromUserProfileImage != null && fromUserProfileImage.isNotEmpty) {
-        debugPrint('프로필 이미지 다운로드 중: $fromUserProfileImage');
-        try {
-          final localImagePath = await _downloadImageToLocal(
-            fromUserProfileImage, 
-            'profile_${invitationId.substring(0, 8)}.jpg'
-          );
-          profileBitmap = _createFilePathBitmap(localImagePath);
-          if (profileBitmap != null) {
-            debugPrint('프로필 이미지 로드 완료');
-          }
-        } catch (e) {
-          debugPrint('프로필 이미지 로드 실패: $e');
-        }
-      }
       
       // 플러터 로컬 알림 플러그인 설정
       await _localNotifications.show(
@@ -508,28 +486,13 @@ class FCMService {
             showWhen: true,
             enableVibration: true,
             playSound: true,
-            sound: const RawResourceAndroidNotificationSound('notification'),
+            // sound: const RawResourceAndroidNotificationSound('notification'), // 리소스 부재로 제거 (기본음 사용)
             color: const Color(0xFF4CAF50), // 초대 알림 색상
-            largeIcon: profileBitmap, // 다운로드된 프로필 이미지 사용
             styleInformation: BigTextStyleInformation(
               body,
               contentTitle: title,
-              summaryText: '그룹팅 초대',
             ),
-            actions: [
-              const AndroidNotificationAction(
-                'accept_invitation',
-                '수락하기',
-                icon: DrawableResourceAndroidBitmap('ic_check'),
-                contextual: false,
-              ),
-              const AndroidNotificationAction(
-                'view_invitation', 
-                '확인하기',
-                icon: DrawableResourceAndroidBitmap('ic_visibility'),
-                contextual: true,
-              ),
-            ],
+            // actions: [ ... ] // 아이콘 리소스 부재로 제거
           ),
           iOS: DarwinNotificationDetails(
             presentAlert: true,
@@ -571,7 +534,13 @@ class FCMService {
       } else if (data.isNotEmpty) {
         // Data-only message: extract from data payload
         final messageType = data['type'];
-        if (messageType == 'new_message') {
+        
+
+        if (messageType == 'new_invitation') {
+          // [초대 알림 처리 추가]
+          title = data['localNotificationTitle'] ?? '그룹팅';
+          body = '새로운 초대가 도착했습니다.';
+        } else if (messageType == 'new_message') {
           title = data['senderNickname'] ?? '새 메시지';
           body = data['content'] ?? '';
         } else {
@@ -831,9 +800,21 @@ class FCMService {
     try {
       final context = main_file.navigatorKey.currentContext;
       if (context != null) {
-        // 홈 화면으로 이동 (초대 목록은 홈에서 접근)
+        // 홈 화면을 먼저 스택의 최하단에 배치 (Back 버튼 시 홈으로 이동)
         Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
-        debugPrint('초대 알림으로 홈 화면 이동 완료');
+        
+        // 초대 목록 화면을 그 위에 푸시
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (main_file.navigatorKey.currentContext != null) {
+            Navigator.of(main_file.navigatorKey.currentContext!).push(
+              MaterialPageRoute(
+                builder: (context) => const InvitationListView(),
+              ),
+            );
+          }
+        });
+        
+        debugPrint('초대 알림 클릭 -> 홈 -> 초대 목록 이동 완료');
       }
     } catch (e) {
       debugPrint('초대 목록 이동 실패: $e');

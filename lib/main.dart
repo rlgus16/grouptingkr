@@ -87,28 +87,82 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
-  // 알림 채널 생성
-  const AndroidNotificationChannel channel = AndroidNotificationChannel(
+  // 1. 기본 알림 채널 (채팅 메시지 등)
+  const AndroidNotificationChannel defaultChannel = AndroidNotificationChannel(
     'groupting_message',
     '채팅 메세지 알림',
     description: '새로운 채팅 메세지 알림을 받습니다',
     importance: Importance.high,
   );
 
-  await flutterLocalNotificationsPlugin
-      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-      ?.createNotificationChannel(channel);
+  // 2. 초대 전용 알림 채널 (최고 우선순위 + 소리/진동)
+  const AndroidNotificationChannel invitationChannel = AndroidNotificationChannel(
+    'groupting_invitation',
+    '그룹 초대 알림',
+    description: '친구들의 그룹 초대 알림을 받습니다',
+    importance: Importance.max,
+    playSound: true,
+    enableVibration: true,
+    showBadge: true,
+  );
+
+  final androidImpl = flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      
+  if (androidImpl != null) {
+    await androidImpl.createNotificationChannel(defaultChannel);
+    await androidImpl.createNotificationChannel(invitationChannel);
+  }
 
   // 알림 표시
   String? title = message.notification?.title;
   String? body = message.notification?.body;
+  
+  // 사용할 채널 결정 (기본값: defaultChannel)
+  AndroidNotificationChannel currentChannel = defaultChannel;
+  // 초대 알림 여부 확인
+  bool isInvitation = false;
 
   // 데이터 메시지인 경우 내용 채우기
-  if (title == null && message.data.isNotEmpty) {
-    title = message.data['senderNickname'] ?? '알림';
-    body = message.data['content'] ?? '새로운 메시지가 도착했습니다.';
-    if (message.data['type'] == 'image') {
-      body = '(사진)';
+  if (message.data.isNotEmpty) {
+    final type = message.data['type'];
+    
+    // [초대 알림 처리]
+    if (type == 'new_invitation') {
+      isInvitation = true;
+      currentChannel = invitationChannel;
+      
+      // 1순위: 명시적 로컬 알림 필드
+      title = message.data['localNotificationTitle'];
+      body = message.data['localNotificationBody'];
+      
+      // 2순위: 닉네임 기반 구성
+      if (title == null || title.isEmpty) {
+        title = '그룹팅';
+        final nickname = message.data['fromUserNickname'];
+        if (nickname != null && nickname.isNotEmpty) {
+          body = '$nickname님이 그룹에 초대했습니다.';
+        } else {
+          body = '새로운 초대가 도착했습니다.';
+        }
+      }
+    } 
+    // [채팅 메시지 처리]
+    else if (type == 'new_message') {
+      if (title == null) {
+        title = message.data['senderNickname'] ?? '알림';
+        body = message.data['content'] ?? '새로운 메시지가 도착했습니다.';
+        if (message.data['type'] == 'image') {
+          body = '(사진)';
+        }
+      }
+    }
+    // [그 외 알림]
+    else {
+      if (title == null) {
+        title = message.data['title'] ?? '알림';
+        body = message.data['body'] ?? '새로운 알림이 도착했습니다.';
+      }
     }
   }
 
@@ -119,11 +173,14 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       body,
       NotificationDetails(
         android: AndroidNotificationDetails(
-          channel.id,
-          channel.name,
-          channelDescription: channel.description,
+          currentChannel.id,
+          currentChannel.name,
+          channelDescription: currentChannel.description,
           icon: '@mipmap/ic_launcher',
-          importance: Importance.high,
+          importance: currentChannel.importance,
+          priority: isInvitation ? Priority.max : Priority.high,
+          // 초대 알림은 헤드업 노티피케이션 등 강조
+          fullScreenIntent: isInvitation, 
         ),
       ),
     );

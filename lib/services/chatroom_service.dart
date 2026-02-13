@@ -126,11 +126,14 @@ class ChatroomService {
         groupId: chatRoomId,
         content: content,
         metadata: metadata,
+      ).copyWith(
+        id: DateTime.now().millisecondsSinceEpoch.toString(), // [FIX] Generate ID
       );
 
       await _chatroomsCollection.doc(chatRoomId).update({
         'messages': FieldValue.arrayUnion([systemMessage.toFirestore()]),
         'lastMessage': systemMessage.toFirestore(),
+        'lastMessageId': systemMessage.id,
         'updatedAt': FieldValue.serverTimestamp(),
         'messageCount': FieldValue.increment(1),
       });

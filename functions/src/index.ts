@@ -436,7 +436,7 @@ export const notifyInvitation = onDocumentCreated("invitations/{invitationId}", 
       groupMemberCount: invitationData?.groupMemberCount?.toString() || "1",
       // Add title and body to data payload for local notification display
       localNotificationTitle: "그룹팅",
-      localNotificationBody: `${fromUserNickname}님이 그룹에 초대했습니다.`,
+      localNotificationBody: "새로운 초대가 도착했습니다.",
       showAsLocalNotification: "true",
       click_action: "FLUTTER_NOTIFICATION_CLICK",
     },

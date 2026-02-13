@@ -158,7 +158,7 @@ class ChatroomModel {
           .map((m) {
         // Map 데이터인 경우 처리
         if (m is Map<String, dynamic>) {
-          return ChatMessage.fromMap('', m);
+          return ChatMessage.fromMap(m['id'] as String? ?? '', m);
         }
         return null;
       })

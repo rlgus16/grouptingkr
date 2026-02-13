@@ -75,6 +75,7 @@ class MessageModel {
   // To Firestore
   Map<String, dynamic> toFirestore() {
     return {
+      'id': id, // [FIX] ID 저장
       'groupId': groupId,
       'senderId': senderId,
       'senderNickname': senderNickname,
