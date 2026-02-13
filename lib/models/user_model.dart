@@ -24,6 +24,7 @@ class UserModel {
   final bool matchingNotification;
   final bool invitationNotification;
   final bool chatNotification;
+  final String? languageCode; // 'ko' or 'en'
 
   UserModel({
     required this.uid,
@@ -47,6 +48,7 @@ class UserModel {
     this.latitude = 0.0,
     this.longitude = 0.0,
     this.tingBalance = 0,
+    this.languageCode,
   });
 
   // 나이 계산
@@ -107,6 +109,7 @@ class UserModel {
       latitude: (data['latitude'] ?? 0.0).toDouble(),
       longitude: (data['longitude'] ?? 0.0).toDouble(),
       tingBalance: dataMap['tingBalance'] ?? 0,
+      languageCode: dataMap['languageCode'],
     );
   }
 
@@ -135,6 +138,7 @@ class UserModel {
       'latitude': latitude,
       'longitude': longitude,
       'tingBalance': tingBalance,
+      'languageCode': languageCode,
     };
     
     // fcmToken이 null이 아닌 경우에만 포함 (기존 값 덮어쓰기 방지)
@@ -169,6 +173,7 @@ class UserModel {
     double? latitude,
     double? longitude,
     int? tingBalance,
+    String? languageCode,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -192,6 +197,7 @@ class UserModel {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       tingBalance: tingBalance ?? this.tingBalance,
+      languageCode: languageCode ?? this.languageCode,
     );
   }
 }

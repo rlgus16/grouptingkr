@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LocaleController extends ChangeNotifier {
   static const String _localeKey = 'app_locale';
@@ -41,6 +43,15 @@ class LocaleController extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_localeKey, newLocale.languageCode);
+
+      // Sync with Firestore if logged in
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .update({'languageCode': newLocale.languageCode});
+      }
     } catch (e) {
       debugPrint('Locale 저장 오류: $e');
     }

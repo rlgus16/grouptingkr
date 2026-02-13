@@ -315,6 +315,22 @@ export const handleMatchingCompletion = onDocumentUpdated("groups/{groupId}", as
   }
 });
 
+// Translation Dictionaries
+const NOTIFICATIONS = {
+  ko: {
+    matchTitle: "매칭 성공! 🎉",
+    matchBody: "새로운 그룹과 매칭되었습니다. 지금 채팅을 시작해보세요!",
+    inviteTitle: "그룹팅",
+    inviteBody: "새로운 초대가 도착했습니다."
+  },
+  en: {
+    matchTitle: "It's a Match! 🎉",
+    matchBody: "You've been matched. Start chatting now!",
+    inviteTitle: "Groupting",
+    inviteBody: "You have received a new invitation."
+  }
+};
+
 // 3. [NOTIFICATIONS]
 // Triggers ONLY when the chatroom is created.
 export const notifyMatchOnChatroomCreate = onDocumentCreated("chatrooms/{chatroomId}", async (event) => {
@@ -341,43 +357,44 @@ export const notifyMatchOnChatroomCreate = onDocumentCreated("chatrooms/{chatroo
 
   console.log(`Sending match notifications to: ${participantIds}`);
 
-  // Get tokens for all users in the chatroom
+  // Get tokens and language settings for all users in the chatroom
   const usersQuery = await db.collection("users")
     .where(admin.firestore.FieldPath.documentId(), "in", participantIds)
     .get();
 
-  const tokens: string[] = [];
+  const messages: admin.messaging.Message[] = [];
+
   usersQuery.forEach((doc) => {
     const userData = doc.data();
     if (userData.matchingNotification === false) return;
     if (userData.fcmToken) {
-      tokens.push(userData.fcmToken);
+      const lang = (userData.languageCode === 'en' ? 'en' : 'ko') as keyof typeof NOTIFICATIONS;
+      const texts = NOTIFICATIONS[lang];
+
+      messages.push({
+        token: userData.fcmToken,
+        notification: {
+          title: texts.matchTitle,
+          body: texts.matchBody,
+        },
+        data: {
+          type: "matching_completed",
+          chatRoomId: chatRoomId,
+          click_action: "FLUTTER_NOTIFICATION_CLICK",
+        },
+      });
     }
   });
 
-  if (tokens.length === 0) {
-    console.log("No FCM tokens found for users.");
+  if (messages.length === 0) {
+    console.log("No valid recipients found for match notification.");
     return;
   }
 
-  // Construct the notification payload
-  const message = {
-    notification: {
-      title: "매칭 성공! 🎉",
-      body: "새로운 그룹과 매칭되었습니다. 지금 채팅을 시작해보세요!",
-    },
-    data: {
-      type: "matching_completed",
-      chatRoomId: chatRoomId,
-      click_action: "FLUTTER_NOTIFICATION_CLICK",
-    },
-    tokens: tokens,
-  };
-
-  // Send Multicast Message
+  // Send Individual Messages (since payloads differ by language)
   try {
-    const response = await admin.messaging().sendEachForMulticast(message);
-    console.log(`Notifications sent. Success: ${response.successCount}, Failure: ${response.failureCount}`);
+    const responses = await Promise.all(messages.map(msg => admin.messaging().send(msg)));
+    console.log(`Match notifications sent: ${responses.length}`);
   } catch (error) {
     console.error("Error sending match notifications:", error);
   }
@@ -401,7 +418,7 @@ export const notifyInvitation = onDocumentCreated("invitations/{invitationId}", 
 
   console.log(`Sending invitation notification to user: ${toUserId}`);
 
-  // Get the recipient's FCM token
+  // Get the recipient's FCM token and language
   const userDoc = await db.collection("users").doc(toUserId).get();
   if (!userDoc.exists) {
     console.log(`User ${toUserId} not found.`);
@@ -423,6 +440,12 @@ export const notifyInvitation = onDocumentCreated("invitations/{invitationId}", 
     return;
   }
 
+  const lang = (userData?.languageCode === 'en' ? 'en' : 'ko') as keyof typeof NOTIFICATIONS;
+  const texts = NOTIFICATIONS[lang];
+  const inviteBody = lang === 'en' 
+    ? (fromUserNickname ? `${fromUserNickname} invited you to a group.` : texts.inviteBody)
+    : texts.inviteBody; // Keep Korean generic for consistency with client-side if needed, or update if desired
+
   // Construct the data-only message payload
   // Note: Using data-only (no notification field) prevents FCM from auto-showing notifications
   // and allows the app to control notification display via local notifications
@@ -435,8 +458,8 @@ export const notifyInvitation = onDocumentCreated("invitations/{invitationId}", 
       fromUserProfileImage: invitationData?.fromUserProfileImage || "",
       groupMemberCount: invitationData?.groupMemberCount?.toString() || "1",
       // Add title and body to data payload for local notification display
-      localNotificationTitle: "그룹팅",
-      localNotificationBody: "새로운 초대가 도착했습니다.",
+      localNotificationTitle: texts.inviteTitle,
+      localNotificationBody: inviteBody,
       showAsLocalNotification: "true",
       click_action: "FLUTTER_NOTIFICATION_CLICK",
     },
@@ -460,7 +483,7 @@ export const notifyInvitation = onDocumentCreated("invitations/{invitationId}", 
 
   try {
     await admin.messaging().send(message);
-    console.log(`Invitation notification sent to ${toUserId}`);
+    console.log(`Invitation notification sent to ${toUserId} in ${lang}`);
   } catch (error) {
     console.error("Error sending invitation notification:", error);
   }

@@ -340,6 +340,7 @@ class AuthController extends ChangeNotifier {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         isProfileComplete: false, // 프로필 미완성 표시
+        languageCode: 'ko', // 기본값 한국어
       );
 
       // 재시도 로직으로 문서 생성
