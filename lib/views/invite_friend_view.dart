@@ -29,8 +29,6 @@ class _InviteFriendViewState extends State<InviteFriendView> {
   }
 
   Future<void> _pickContact() async {
-    final l10n = AppLocalizations.of(context)!;
-    
     // 권한 요청
     if (!await FlutterContacts.requestPermission(readonly: true)) {
       if (mounted) {

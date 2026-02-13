@@ -6,7 +6,6 @@ import '../models/user_model.dart';
 import '../models/message_model.dart';
 import 'firebase_service.dart';
 import 'user_service.dart';
-import 'chatroom_service.dart';
 import 'dart:async';
 
 class GroupService {
@@ -16,7 +15,6 @@ class GroupService {
 
   final FirebaseService _firebaseService = FirebaseService();
   final UserService _userService = UserService();
-  final ChatroomService _chatroomService = ChatroomService(); // [Added] Instance
 
   CollectionReference<Map<String, dynamic>> get _groupsCollection =>
       _firebaseService.getCollection('groups');
@@ -265,7 +263,7 @@ class GroupService {
     } else {
       // === Case B: Pre-Match Group ===
       final groupRef = _groupsCollection.doc(groupId);
-      bool groupDeleted = false;
+
 
       await _firebaseService.runTransaction((transaction) async {
         final doc = await transaction.get(groupRef);
@@ -275,7 +273,6 @@ class GroupService {
 
           if(newMemberIds.isEmpty) {
             transaction.delete(groupRef);
-            groupDeleted = true;
           } else {
             String newOwnerId = group.ownerId;
             if (group.ownerId == userId) {

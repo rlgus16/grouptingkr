@@ -7,8 +7,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import 'firebase_service.dart';
 import '../main.dart' as main_file;
 import '../views/chat_view.dart';
@@ -47,46 +45,6 @@ class FCMService {
   }
 
   String? get currentChatRoomId => _currentChatRoomId;
-
-  // 네트워크 이미지를 로컬로 다운로드하여 저장
-  Future<String?> _downloadImageToLocal(String imageUrl, String fileName) async {
-    try {
-      debugPrint('이미지 다운로드 시작: $imageUrl');
-      
-      // HTTP 요청으로 이미지 다운로드
-      final response = await http.get(Uri.parse(imageUrl));
-      if (response.statusCode != 200) {
-        debugPrint('이미지 다운로드 실패: HTTP ${response.statusCode}');
-        return null;
-      }
-
-      // 임시 디렉터리 경로 가져오기
-      final tempDir = await getTemporaryDirectory();
-      final filePath = '${tempDir.path}/notification_images/$fileName';
-      
-      // 디렉터리 생성 (없으면)
-      final file = File(filePath);
-      await file.parent.create(recursive: true);
-      
-      // 이미지 파일로 저장
-      await file.writeAsBytes(response.bodyBytes);
-      
-      debugPrint('이미지 로컬 저장 완료: $filePath');
-      return filePath;
-      
-    } catch (e) {
-      debugPrint('이미지 다운로드 오류: $e');
-      return null;
-    }
-  }
-
-  // 파일 경로에서 안드로이드 비트맵 생성
-  FilePathAndroidBitmap? _createFilePathBitmap(String? filePath) {
-    if (filePath == null || !File(filePath).existsSync()) {
-      return null;
-    }
-    return FilePathAndroidBitmap(filePath);
-  }
 
     // FCM 초기화
   Future<void> initialize() async {

@@ -10,6 +10,8 @@ import '../widgets/message_bubble.dart';
 import 'profile_detail_view.dart';
 import 'invite_friend_view.dart';
 import '../services/chatroom_service.dart';
+import '../models/user_model.dart';
+import '../utils/user_action_helper.dart';
 
 class ChatView extends StatefulWidget {
   final String groupId;
@@ -78,6 +80,18 @@ class _ChatViewState extends State<ChatView> with WidgetsBindingObserver {
     } else if (state == AppLifecycleState.resumed) {
       FCMService().setCurrentChatRoom(widget.groupId);
     }
+  }
+
+  void _showUserOptions(BuildContext context, UserModel user) {
+    if (!mounted) return;
+
+    UserActionHelper.showUserOptionsBottomSheet(
+      context: context,
+      targetUser: user,
+      openChatroomId: null,
+      isChatRoomOwner: false,
+      isTargetUserInChatroom: false,
+    );
   }
 
   @override
@@ -202,6 +216,9 @@ class _ChatViewState extends State<ChatView> with WidgetsBindingObserver {
                             );
                           }
                         }
+                            : null,
+                        onAvatarLongPress: message.senderId != 'system' && senderProfile != null
+                            ? () => _showUserOptions(context, senderProfile)
                             : null,
                       ),
                     );
