@@ -18,6 +18,7 @@ import 'openting_view.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/chatroom_service.dart';
 import '../models/chatroom_model.dart';
+import '../utils/user_action_helper.dart';
 
 // 프로필 검증 결과 클래스
 class ProfileValidationResult {
@@ -1422,6 +1423,19 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
   }
 
   // 커스텀 헤더 위젯
+  void _showUserOptions(BuildContext context, UserModel user) {
+    if (!mounted) return;
+
+    // HomeView에서도 강퇴 기능(Kick)을 지원하지 않으므로 openChatroomId는 null로 처리
+    UserActionHelper.showUserOptionsBottomSheet(
+      context: context,
+      targetUser: user,
+      openChatroomId: null,
+      isChatRoomOwner: false,
+      isTargetUserInChatroom: false,
+    );
+  }
+
   Widget _buildCustomHeader() {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 16, 16),
@@ -1767,6 +1781,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
                       ),
                     );
                   },
+                  onLongPress: () => _showUserOptions(context, member),
                   child: Column(
                     children: [
                       Stack(
