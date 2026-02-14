@@ -7,6 +7,7 @@ import 'package:groupting/services/firebase_service.dart';
 import 'package:groupting/services/group_service.dart';
 import 'package:groupting/services/invitation_service.dart';
 import 'package:groupting/services/user_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class GroupController extends ChangeNotifier {
   final FirebaseService _firebaseService = FirebaseService();
@@ -302,7 +303,47 @@ class GroupController extends ChangeNotifier {
     if (_currentGroup == null) return false;
     _setLoading(true);
     try {
-      await _groupService.startMatching(_currentGroup!.id);
+      // Calculate group stats on client-side before starting match
+      final members = _groupMembers;
+      
+      // Calculate stats (only if we have members, which we should)
+      Map<String, dynamic>? stats;
+      
+      if (members.isNotEmpty) {
+        int totalAge = 0;
+        int totalHeight = 0;
+        int maleCount = 0;
+        int femaleCount = 0;
+
+        for (var member in members) {
+          totalAge += member.age;
+          totalHeight += member.height;
+          if (member.gender == '남' || member.gender == '남자') {
+            maleCount++;
+          } else {
+            femaleCount++;
+          }
+        }
+
+        int averageAge = (totalAge / members.length).round();
+        int averageHeight = (totalHeight / members.length).round();
+
+        String groupGender = '혼성';
+        if (maleCount > 0 && femaleCount == 0) {
+          groupGender = '남자';
+        } else if (femaleCount > 0 && maleCount == 0) {
+          groupGender = '여자';
+        }
+
+        stats = {
+          'averageAge': averageAge,
+          'averageHeight': averageHeight,
+          'groupGender': groupGender,
+          'updatedAt': FieldValue.serverTimestamp(),
+        };
+      }
+
+      await _groupService.startMatching(_currentGroup!.id, stats: stats);
       return true;
     } catch (e) {
       _setError('매칭 시작 실패: $e');

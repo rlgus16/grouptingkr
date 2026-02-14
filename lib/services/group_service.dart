@@ -196,11 +196,17 @@ class GroupService {
     }
   }
 
-  Future<void> startMatching(String groupId) async {
+  Future<void> startMatching(String groupId, {Map<String, dynamic>? stats}) async {
     try {
-      await _groupsCollection.doc(groupId).update({
+      final Map<String, dynamic> data = {
         'status': GroupStatus.matching.toString().split('.').last,
-      });
+      };
+
+      if (stats != null) {
+        data.addAll(stats);
+      }
+
+      await _groupsCollection.doc(groupId).update(data);
     } catch (e) {
       throw ('매칭 시작에 실패했습니다: $e');
     }

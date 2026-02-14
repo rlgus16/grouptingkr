@@ -341,7 +341,6 @@ export const notifyMatchOnChatroomCreate = onDocumentCreated("chatrooms/{chatroo
   const chatRoomId = event.params.chatroomId;
 
   // Only send match notifications for matched chatrooms (format: groupId1_groupId2)
-  // Waiting chatrooms (pre-match group chats) don't have an underscore in their ID
   if (!chatRoomId.includes('_')) {
     console.log(`Skipping match notification for waiting chatroom: ${chatRoomId}`);
     return;
@@ -362,41 +361,124 @@ export const notifyMatchOnChatroomCreate = onDocumentCreated("chatrooms/{chatroo
     .where(admin.firestore.FieldPath.documentId(), "in", participantIds)
     .get();
 
-  const messages: admin.messaging.Message[] = [];
+  const tokensKo: string[] = [];
+  const tokensEn: string[] = [];
 
   usersQuery.forEach((doc) => {
     const userData = doc.data();
     if (userData.matchingNotification === false) return;
+    
     if (userData.fcmToken) {
-      const lang = (userData.languageCode === 'en' ? 'en' : 'ko') as keyof typeof NOTIFICATIONS;
-      const texts = NOTIFICATIONS[lang];
-
-      messages.push({
-        token: userData.fcmToken,
-        notification: {
-          title: texts.matchTitle,
-          body: texts.matchBody,
-        },
-        data: {
-          type: "matching_completed",
-          chatRoomId: chatRoomId,
-          click_action: "FLUTTER_NOTIFICATION_CLICK",
-        },
-      });
+      // Determine language (Default to Korean if not set or invalid)
+      const lang = userData.languageCode === 'en' ? 'en' : 'ko';
+      
+      if (lang === 'en') {
+        tokensEn.push(userData.fcmToken);
+      } else {
+        tokensKo.push(userData.fcmToken);
+      }
     }
   });
 
-  if (messages.length === 0) {
+  if (tokensKo.length === 0 && tokensEn.length === 0) {
     console.log("No valid recipients found for match notification.");
     return;
   }
 
-  // Send Individual Messages (since payloads differ by language)
-  try {
-    const responses = await Promise.all(messages.map(msg => admin.messaging().send(msg)));
-    console.log(`Match notifications sent: ${responses.length}`);
-  } catch (error) {
-    console.error("Error sending match notifications:", error);
+  // Send to Korean users
+  if (tokensKo.length > 0) {
+    const texts = NOTIFICATIONS['ko'];
+    const messagePayload = {
+      tokens: tokensKo,
+      notification: {
+        title: texts.matchTitle,
+        body: texts.matchBody,
+      },
+      data: {
+        type: "matching_completed",
+        chatRoomId: chatRoomId,
+        click_action: "FLUTTER_NOTIFICATION_CLICK",
+      },
+      // Android settings
+      android: {
+        priority: "high" as const,
+      },
+      // iOS settings
+      apns: {
+        payload: {
+          aps: {
+            alert: {
+              title: texts.matchTitle,
+              body: texts.matchBody,
+            },
+            sound: "default",
+          }
+        }
+      }
+    };
+
+    try {
+      const response = await admin.messaging().sendEachForMulticast(messagePayload as any);
+      console.log(`Match notifications (KO) sent. Success: ${response.successCount}, Failure: ${response.failureCount}`);
+      
+      if (response.failureCount > 0) {
+        response.responses.forEach((resp, idx) => {
+          if (!resp.success) {
+            console.error(`Error sending KO notification to ${tokensKo[idx]}:`, resp.error);
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error sending match notifications (KO):", error);
+    }
+  }
+
+  // Send to English users
+  if (tokensEn.length > 0) {
+    const texts = NOTIFICATIONS['en'];
+    const messagePayload = {
+      tokens: tokensEn,
+      notification: {
+        title: texts.matchTitle,
+        body: texts.matchBody,
+      },
+      data: {
+        type: "matching_completed",
+        chatRoomId: chatRoomId,
+        click_action: "FLUTTER_NOTIFICATION_CLICK",
+      },
+      // Android settings
+      android: {
+        priority: "high" as const,
+      },
+      // iOS settings
+      apns: {
+        payload: {
+          aps: {
+            alert: {
+              title: texts.matchTitle,
+              body: texts.matchBody,
+            },
+            sound: "default",
+          }
+        }
+      }
+    };
+
+    try {
+      const response = await admin.messaging().sendEachForMulticast(messagePayload as any);
+      console.log(`Match notifications (EN) sent. Success: ${response.successCount}, Failure: ${response.failureCount}`);
+      
+      if (response.failureCount > 0) {
+        response.responses.forEach((resp, idx) => {
+          if (!resp.success) {
+            console.error(`Error sending EN notification to ${tokensEn[idx]}:`, resp.error);
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Error sending match notifications (EN):", error);
+    }
   }
 });
 
