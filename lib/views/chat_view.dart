@@ -104,18 +104,26 @@ class _ChatViewState extends State<ChatView> with WidgetsBindingObserver {
       backgroundColor: const Color(0xFFF5F6F8),
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: Consumer<GroupController>(
-          builder: (context, groupController, _) {
+        title: Consumer2<GroupController, ChatController>(
+          builder: (context, groupController, chatController, _) {
             if (groupController.currentGroup == null) {
               return Text(l10n.chatTitle);
             }
+
+            // [FIX] Matched groups use ChatController.matchedGroupMembers
+            // Unmatched groups use GroupController.groupMembers
+            final memberCount = groupController.isMatched
+                ? chatController.matchedGroupMembers.length
+                : groupController.groupMembers.length;
+
             return Column(
               children: [
                 Text(
                   groupController.isMatched ? l10n.chatMatchingTitle : l10n.chatGroupTitle,
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                 ),
-                if (!groupController.isMatched)
+                // [FIX] Always show participant count if meaningful (>0)
+                if (memberCount > 0)
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -126,7 +134,7 @@ class _ChatViewState extends State<ChatView> with WidgetsBindingObserver {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '${groupController.groupMembers.length}',
+                        '$memberCount',
                         style: TextStyle(
                           fontSize: 12,
                           color: AppTheme.textSecondary.withValues(alpha: 0.8),

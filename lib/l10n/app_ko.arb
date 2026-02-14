@@ -163,7 +163,7 @@
 
   "inviteTitle": "친구 초대",
   "inviteGuide": "초대 안내",
-  "inviteGuideDesc": "친구의 닉네임을 정확히 입력해주세요\n최대 5명까지 그룹을 구성할 수 있습니다",
+  "inviteGuideDesc": "친구의 전화번호를 정확히 입력해주세요\n최대 5명까지 그룹을 구성할 수 있습니다",
   "inviteCurrentMember": "현재 그룹 인원",
   "inviteNicknameLabel": "친구 닉네임",
   "inviteNicknameHint": "초대할 친구의 닉네임을 입력하세요",

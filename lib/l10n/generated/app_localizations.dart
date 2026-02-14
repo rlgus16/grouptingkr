@@ -977,7 +977,7 @@ abstract class AppLocalizations {
   /// No description provided for @inviteGuideDesc.
   ///
   /// In ko, this message translates to:
-  /// **'친구의 닉네임을 정확히 입력해주세요\n최대 5명까지 그룹을 구성할 수 있습니다'**
+  /// **'친구의 전화번호를 정확히 입력해주세요\n최대 5명까지 그룹을 구성할 수 있습니다'**
   String get inviteGuideDesc;
 
   /// No description provided for @inviteCurrentMember.

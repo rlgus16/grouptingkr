@@ -152,7 +152,7 @@
 
   "inviteTitle": "Invite Friends",
   "inviteGuide": "Invitation Guide",
-  "inviteGuideDesc": "Please enter the friend's nickname correctly\nYou can form a group of up to 5 people",
+  "inviteGuideDesc": "Enter friend's phone number correctly\nYou can form a group of up to 5 people",
   "inviteCurrentMember": "Current Members",
   "inviteNicknameLabel": "Friend Nickname",
   "inviteNicknameHint": "Enter friend's nickname",

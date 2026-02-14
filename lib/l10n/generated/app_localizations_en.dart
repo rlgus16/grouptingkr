@@ -458,7 +458,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inviteGuideDesc =>
-      'Please enter the friend\'s nickname correctly\nYou can form a group of up to 5 people';
+      'Enter friend\'s phone number correctly\nYou can form a group of up to 5 people';
 
   @override
   String get inviteCurrentMember => 'Current Members';

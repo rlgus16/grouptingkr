@@ -449,7 +449,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get inviteGuide => '초대 안내';
 
   @override
-  String get inviteGuideDesc => '친구의 닉네임을 정확히 입력해주세요\n최대 5명까지 그룹을 구성할 수 있습니다';
+  String get inviteGuideDesc => '친구의 전화번호를 정확히 입력해주세요\n최대 5명까지 그룹을 구성할 수 있습니다';
 
   @override
   String get inviteCurrentMember => '현재 그룹 인원';
