@@ -1589,7 +1589,8 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
                   if (snapshot.hasData && snapshot.data != null && currentUserId != null) {
                     final chatroom = snapshot.data!;
                     if (chatroom.lastMessage != null &&
-                        chatroom.lastMessage!.senderId != currentUserId) {
+                        chatroom.lastMessage!.senderId != currentUserId &&
+                        !chatroom.lastMessage!.isSystem) { // 시스템 메시지 제외
 
                       // readBy 리스트에 내 ID가 없으면 '안 읽음'으로 간주
                       final readBy = chatroom.lastMessage!.readBy;
@@ -1602,7 +1603,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
                   return ElevatedButton(
                     onPressed: _navigateToChat,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: hasUnread ? Colors.orange : Colors.white, // 오렌지색 적용
+                      backgroundColor: hasUnread ? Colors.orange : Colors.white,
                       foregroundColor: hasUnread ? Colors.white : AppTheme.successColor,
                       elevation: hasUnread ? 4 : 0,
                       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -1661,7 +1662,8 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
                         if (snapshot.hasData && snapshot.data != null && currentUserId != null) {
                           final chatroom = snapshot.data!;
                           if (chatroom.lastMessage != null &&
-                              chatroom.lastMessage!.senderId != currentUserId) {
+                              chatroom.lastMessage!.senderId != currentUserId &&
+                              !chatroom.lastMessage!.isSystem) { // 시스템 메시지 제외
 
                             // readBy 리스트에 내 ID가 없으면 '안 읽음'으로 간주
                             final readBy = chatroom.lastMessage!.readBy;

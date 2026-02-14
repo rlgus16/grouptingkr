@@ -99,6 +99,9 @@ class LastMessage {
       'readBy': readBy,
     };
   }
+
+  bool get isSystem => type == MessageType.system;
+  bool get isImage => type == MessageType.image;
 }
 
 class ChatroomModel {
