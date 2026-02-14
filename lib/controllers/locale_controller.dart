@@ -24,6 +24,16 @@ class LocaleController extends ChangeNotifier {
         _locale = Locale(savedLocale);
       }
       
+      // 이미 로그인된 상태라면 Firestore와 동기화 (기존 유저 마이그레이션용)
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        // 현재 설정된 로케일을 Firestore에 업데이트
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .update({'languageCode': _locale.languageCode});
+      }
+      
       _isInitialized = true;
       notifyListeners();
     } catch (e) {

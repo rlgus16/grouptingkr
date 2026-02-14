@@ -11,6 +11,7 @@ import '../services/user_service.dart';
 import '../services/group_service.dart';
 import '../services/fcm_service.dart';
 import '../models/user_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthController extends ChangeNotifier {
   final FirebaseService _firebaseService = FirebaseService();
@@ -340,7 +341,7 @@ class AuthController extends ChangeNotifier {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         isProfileComplete: false, // 프로필 미완성 표시
-        languageCode: 'ko', // 기본값 한국어
+        languageCode: await _getInitialLanguageCode(), // 현재 설정된 언어 코드 사용
       );
 
       // 재시도 로직으로 문서 생성
@@ -362,6 +363,16 @@ class AuthController extends ChangeNotifier {
 
     } catch (e) {
       throw Exception('사용자 정보 생성 실패: $e');
+    }
+  }
+
+  // 초기 언어 설정 가져오기
+  Future<String> _getInitialLanguageCode() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('app_locale') ?? 'ko';
+    } catch (e) {
+      return 'ko';
     }
   }
 
