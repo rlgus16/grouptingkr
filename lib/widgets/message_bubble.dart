@@ -6,11 +6,10 @@ import '../utils/app_theme.dart';
 import '../widgets/member_avatar.dart';
 import '../views/profile_detail_view.dart';
 
-class MessageBubble extends StatelessWidget {
+class MessageBubble extends StatefulWidget {
   final ChatMessage message;
   final bool isMe;
   final UserModel? senderProfile;
-  final VoidCallback? onTap;
   final String? openChatroomId;
   final bool isChatRoomOwner;
   final bool isSenderInChatroom;
@@ -21,7 +20,6 @@ class MessageBubble extends StatelessWidget {
     required this.message,
     required this.isMe,
     this.senderProfile,
-    this.onTap,
     this.openChatroomId,
     this.isChatRoomOwner = false,
     this.isSenderInChatroom = true,
@@ -29,28 +27,41 @@ class MessageBubble extends StatelessWidget {
   });
 
   @override
+  State<MessageBubble> createState() => _MessageBubbleState();
+}
+
+class _MessageBubbleState extends State<MessageBubble> {
+  bool _showTime = false;
+
+  void _toggleTime() {
+    setState(() {
+      _showTime = !_showTime;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
-        mainAxisAlignment: isMe
+        mainAxisAlignment: widget.isMe
             ? MainAxisAlignment.end
             : MainAxisAlignment.start,
         children: [
-          if (!isMe) ...[
+          if (!widget.isMe) ...[
             // 상대방 메시지일 때 프로필 이미지
             GestureDetector(
-              onLongPress: onAvatarLongPress,
+              onLongPress: widget.onAvatarLongPress,
               onTap: () {
-                if (senderProfile != null) {
+                if (widget.senderProfile != null) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => ProfileDetailView(
-                        user: senderProfile!,
-                        openChatroomId: openChatroomId,
-                        isChatRoomOwner: isChatRoomOwner,
-                        isTargetUserInChatroom: isSenderInChatroom,
+                        user: widget.senderProfile!,
+                        openChatroomId: widget.openChatroomId,
+                        isChatRoomOwner: widget.isChatRoomOwner,
+                        isTargetUserInChatroom: widget.isSenderInChatroom,
                       ),
                     ),
                   );
@@ -60,14 +71,14 @@ class MessageBubble extends StatelessWidget {
                 width: 32,
                 height: 32,
                 margin: const EdgeInsets.only(right: 8),
-                child: senderProfile != null
-                    ? MemberAvatar(user: senderProfile!, size: 32)
+                child: widget.senderProfile != null
+                    ? MemberAvatar(user: widget.senderProfile!, size: 32)
                     : CircleAvatar(
                         radius: 16,
                         backgroundColor: AppTheme.gray300,
                         child: Text(
-                          message.senderNickname.isNotEmpty
-                              ? message.senderNickname[0].toUpperCase()
+                          widget.message.senderNickname.isNotEmpty
+                              ? widget.message.senderNickname[0].toUpperCase()
                               : '?',
                           style: const TextStyle(
                             color: Colors.white,
@@ -84,25 +95,25 @@ class MessageBubble extends StatelessWidget {
               maxWidth: MediaQuery.of(context).size.width * 0.8,
             ),
             child: GestureDetector(
-              onTap: onTap,
+              onTap: _toggleTime,
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: isMe
+                  color: widget.isMe
                       ? AppTheme.primaryColor
-                      : message.type == MessageType.system
+                      : widget.message.type == MessageType.system
                       ? AppTheme.gray200
                       : Colors.white,
                   borderRadius: BorderRadius.only(
                     topLeft: const Radius.circular(20),
                     topRight: const Radius.circular(20),
-                    bottomLeft: Radius.circular(isMe ? 20 : 4),
-                    bottomRight: Radius.circular(isMe ? 4 : 20),
+                    bottomLeft: Radius.circular(widget.isMe ? 20 : 4),
+                    bottomRight: Radius.circular(widget.isMe ? 4 : 20),
                   ),
-                  boxShadow: message.type != MessageType.system
+                  boxShadow: widget.message.type != MessageType.system
                       ? [
                           BoxShadow(
                             color: Colors.black.withValues(alpha:0.1),
@@ -113,12 +124,12 @@ class MessageBubble extends StatelessWidget {
                       : null,
                 ),
                 child: Column(
-                  crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  crossAxisAlignment: widget.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                   children: [
                     // 발신자 이름 (시스템 메시지가 아니고 내 메시지가 아닐 때)
-                    if (!isMe && message.type != MessageType.system) ...[
+                    if (!widget.isMe && widget.message.type != MessageType.system) ...[
                       Text(
-                        message.senderNickname,
+                        widget.message.senderNickname,
                         style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
@@ -130,29 +141,31 @@ class MessageBubble extends StatelessWidget {
 
                     // 메시지 내용
                     Text(
-                      message.content,
-                      textAlign: isMe ? TextAlign.right : TextAlign.left,
+                      widget.message.content,
+                      textAlign: widget.isMe ? TextAlign.right : TextAlign.left,
                       style: TextStyle(
-                        color: isMe
+                        color: widget.isMe
                             ? Colors.white
-                            : message.type == MessageType.system
+                            : widget.message.type == MessageType.system
                             ? AppTheme.textSecondary
                             : AppTheme.textPrimary,
-                        fontSize: message.type == MessageType.system ? 12 : 16,
+                        fontSize: widget.message.type == MessageType.system ? 12 : 16,
                       ),
                     ),
 
-                    // 시간 표시
-                    const SizedBox(height: 4),
-                    Text(
-                      _formatTime(message.createdAt),
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: isMe
-                            ? Colors.white.withValues(alpha:0.8)
-                            : AppTheme.textSecondary,
+                    // 시간 표시 (탭했을 때만 보임)
+                    if (_showTime) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        _formatTime(widget.message.createdAt),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: widget.isMe
+                              ? Colors.white.withValues(alpha:0.8)
+                              : AppTheme.textSecondary,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),

@@ -205,26 +205,10 @@ class _ChatViewState extends State<ChatView> with WidgetsBindingObserver {
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 4.0),
-                      child: MessageBubble(
+                        child: MessageBubble(
                         message: message,
                         isMe: chatController.isMyMessage(message),
                         senderProfile: senderProfile,
-                        onTap: message.senderId != 'system'
-                            ? () {
-                          final member = groupController
-                              .getMemberById(message.senderId);
-                          if (member != null &&
-                              member.uid.isNotEmpty) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    ProfileDetailView(user: member),
-                              ),
-                            );
-                          }
-                        }
-                            : null,
                         onAvatarLongPress: message.senderId != 'system' && senderProfile != null
                             ? () => _showUserOptions(context, senderProfile)
                             : null,

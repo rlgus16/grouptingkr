@@ -522,21 +522,6 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
                             openChatroomId: widget.chatroomId,
                             isChatRoomOwner: isOwner,
                             isSenderInChatroom: _currentChatroomData?['participants']?.contains(message.senderId) ?? false,
-                            onTap: message.senderId != 'system' && senderProfile != null
-                                ? () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => ProfileDetailView(
-                                          user: senderProfile,
-                                          openChatroomId: widget.chatroomId,
-                                          isChatRoomOwner: isOwner,
-                                          isTargetUserInChatroom: _currentChatroomData?['participants']?.contains(message.senderId) ?? false,
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                : null,
                             onAvatarLongPress: message.senderId != 'system' && senderProfile != null
                                 ? () => _showUserOptions(context, senderProfile)
                                 : null,
