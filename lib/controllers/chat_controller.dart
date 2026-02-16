@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:groupting/models/message_model.dart';
 import '../models/user_model.dart';
 import '../models/group_model.dart';
 import '../models/chatroom_model.dart';
@@ -25,7 +26,7 @@ class ChatController extends ChangeNotifier {
   // State
   bool _isLoading = false;
   String? _errorMessage;
-  List<ChatMessage> _messages = [];
+  List<MessageModel> _messages = [];
   List<UserModel> _matchedGroupMembers = [];
   final TextEditingController _messageController = TextEditingController();
   bool _disposed = false;
@@ -35,7 +36,7 @@ class ChatController extends ChangeNotifier {
   List<String> _blockedUserIds = [];
 
   // Cache & Performance
-  final Map<String, List<ChatMessage>> _messageCache = {};
+  final Map<String, List<MessageModel>> _messageCache = {};
   final Map<String, DateTime> _lastUpdateTime = {};
   Timer? _debounceTimer;
 
@@ -46,7 +47,7 @@ class ChatController extends ChangeNotifier {
   // Getters
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  List<ChatMessage> get messages => _messages
+  List<MessageModel> get messages => _messages
       .where((msg) => !_blockedUserIds.contains(msg.senderId))
       .toList();
   List<UserModel> get matchedGroupMembers => _matchedGroupMembers;
@@ -321,7 +322,7 @@ class ChatController extends ChangeNotifier {
     }
   }
 
-  bool isMyMessage(ChatMessage message) {
+  bool isMyMessage(MessageModel message) {
     return _firebaseService.currentUserId != null &&
         message.senderId == _firebaseService.currentUserId;
   }

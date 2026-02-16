@@ -9,7 +9,6 @@ import '../widgets/custom_toast.dart';
 import '../widgets/member_avatar.dart';
 import '../widgets/message_bubble.dart';
 import '../models/user_model.dart';
-import '../models/chatroom_model.dart';
 import '../models/message_model.dart';
 import 'profile_detail_view.dart';
 import '../utils/user_action_helper.dart';
@@ -36,7 +35,7 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
   bool _isLoadingMembers = false;
   bool _isLeaving = false;
 
-  List<ChatMessage> _messages = [];
+  List<MessageModel> _messages = [];
   Map<String, UserModel> _userProfiles = {};
   StreamSubscription<DocumentSnapshot>? _messageSubscription;
   StreamSubscription<DocumentSnapshot>? _chatroomSubscription;
@@ -158,7 +157,7 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
 
           setState(() {
             _messages = messagesData
-                .map((msgData) => ChatMessage.fromMap(
+                .map((msgData) => MessageModel.fromMap(
                       msgData['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
                       msgData,
                     ))
@@ -228,8 +227,9 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
     if (currentUser == null) return;
 
     try {
-      final newMessage = ChatMessage(
+      final newMessage = MessageModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
+        groupId: widget.chatroomId,
         senderId: currentUser.uid,
         senderNickname: currentUser.nickname,
         content: messageText,
@@ -240,8 +240,8 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
       );
 
       await _firestore.collection('openChatrooms').doc(widget.chatroomId).update({
-        'messages': FieldValue.arrayUnion([newMessage.toMap()]),
-        'lastMessage': newMessage.toMap(),
+        'messages': FieldValue.arrayUnion([newMessage.toFirestore()]),
+        'lastMessage': newMessage.toFirestore(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
 

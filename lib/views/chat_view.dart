@@ -7,7 +7,6 @@ import '../services/fcm_service.dart';
 import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../widgets/message_bubble.dart';
-import 'profile_detail_view.dart';
 import 'invite_friend_view.dart';
 import '../services/chatroom_service.dart';
 import '../models/user_model.dart';
