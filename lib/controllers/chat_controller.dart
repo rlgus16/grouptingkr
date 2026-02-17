@@ -66,36 +66,60 @@ class ChatController extends ChangeNotifier {
 
   // --- Initialization & Stream Management ---
 
-  void startMessageStream(String groupId) {
+  void startMessageStream(String groupId, {bool isPrivate = false}) {
     _setLoading(true);
     _currentGroupId = groupId;
-    _startMessageStreamAsync(groupId);
+    _startMessageStreamAsync(groupId, isPrivate: isPrivate);
   }
 
-  Future<void> _startMessageStreamAsync(String groupId) async {
+  Future<void> _startMessageStreamAsync(String groupId, {bool isPrivate = false}) async {
     try {
       debugPrint('Chat stream started: $groupId');
       _cancelSubscriptions();
 
-      // 1. Listen for group status changes (e.g. matching completed)
-      _startGroupStatusListener(groupId);
+      String chatRoomId;
 
-      // 2. Load members based on current group status
-      await _loadGroupMembers();
+      if (isPrivate) {
+        // Private Chat Logic
+        chatRoomId = groupId;
+        _currentGroupId = chatRoomId;
+        
+        // Load initial messages
+        await _loadInitialMessages(chatRoomId);
+        
+        // Start stream
+        _startChatroomStream(chatRoomId);
+        
+        // Fetch members from chatroom participants
+        // We need to wait for the first chatroom data to get participants
+         final chatroom = await _chatroomService.getChatroomStream(chatRoomId).first;
+         if (chatroom != null) {
+           _matchedGroupMembers = await _fetchUsers(chatroom.participants);
+           notifyListeners();
+         }
 
-      // 3. Resolve the actual ChatRoom ID (handles matched groups)
-      final chatRoomId = await _getChatRoomId(groupId);
-      _currentGroupId = chatRoomId;
-      debugPrint('ChatRoom ID resolved: $chatRoomId');
-
-      // 4. Ensure chatroom document exists and participant list is up-to-date
-      await _syncChatroomParticipants(chatRoomId);
-
-      // 5. Load initial data from cache or single fetch for speed
-      await _loadInitialMessages(chatRoomId);
-
-      // 6. Start real-time stream
-      _startChatroomStream(chatRoomId);
+      } else {
+        // Group/Matched Chat Logic
+        // 1. Listen for group status changes (e.g. matching completed)
+        _startGroupStatusListener(groupId);
+  
+        // 2. Load members based on current group status
+        await _loadGroupMembers();
+  
+        // 3. Resolve the actual ChatRoom ID (handles matched groups)
+        chatRoomId = await _getChatRoomId(groupId);
+        _currentGroupId = chatRoomId;
+        debugPrint('ChatRoom ID resolved: $chatRoomId');
+  
+        // 4. Ensure chatroom document exists and participant list is up-to-date
+        await _syncChatroomParticipants(chatRoomId);
+  
+        // 5. Load initial data from cache or single fetch for speed
+        await _loadInitialMessages(chatRoomId);
+  
+        // 6. Start real-time stream
+        _startChatroomStream(chatRoomId);
+      }
 
       debugPrint('Chat stream setup completed');
     } catch (e) {

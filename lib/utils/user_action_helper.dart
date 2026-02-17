@@ -4,8 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/user_model.dart';
+import '../models/invitation_model.dart'; // Added
 import '../controllers/auth_controller.dart';
 import '../services/user_service.dart';
+import '../services/invitation_service.dart'; // Added
 import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
 
@@ -65,6 +67,14 @@ class UserActionHelper {
                   onTap: () {
                     Navigator.pop(context);
                     showReportDialog(context, targetUser);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.mail_outline, color: AppTheme.primaryColor),
+                  title: const Text('1:1 대화 신청'), // Localization needed ideally
+                  onTap: () {
+                    Navigator.pop(context);
+                    showRequestPrivateChatDialog(context, targetUser);
                   },
                 ),
                 ListTile(
@@ -553,5 +563,75 @@ Platform: ${Theme.of(context).platform}
     } catch (e) {
       debugPrint('Unblock failed: $e');
     }
+  }
+
+  static void showRequestPrivateChatDialog(BuildContext context, UserModel targetUser) {
+    final TextEditingController messageController = TextEditingController();
+    final l10n = AppLocalizations.of(context)!;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${targetUser.nickname}님께 1:1 대화 신청'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('상대방이 수락하면 1:1 채팅방이 개설됩니다.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: messageController,
+              decoration: const InputDecoration(
+                hintText: '초대 메시지를 입력하세요 (선택 사항)',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.commonCancel),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                // Get current user phone number or some way to identify?
+                // InvitationService.sendInvitation uses phone number to find target user.
+                // But here we already have targetUser.
+                
+                // Wait, InvitationService.sendInvitation takes toUserPhoneNumber.
+                // We should probably update InvitationService to take UID or UserModel if we have it,
+                // OR just use the phone number from targetUser.
+                
+                if (targetUser.phoneNumber == null || targetUser.phoneNumber!.isEmpty) {
+                   throw ('상대방의 전화번호 정보가 없습니다.'); 
+                }
+
+                await InvitationService().sendInvitation(
+                  toUserPhoneNumber: targetUser.phoneNumber!, 
+                  message: messageController.text.trim().isEmpty ? null : messageController.text.trim(),
+                  type: InvitationType.private,
+                );
+                
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('1:1 대화 신청을 보냈습니다.')),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('오류 발생: $e')),
+                  );
+                }
+              }
+            },
+            child: const Text('보내기'),
+          ),
+        ],
+      ),
+    );
   }
 }

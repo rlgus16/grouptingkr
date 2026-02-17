@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../controllers/group_controller.dart';
+import '../controllers/auth_controller.dart'; // Added
 import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../widgets/member_avatar.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
+import '../models/invitation_model.dart'; // Added
 import '../views/profile_detail_view.dart';
+import '../views/private_chat_view.dart'; // Added
 import '../widgets/custom_toast.dart';
+import '../services/invitation_service.dart'; // Added for fetching invitation details if needed
 
 class InvitationListView extends StatefulWidget {
   const InvitationListView({super.key});
@@ -25,7 +29,21 @@ class _InvitationListViewState extends State<InvitationListView> {
     final l10n = AppLocalizations.of(context)!;
     final groupController = context.read<GroupController>();
 
-    if (accept && groupController.currentGroup != null) {
+    // Check if it's a private invitation
+    // We need to fetch the invitation model or pass it in. 
+    // _handleInvitation only takes ID. Ideally we should have the model here or fetch it.
+    // The list view has the list of invitations, but _handleInvitation doesn't receive the model.
+    // We can fetch it or find it in the list.
+    
+    InvitationModel? invitation;
+    try {
+      invitation = context.read<GroupController>().receivedInvitations
+          .firstWhere((inv) => inv.id == invitationId);
+    } catch (_) {
+      // Not found in list?
+    }
+
+    if (accept && invitation != null && invitation.type == InvitationType.group && groupController.currentGroup != null) {
       final bool? confirm = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -71,8 +89,33 @@ class _InvitationListViewState extends State<InvitationListView> {
             CustomToast.showSuccess(context, l10n.invitationJoinedSuccess);
             await Future.delayed(const Duration(milliseconds: 1200));
             if (mounted) {
-              Navigator.pushNamedAndRemoveUntil(
-                  context, '/home', (route) => false);
+              if (invitation != null && invitation.type == InvitationType.private) {
+                // Navigate to PrivateChatView
+                // We need generated chatRoomId. 
+                // ChatroomService.getOrCreatePrivateChatroom uses sorted UIDs.
+                // We can replicate logic or fetch from service.
+                // We can replicate logic or fetch from service.
+                // Or since we just accepted, we can calculate it.
+                final currentUser = context.read<AuthController>().currentUserModel;
+                if (currentUser != null) {
+                   final ids = [currentUser.uid, invitation.fromUserId]..sort();
+                   final chatRoomId = '${ids[0]}_${ids[1]}';
+                   
+                   Navigator.push(
+                     context,
+                     MaterialPageRoute(
+                       builder: (context) => PrivateChatView(
+                         chatRoomId: chatRoomId,
+                         targetUserId: invitation!.fromUserId,
+                         targetUserNickname: invitation.fromUserNickname,
+                       ),
+                     ),
+                   );
+                }
+              } else {
+                Navigator.pushNamedAndRemoveUntil(
+                    context, '/home', (route) => false);
+              }
             }
           } else {
             CustomToast.showInfo(context, l10n.invitationRejectedInfo);
@@ -203,6 +246,23 @@ class _InvitationListViewState extends State<InvitationListView> {
                                     color: AppTheme.textSecondary,
                                   ),
                                 ),
+                                if (invitation.type == InvitationType.private)
+                                  Container(
+                                    margin: const EdgeInsets.only(top: 4),
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      '1:1 Chat',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: AppTheme.primaryColor,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
                               ],
                             ),
                           ),

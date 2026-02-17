@@ -10,6 +10,7 @@ import '../widgets/member_avatar.dart';
 import '../l10n/generated/app_localizations.dart';
 import 'invite_friend_view.dart';
 import 'invitation_list_view.dart';
+import 'private_chat_list_view.dart'; // Added
 import 'profile_detail_view.dart';
 import 'my_page_view.dart';
 import 'chat_view.dart';
@@ -968,13 +969,22 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
               );
               break;
             case 2:
+            // 1:1 채팅 목록
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PrivateChatListView(),
+                ),
+              );
+              break;
+            case 3:
             // 마이페이지
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const MyPageView()),
               );
               break;
-            case 3:
+            case 4:
             // 오픈팅
               Navigator.push(
                 context,
@@ -1013,6 +1023,10 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
               },
             ),
             label: AppLocalizations.of(context)!.homeNavInvitations,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.chat_bubble_outline),
+            label: AppLocalizations.of(context)!.homeNavChat,
           ),
           BottomNavigationBarItem(
             icon: const Icon(Icons.person_outline),

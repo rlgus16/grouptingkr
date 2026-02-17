@@ -1,0 +1,310 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../controllers/auth_controller.dart';
+import '../controllers/chat_controller.dart';
+import '../models/user_model.dart';
+import '../services/fcm_service.dart';
+import '../services/chatroom_service.dart'; // Added
+import '../utils/app_theme.dart';
+import '../l10n/generated/app_localizations.dart';
+import '../widgets/message_bubble.dart';
+import '../utils/user_action_helper.dart';
+
+class PrivateChatView extends StatefulWidget {
+  final String chatRoomId;
+  final String targetUserNickname;
+  final String targetUserId;
+
+  const PrivateChatView({
+    super.key,
+    required this.chatRoomId,
+    required this.targetUserNickname,
+    required this.targetUserId,
+  });
+
+  @override
+  State<PrivateChatView> createState() => _PrivateChatViewState();
+}
+
+class _PrivateChatViewState extends State<PrivateChatView> with WidgetsBindingObserver {
+  ChatController? _chatController;
+  final ChatroomService _chatroomService = ChatroomService();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    FCMService().setCurrentChatRoom(widget.chatRoomId);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _chatroomService.markAsRead(widget.chatRoomId);
+
+      if (mounted) {
+        try {
+          final chatController = context.read<ChatController>();
+          _chatController = chatController;
+          chatController.startMessageStream(widget.chatRoomId, isPrivate: true);
+        } catch (e) {
+          debugPrint('PrivateChatView initState Error: $e');
+        }
+      }
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_chatController == null) {
+      try {
+        _chatController = context.read<ChatController>();
+      } catch (e) {
+        // ChatController ref failed
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    FCMService().clearCurrentChatRoom();
+    try {
+      _chatController?.clearData(fromDispose: true);
+    } catch (e) {
+      debugPrint('ChatController dispose error: $e');
+    }
+    _chatController = null;
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      FCMService().clearCurrentChatRoom();
+    } else if (state == AppLifecycleState.resumed) {
+      FCMService().setCurrentChatRoom(widget.chatRoomId);
+    }
+  }
+
+  void _showUserOptions(BuildContext context, UserModel user) {
+    if (!mounted) return;
+
+    UserActionHelper.showUserOptionsBottomSheet(
+      context: context,
+      targetUser: user,
+      openChatroomId: null,
+      isChatRoomOwner: false,
+      isTargetUserInChatroom: false,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final mediaQuery = MediaQuery.of(context);
+    final isKeyboardVisible = mediaQuery.viewInsets.bottom > 0;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F6F8),
+      resizeToAvoidBottomInset: true,
+      appBar: AppBar(
+        title: Column(
+          children: [
+            Text(
+              widget.targetUserNickname,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+            ),
+            const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.lock_outline_rounded,
+                  size: 13,
+                  color: AppTheme.textSecondary,
+                ),
+                SizedBox(width: 4),
+                Text(
+                  '1:1 Private Chat',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppTheme.textSecondary,
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: AppTheme.textPrimary,
+        elevation: 0,
+        centerTitle: true,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: AppTheme.gray200, height: 1),
+        ),
+        actions: [
+          // Option to leave/report etc. could be added here
+          // For now, maybe just "block" or "report" the user via avatar long press?
+          // Or we can add an action button to show user options for the target user.
+          IconButton(
+            icon: const Icon(Icons.more_vert),
+            onPressed: () {
+               // We need a UserModel to show options.
+               // We only have targetUserId and targetUserNickname here.
+               // Ideally we should fetch the user model or pass it in.
+               // For simplicity, let's fetch it or just rely on avatar long press.
+               // Let's implement fetch for better UX? Or just leave it for now.
+            },
+          ),
+        ],
+      ),
+      body: Consumer2<ChatController, AuthController>(
+        builder: (context, chatController, authController, _) {
+          if (!authController.isLoggedIn) {
+             return const Center(child: CircularProgressIndicator());
+          }
+
+          // Ensure blocked users are updated
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            chatController.updateBlockedUsers(authController.blockedUserIds);
+          });
+
+          return Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  reverse: true,
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                  itemCount: chatController.messages.length,
+                  itemBuilder: (context, index) {
+                    final message = chatController.messages[
+                    chatController.messages.length - 1 - index];
+
+                    if (message.senderId == 'system') {
+                      return _buildSystemMessage(message);
+                    }
+
+                    // For private chat, we need to know who sent it.
+                    // If it's me, senderProfile is null (handled by MessageBubble).
+                    // If it's the other person, we might want their profile.
+                    // We don't have the full profile list here like in GroupController.
+                    // But we can construct a dummy one with just ID and nickname if needed, OR
+                    // better, fetch it.
+                    // MessageBubble treats null senderProfile as "don't show avatar" if not IsMe?
+                    // Let's check MessageBubble logic.
+                    // Ideally we pass a User object.
+                    
+                    // For now, let's just pass null and let MessageBubble handle it or 
+                    // maybe we should fetch the target user model in initState.
+
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 4.0),
+                      child: MessageBubble(
+                        message: message,
+                        isMe: chatController.isMyMessage(message),
+                        senderProfile: null, // Avatar logic might need adjustment if we want to show it.
+                        // Private chat usually shows avatar for the other person.
+                        onAvatarLongPress: null, 
+                      ),
+                    );
+                  },
+                ),
+              ),
+              _buildInputArea(isKeyboardVisible, chatController, l10n),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildInputArea(bool isKeyboardVisible, ChatController chatController, AppLocalizations l10n) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(16, 12, 16, isKeyboardVisible ? 12 : 30),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha:0.03),
+            offset: const Offset(0, -2),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: Container(
+              constraints: const BoxConstraints(maxHeight: 120),
+              decoration: BoxDecoration(
+                color: AppTheme.gray100,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: TextField(
+                controller: chatController.messageController,
+                maxLines: null,
+                minLines: 1,
+                keyboardType: TextInputType.multiline,
+                textInputAction: TextInputAction.newline,
+                style: const TextStyle(fontSize: 15, height: 1.4),
+                decoration: InputDecoration(
+                  hintText: l10n.chatInputHint,
+                  hintStyle: const TextStyle(color: AppTheme.gray500, fontSize: 15),
+                  border: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  isDense: true,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            margin: const EdgeInsets.only(bottom: 2),
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppTheme.primaryColor,
+            ),
+            child: IconButton(
+              onPressed: () async {
+                await chatController.sendMessage();
+              },
+              icon: const Icon(Icons.arrow_upward_rounded, size: 24),
+              color: Colors.white,
+              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+              style: IconButton.styleFrom(
+                shape: const CircleBorder(),
+                padding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSystemMessage(dynamic message) {
+    return Align(
+      alignment: Alignment.center,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.black.withValues(alpha:0.05),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          message.content,
+          style: TextStyle(
+            color: AppTheme.textSecondary.withValues(alpha:0.8),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+}

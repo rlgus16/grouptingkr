@@ -2378,6 +2378,12 @@ abstract class AppLocalizations {
   /// **'초대'**
   String get homeNavInvitations;
 
+  /// No description provided for @homeNavChat.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅'**
+  String get homeNavChat;
+
   /// No description provided for @homeNavMyPage.
   ///
   /// In ko, this message translates to:

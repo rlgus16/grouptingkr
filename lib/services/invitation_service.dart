@@ -63,8 +63,10 @@ class InvitationService {
   // 초대 보내기
   Future<void> sendInvitation({
     required String toUserPhoneNumber,
-    required String groupId,
+    // groupId is required for group invites, but optional/ignored for private logic (we'll use generated ID)
+    String? groupId,
     String? message,
+    InvitationType type = InvitationType.group,
   }) async {
     try {
       final currentUser = _firebaseService.currentUser;
@@ -89,27 +91,39 @@ class InvitationService {
         throw ('자기 자신에게는 초대를 보낼 수 없습니다.');
       }
 
-      // 그룹 정보 확인
-      final group = await _groupService.getGroupById(groupId);
-      if (group == null) {
-        throw ('그룹을 찾을 수 없습니다.');
-      }
+      String targetGroupId = '';
 
-      // 방장인지 확인
-      if (!group.isOwner(currentUser.uid)) {
-        throw ('그룹 방장만 초대를 보낼 수 있습니다.');
-      }
+      if (type == InvitationType.group) {
+        if (groupId == null) throw ('그룹 ID가 필요합니다.');
+        targetGroupId = groupId;
 
-      // 그룹 인원 확인
-      if (group.memberIds.length >= 5) {
-        throw ('그룹 인원이 가득 찼습니다. (최대 5명)');
+        // 그룹 정보 확인
+        final group = await _groupService.getGroupById(targetGroupId);
+        if (group == null) {
+          throw ('그룹을 찾을 수 없습니다.');
+        }
+
+        // 방장인지 확인
+        if (!group.isOwner(currentUser.uid)) {
+          throw ('그룹 방장만 초대를 보낼 수 있습니다.');
+        }
+
+        // 그룹 인원 확인
+        if (group.memberIds.length >= 5) {
+          throw ('그룹 인원이 가득 찼습니다. (최대 5명)');
+        }
+      } else {
+        // For private chat, we can define groupId as a unique combo or leave empty/dummy for now
+        // But InvitationModel requires groupId. Let's use a placeholder or the future chatroom ID.
+        final ids = [currentUser.uid, toUser.uid]..sort();
+        targetGroupId = '${ids[0]}_${ids[1]}';
       }
 
       // 이미 보낸 초대가 있는지 확인 (대기 중인 초대)
       final existingInvitations = await _invitationsCollection
           .where('fromUserId', isEqualTo: currentUser.uid)
           .where('toUserId', isEqualTo: toUser.uid)
-          .where('groupId', isEqualTo: groupId)
+          .where('groupId', isEqualTo: targetGroupId)
           .where(
         'status',
         isEqualTo: InvitationStatus.pending.toString().split('.').last,
@@ -129,8 +143,9 @@ class InvitationService {
         fromUserProfileImage: fromUser.mainProfileImage,
         toUserId: toUser.uid,
         toUserNickname: toUser.nickname,
-        groupId: groupId,
+        groupId: targetGroupId,
         status: InvitationStatus.pending,
+        type: type,
         createdAt: DateTime.now(),
         expiresAt: DateTime.now().add(const Duration(days: 7)),
         message: message,
@@ -145,15 +160,15 @@ class InvitationService {
             .toFirestore(),
       );
 
-      // 초대 메시지 전송
-      final invitationMessage = message != null
-          ? '${fromUser.nickname}님이 그룹에 초대했습니다: $message'
-          : '${fromUser.nickname}님이 그룹에 초대했습니다.';
+      // 초대 메시지 전송 (알림 등)
+      final invitationMessageContent = message != null
+          ? '${fromUser.nickname}님이 ${type == InvitationType.private ? "1:1 채팅" : "그룹"}에 초대했습니다: $message'
+          : '${fromUser.nickname}님이 ${type == InvitationType.private ? "1:1 채팅" : "그룹"}에 초대했습니다.';
 
       await _messageService.sendInvitationMessage(
-        groupId: groupId,
+        groupId: targetGroupId,
         targetUserId: toUser.uid,
-        content: invitationMessage,
+        content: invitationMessageContent,
       );
 
     } catch (e) {
@@ -188,6 +203,12 @@ class InvitationService {
     final invitation = InvitationModel.fromFirestore(invitationDoc);
     if (invitation.toUserId != currentUser.uid) throw ('해당 초대를 수락할 권한이 없습니다.');
     if (!invitation.canRespond) throw ('만료되었거나 이미 처리된 초대입니다.');
+
+    // [PRIVATE CHAT LOGIC]
+    if (invitation.type == InvitationType.private) {
+      await _acceptPrivateInvitation(invitation, currentUser.uid);
+      return;
+    }
 
     final currentUserInfo = await _userService.getUserById(currentUser.uid);
     if (currentUserInfo == null) throw ('사용자 정보를 찾을 수 없습니다.');
@@ -319,6 +340,26 @@ class InvitationService {
         debugPrint('Failed to send system message for old pre-match group: $e');
       }
     }
+  }
+
+  Future<void> _acceptPrivateInvitation(InvitationModel invitation, String currentUserId) async {
+    // For specific private chat
+    await _firebaseService.runTransaction((transaction) async {
+      // 1. Mark invitation as accepted
+      final invRef = _invitationsCollection.doc(invitation.id);
+      transaction.update(invRef, {
+        'status': InvitationStatus.accepted.toString().split('.').last,
+        'respondedAt': Timestamp.fromDate(DateTime.now()),
+      });
+    });
+
+    // 2. Create/Get private chatroom (Idempotent)
+    // We do this outside transaction because ChatroomService.getOrCreate uses specialized logic
+    // and we don't need to lock everything. The invitation status update prevents double-acceptance.
+    await _chatroomService.getOrCreatePrivateChatroom(
+      currentUserUid: currentUserId,
+      targetUserUid: invitation.fromUserId,
+    );
   }
 
   // 초대 거절

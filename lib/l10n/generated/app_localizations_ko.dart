@@ -1190,6 +1190,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get homeNavInvitations => '초대';
 
   @override
+  String get homeNavChat => '채팅';
+
+  @override
   String get homeNavMyPage => '마이페이지';
 
   @override

@@ -18,6 +18,7 @@ class ChatroomService {
     required String chatRoomId,
     required String groupId,
     required List<String> participants,
+    ChatroomType type = ChatroomType.group_match,
   }) async {
     try {
       final docRef = _chatroomsCollection.doc(chatRoomId);
@@ -52,6 +53,7 @@ class ChatroomService {
         messageCount: 0,
         createdAt: now,
         updatedAt: now,
+        type: type,
       );
 
       // set() with merge: true is safer than set() alone for race conditions
@@ -64,11 +66,39 @@ class ChatroomService {
     }
   }
 
+  /// Helper to get or create a private 1:1 chatroom
+  Future<ChatroomModel> getOrCreatePrivateChatroom({
+    required String currentUserUid,
+    required String targetUserUid,
+  }) async {
+    // Generate a unique ID based on sorted UIDs to ensure 1:1 uniqueness
+    final ids = [currentUserUid, targetUserUid]..sort();
+    final chatRoomId = '${ids[0]}_${ids[1]}';
+
+    return getOrCreateChatroom(
+      chatRoomId: chatRoomId,
+      groupId: chatRoomId, // For private chats, groupId can be same as chatRoomId
+      participants: [currentUserUid, targetUserUid],
+      type: ChatroomType.private,
+    );
+  }
+
   Stream<ChatroomModel?> getChatroomStream(String chatRoomId) {
     return _chatroomsCollection
         .doc(chatRoomId)
         .snapshots(includeMetadataChanges: false)
         .map((doc) => doc.exists ? ChatroomModel.fromDocument(doc) : null);
+  }
+
+  Stream<List<ChatroomModel>> getPrivateChatroomsStream(String userId) {
+    return _chatroomsCollection
+        .where('type', isEqualTo: ChatroomType.private.toString().split('.').last)
+        .where('participants', arrayContains: userId)
+        .orderBy('updatedAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => ChatroomModel.fromDocument(doc)).toList();
+    });
   }
 
   Future<void> sendMessage({

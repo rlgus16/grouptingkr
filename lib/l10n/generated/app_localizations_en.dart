@@ -1216,6 +1216,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeNavInvitations => 'Invites';
 
   @override
+  String get homeNavChat => 'Chats';
+
+  @override
   String get homeNavMyPage => 'My Page';
 
   @override

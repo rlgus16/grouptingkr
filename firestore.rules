@@ -87,14 +87,60 @@ service cloud.firestore {
 
     // 채팅방 컬렉션
     match /chatrooms/{chatroomId} {
-      allow read, write, update: if request.auth != null && (
-        (resource != null && request.auth.uid in resource.data.participants) ||
-        (exists(/databases/$(database)/documents/groups/$(chatroomId)) &&
-         request.auth.uid in get(/databases/$(database)/documents/groups/$(chatroomId)).data.memberIds)
+      // Helper function to safely check participation
+      function isParticipantIn(rsc) {
+        // resource.data에 participants 키가 존재하고, 리스트 타입이어야 함 (hasAny 사용)
+        return rsc.data.keys().hasAll(['participants']) && 
+               rsc.data.participants.hasAny([request.auth.uid]);
+      }
+      
+      // Helper to check if linked group exists and user is a member
+      function isGroupMember() {
+         return exists(/databases/$(database)/documents/groups/$(chatroomId)) &&
+                get(/databases/$(database)/documents/groups/$(chatroomId)).data.memberIds.hasAny([request.auth.uid]);
+      }
+
+      // 읽기 권한:
+      // 1. 문서 미존재 (생성 전 체크)
+      // 2. 문서 존재 -> 참여자(private) 또는 그룹 멤버(group)
+      // 3. Fallback: ID 기반 체크 (private chat ID 구조: uidA_uidB)
+      allow read: if request.auth != null && (
+        resource == null || 
+        isParticipantIn(resource) || 
+        isGroupMember() ||
+        // ID 보장형 접근 (데이터 정합성 문제 시 백업)
+        // 주의: 정렬된 UID 조합이므로 두 가지 케이스 모두 필요
+        chatroomId.matches('^' + request.auth.uid + '_.*') || 
+        chatroomId.matches('.*_' + request.auth.uid + '$')
       );
+
+      // 생성 권한:
+      // 1. Private: type=private, participants 키 존재, 본인 포함
+      // 2. Group: linked group의 멤버
       allow create: if request.auth != null && (
-         exists(/databases/$(database)/documents/groups/$(chatroomId)) &&
-         request.auth.uid in get(/databases/$(database)/documents/groups/$(chatroomId)).data.memberIds
+        (
+          request.resource.data.type == 'private' && 
+          request.resource.data.keys().hasAll(['participants']) &&
+          request.resource.data.participants.hasAny([request.auth.uid])
+        ) ||
+        isGroupMember()
+      );
+
+      // 수정 권한:
+      allow update: if request.auth != null && (
+        isParticipantIn(resource) || 
+        isGroupMember() ||
+        // ID 보장형 접근 (데이터 정합성 문제 시 복구 허용)
+        chatroomId.matches('^' + request.auth.uid + '_.*') || 
+        chatroomId.matches('.*_' + request.auth.uid + '$')
+      );
+      
+      // 삭제 권한:
+      allow delete: if request.auth != null && (
+        isParticipantIn(resource) || 
+        isGroupMember() ||
+        chatroomId.matches('^' + request.auth.uid + '_.*') || 
+        chatroomId.matches('.*_' + request.auth.uid + '$')
       );
     }
 

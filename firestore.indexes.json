@@ -139,6 +139,24 @@
       ]
     },
     {
+      "collectionGroup": "chatrooms",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "participants",
+          "arrayConfig": "CONTAINS"
+        },
+        {
+          "fieldPath": "type",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "updatedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "users",
       "queryScope": "COLLECTION",
       "fields": [
@@ -196,4 +214,4 @@
     }
   ],
   "fieldOverrides": []
-} 
+}

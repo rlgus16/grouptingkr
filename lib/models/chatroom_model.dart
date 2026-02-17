@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:groupting/models/message_model.dart';
 
+enum ChatroomType { group_match, private, open }
+
 class ChatroomModel {
   final String id;
   final String groupId;
@@ -10,6 +12,7 @@ class ChatroomModel {
   final int messageCount;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final ChatroomType type;
 
   ChatroomModel({
     required this.id,
@@ -20,6 +23,7 @@ class ChatroomModel {
     this.messageCount = 0,
     required this.createdAt,
     required this.updatedAt,
+    this.type = ChatroomType.group_match,
   });
 
   // [추가됨] Firestore withConverter 호환용 팩토리
@@ -41,6 +45,7 @@ class ChatroomModel {
       'messageCount': messageCount,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
+      'type': type.toString().split('.').last,
     };
   }
 
@@ -70,6 +75,10 @@ class ChatroomModel {
       messageCount: data['messageCount'] ?? 0,
       createdAt: (data['createdAt'] as Timestamp? ?? Timestamp.now()).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp? ?? Timestamp.now()).toDate(),
+      type: ChatroomType.values.firstWhere(
+        (e) => e.toString().split('.').last == (data['type'] ?? 'group_match'),
+        orElse: () => ChatroomType.group_match,
+      ),
     );
   }
 
@@ -88,6 +97,7 @@ class ChatroomModel {
       messageCount: messageCount + 1,
       createdAt: createdAt,
       updatedAt: DateTime.now(),
+      type: type,
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum InvitationStatus { pending, accepted, rejected, expired }
+enum InvitationType { group, private }
 
 class InvitationModel {
   final String id;
@@ -11,6 +12,7 @@ class InvitationModel {
   final String groupId;
   final String? message;
   final InvitationStatus status;
+  final InvitationType type;
   final DateTime createdAt;
   final DateTime? respondedAt;
   final DateTime expiresAt;
@@ -26,6 +28,7 @@ class InvitationModel {
     required this.groupId,
     this.message,
     required this.status,
+    this.type = InvitationType.group,
     required this.createdAt,
     this.respondedAt,
     required this.expiresAt,
@@ -50,6 +53,10 @@ class InvitationModel {
         (e) => e.toString().split('.').last == data['status'],
         orElse: () => InvitationStatus.pending,
       ),
+      type: InvitationType.values.firstWhere(
+        (e) => e.toString().split('.').last == (data['type'] ?? 'group'),
+        orElse: () => InvitationType.group,
+      ),
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       respondedAt: data['respondedAt'] != null
           ? (data['respondedAt'] as Timestamp).toDate()
@@ -69,6 +76,7 @@ class InvitationModel {
       'message': message,
       'fromUserProfileImage': fromUserProfileImage,
       'status': status.toString().split('.').last,
+      'type': type.toString().split('.').last,
       'createdAt': Timestamp.fromDate(createdAt),
       'respondedAt': respondedAt != null
           ? Timestamp.fromDate(respondedAt!)
@@ -89,6 +97,7 @@ class InvitationModel {
     String? fromUserProfileImage,
     String? invitationId,
     InvitationStatus? status,
+    InvitationType? type,
     DateTime? createdAt,
     DateTime? respondedAt,
     DateTime? expiresAt,
@@ -104,6 +113,7 @@ class InvitationModel {
       fromUserProfileImage: fromUserProfileImage ?? this.fromUserProfileImage,
       invitationId: invitationId ?? this.invitationId,
       status: status ?? this.status,
+      type: type ?? this.type,
       createdAt: createdAt ?? this.createdAt,
       respondedAt: respondedAt ?? this.respondedAt,
       expiresAt: expiresAt ?? this.expiresAt,

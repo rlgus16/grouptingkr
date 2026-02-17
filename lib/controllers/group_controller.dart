@@ -418,7 +418,13 @@ class GroupController extends ChangeNotifier {
       }
       final success = await _invitationService.respondToInvitation(invitationId, true);
       if (success) {
-        _startGroupStream(invitation.groupId);
+        // Only start group stream for group invitations
+        // Private invitations don't change the user's group
+        if (invitation.type == InvitationType.group) {
+          _startGroupStream(invitation.groupId);
+        } else {
+          _setLoading(false);
+        }
       } else {
         _setLoading(false);
       }
