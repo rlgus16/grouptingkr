@@ -207,8 +207,8 @@ class ChatroomService {
     }
   }
 
-  /// Leave a private chatroom: remove current user from participants,
-  /// delete the document if no participants remain.
+  /// Leave a private chatroom: send system message, remove current user
+  /// from participants, delete the document if no participants remain.
   Future<void> leavePrivateChatroom(String chatRoomId) async {
     try {
       final currentUser = _firebaseService.currentUser;
@@ -223,6 +223,21 @@ class ChatroomService {
       if (data == null) return;
 
       final participants = List<String>.from(data['participants'] ?? []);
+
+      // Send system message before leaving (so the other user sees it)
+      if (participants.length > 1) {
+        try {
+          final user = await _userService.getUserById(currentUser.uid);
+          final nickname = user?.nickname ?? 'Unknown';
+          await sendSystemMessage(
+            chatRoomId: chatRoomId,
+            content: '$nickname님이 나갔습니다.',
+          );
+        } catch (e) {
+          debugPrint('Failed to send leave system message: $e');
+        }
+      }
+
       participants.remove(currentUser.uid);
 
       if (participants.isEmpty) {

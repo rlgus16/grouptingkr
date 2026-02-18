@@ -77,11 +77,15 @@ class _PrivateChatListViewState extends State<PrivateChatListView> {
             itemBuilder: (context, index) {
               final chatroom = chatrooms[index];
               
-              // Find the other participant
-              final otherUserId = chatroom.participants.firstWhere(
-                (id) => id != currentUser.uid,
-                orElse: () => '',
-              );
+              // Derive the other user's ID from the chatroom document ID (format: uid1_uid2)
+              // This works even if the other user has left (removed from participants)
+              final idParts = chatroom.id.split('_');
+              final otherUserId = idParts.length == 2
+                  ? (idParts[0] == currentUser.uid ? idParts[1] : idParts[0])
+                  : chatroom.participants.firstWhere(
+                      (id) => id != currentUser.uid,
+                      orElse: () => '',
+                    );
 
               if (otherUserId.isEmpty) return const SizedBox();
 
