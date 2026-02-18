@@ -978,19 +978,19 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
               );
               break;
             case 3:
-            // 마이페이지
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const MyPageView()),
-              );
-              break;
-            case 4:
             // 오픈팅
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => const OpentingView(),
                 ),
+              );
+              break;
+            case 4:
+            // 마이페이지
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MyPageView()),
               );
               break;
           }
@@ -1029,12 +1029,12 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
             label: AppLocalizations.of(context)!.homeNavChat,
           ),
           BottomNavigationBarItem(
-            icon: const Icon(Icons.person_outline),
-            label: AppLocalizations.of(context)!.homeNavMyPage,
-          ),
-          BottomNavigationBarItem(
             icon: const Icon(Icons.forum_outlined),
             label: AppLocalizations.of(context)!.opentingTitle,
+          ),
+          BottomNavigationBarItem(
+            icon: const Icon(Icons.person_outline),
+            label: AppLocalizations.of(context)!.homeNavMyPage,
           ),
         ],
       ),

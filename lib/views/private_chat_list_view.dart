@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/chatroom_model.dart';
 import '../models/user_model.dart';
 import '../services/chatroom_service.dart';
 import '../services/user_service.dart';
 import '../services/firebase_service.dart';
-import '../controllers/auth_controller.dart';
 import '../utils/app_theme.dart';
 import '../widgets/member_avatar.dart';
 import 'private_chat_view.dart';
@@ -31,54 +29,66 @@ class _PrivateChatListViewState extends State<PrivateChatListView> {
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
+      backgroundColor: AppTheme.surfaceColor,
       appBar: AppBar(
-        title: const Text(
-          '1:1 Chat',
-          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        title: Text(
+          l10n.homeNavChat,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            fontFamily: 'Pretendard',
+          ),
         ),
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        foregroundColor: AppTheme.textPrimary,
         elevation: 0,
         centerTitle: false,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(color: AppTheme.gray200, height: 1),
+        ),
       ),
-      backgroundColor: Colors.white,
       body: StreamBuilder<List<ChatroomModel>>(
         stream: _chatroomService.getPrivateChatroomsStream(currentUser.uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppTheme.primaryColor,
+              ),
+            );
           }
 
           if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-
-          final chatrooms = snapshot.data ?? [];
-
-          if (chatrooms.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.chat_bubble_outline, size: 48, color: AppTheme.gray300),
-                  const SizedBox(height: 16),
+                  Icon(Icons.error_outline_rounded, size: 48, color: AppTheme.gray400),
+                  const SizedBox(height: 12),
                   Text(
-                    'No private chats yet',
-                    style: TextStyle(color: AppTheme.gray500, fontSize: 16),
+                    'Something went wrong',
+                    style: TextStyle(color: AppTheme.gray500, fontSize: 15),
                   ),
                 ],
               ),
             );
           }
 
-          return ListView.separated(
+          final chatrooms = snapshot.data ?? [];
+
+          if (chatrooms.isEmpty) {
+            return _buildEmptyState();
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             itemCount: chatrooms.length,
-            separatorBuilder: (context, index) => const Divider(height: 1, indent: 72),
             itemBuilder: (context, index) {
               final chatroom = chatrooms[index];
-              
+
               // Derive the other user's ID from the chatroom document ID (format: uid1_uid2)
-              // This works even if the other user has left (removed from participants)
               final idParts = chatroom.id.split('_');
               final otherUserId = idParts.length == 2
                   ? (idParts[0] == currentUser.uid ? idParts[1] : idParts[0])
@@ -93,88 +103,22 @@ class _PrivateChatListViewState extends State<PrivateChatListView> {
                 future: _userService.getUserById(otherUserId),
                 builder: (context, userSnapshot) {
                   if (!userSnapshot.hasData) {
-                    return const SizedBox(height: 72); // Placeholder height
+                    return _buildShimmerTile();
                   }
 
                   final otherUser = userSnapshot.data!;
                   final lastMessage = chatroom.lastMessage;
                   final unreadCount = _calculateUnreadCount(chatroom, currentUser.uid);
 
-                  return ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    leading: MemberAvatar(
-                      imageUrl: otherUser.mainProfileImage,
-                      name: otherUser.nickname,
-                      size: 50,
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: _buildChatTile(
+                      context: context,
+                      otherUser: otherUser,
+                      chatroom: chatroom,
+                      lastMessage: lastMessage,
+                      unreadCount: unreadCount,
                     ),
-                    title: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          otherUser.nickname,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                        if (lastMessage != null)
-                        Text(
-                          _formatTime(lastMessage.createdAt),
-                          style: const TextStyle(
-                            color: AppTheme.gray500,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                    subtitle: Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              lastMessage?.content ?? '',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: unreadCount > 0 ? AppTheme.textPrimary : AppTheme.gray500,
-                                fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.normal,
-                                fontSize: 14,
-                              ),
-                            ),
-                          ),
-                          if (unreadCount > 0)
-                            Container(
-                              margin: const EdgeInsets.only(left: 8),
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppTheme.errorColor,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                unreadCount.toString(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => PrivateChatView(
-                            chatRoomId: chatroom.id,
-                            targetUserId: otherUser.uid,
-                            targetUserNickname: otherUser.nickname,
-                          ),
-                        ),
-                      );
-                    },
                   );
                 },
               );
@@ -185,20 +129,242 @@ class _PrivateChatListViewState extends State<PrivateChatListView> {
     );
   }
 
+  Widget _buildChatTile({
+    required BuildContext context,
+    required UserModel otherUser,
+    required ChatroomModel chatroom,
+    dynamic lastMessage,
+    required int unreadCount,
+  }) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PrivateChatView(
+                chatRoomId: chatroom.id,
+                targetUserId: otherUser.uid,
+                targetUserNickname: otherUser.nickname,
+              ),
+            ),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: unreadCount > 0
+                  ? AppTheme.primaryColor.withValues(alpha: 0.3)
+                  : AppTheme.gray200,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              // Avatar with online-like accent ring for unread
+              MemberAvatar(
+                imageUrl: otherUser.mainProfileImage,
+                name: otherUser.nickname,
+                size: 48,
+              ),
+              const SizedBox(width: 14),
+
+              // Text content
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Name + Time row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            otherUser.nickname,
+                            style: TextStyle(
+                              fontWeight: unreadCount > 0 ? FontWeight.w700 : FontWeight.w600,
+                              fontSize: 15,
+                              color: AppTheme.textPrimary,
+                              fontFamily: 'Pretendard',
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (lastMessage != null) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            _formatTime(lastMessage.createdAt),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: unreadCount > 0
+                                  ? AppTheme.warningColor
+                                  : AppTheme.gray400,
+                              fontWeight: unreadCount > 0 ? FontWeight.w600 : FontWeight.w400,
+                              fontFamily: 'Pretendard',
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+
+                    // Last message + unread badge row
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            lastMessage?.content ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: unreadCount > 0
+                                  ? AppTheme.warningColor
+                                  : AppTheme.gray500,
+                              fontWeight: unreadCount > 0 ? FontWeight.w500 : FontWeight.w400,
+                              fontFamily: 'Pretendard',
+                              height: 1.3,
+                            ),
+                          ),
+                        ),
+                        if (unreadCount > 0) ...[
+                          const SizedBox(width: 10),
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: AppTheme.warningColor,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Center(
+                              child: Text(
+                                'N',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.chat_bubble_outline_rounded,
+              size: 36,
+              color: AppTheme.primaryColor.withValues(alpha: 0.6),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'No chats yet',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w600,
+              color: AppTheme.textPrimary,
+              fontFamily: 'Pretendard',
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Start a conversation by\ninviting someone to chat!',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: AppTheme.gray500,
+              fontFamily: 'Pretendard',
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShimmerTile() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppTheme.gray200),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppTheme.gray100,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 100,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: AppTheme.gray100,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    width: 180,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: AppTheme.gray100,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   int _calculateUnreadCount(ChatroomModel chatroom, String currentUserId) {
-    // This is a simplified unread count. 
-    // Ideally, we compare last read timestamp or message ID with chatroom's last message.
-    // ChatroomModel doesn't have per-user unread count easily accessible without more logic or subcollections.
-    // For now, let's use the 'readBy' field in the last message.
-    // If I haven't read the last message, show a dot or 'N'.
-    // Real unread count requires tracking 'lastReadMessageId' per user in the chatroom document.
-    
-    // Check if the last message exists and if I'm in its readBy list.
     if (chatroom.lastMessage != null) {
-       final readBy = chatroom.lastMessage!.readBy;
-       if (!readBy.contains(currentUserId)) {
-         return 1; // At least one unread. Accurate count requires more data.
-       }
+      final readBy = chatroom.lastMessage!.readBy;
+      if (!readBy.contains(currentUserId)) {
+        return 1;
+      }
     }
     return 0;
   }
@@ -211,6 +377,8 @@ class _PrivateChatListViewState extends State<PrivateChatListView> {
       return DateFormat('HH:mm').format(date);
     } else if (difference.inDays == 1) {
       return 'Yesterday';
+    } else if (difference.inDays < 7) {
+      return DateFormat('EEE').format(date);
     } else {
       return DateFormat('MM/dd').format(date);
     }
