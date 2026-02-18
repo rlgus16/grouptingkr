@@ -1610,4 +1610,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get opentingCannotJoinBanned => '참여할 수 없습니다.';
+
+  @override
+  String get privateChatLeaveChat => '채팅 나가기';
+
+  @override
+  String get privateChatLeaveConfirm => '정말로 이 채팅방을 나가시겠습니까?';
+
+  @override
+  String get privateChatLeaveFailed => '채팅방 나가기 실패';
 }

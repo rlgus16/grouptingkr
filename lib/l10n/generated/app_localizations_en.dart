@@ -1650,4 +1650,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get opentingCannotJoinBanned => 'You cannot join this chatroom.';
+
+  @override
+  String get privateChatLeaveChat => 'Leave Chat';
+
+  @override
+  String get privateChatLeaveConfirm =>
+      'Are you sure you want to leave this chat?';
+
+  @override
+  String get privateChatLeaveFailed => 'Failed to leave chat';
 }

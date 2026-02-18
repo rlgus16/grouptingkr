@@ -570,5 +570,9 @@
   "opentingSendMessageFailed": "메시지 전송 실패",
   "opentingLeaveSuccess": "채팅방에서 나갔습니다!",
   "opentingLeaveFailed": "채팅방 나가기 실패",
-  "opentingCannotJoinBanned": "참여할 수 없습니다."
+  "opentingCannotJoinBanned": "참여할 수 없습니다.",
+  "privateChatLeaveChat": "채팅 나가기",
+  "privateChatLeaveConfirm": "정말로 이 채팅방을 나가시겠습니까?",
+  "privateChatLeaveFailed": "채팅방 나가기 실패",
+  "commonCancel": "취소"
 }

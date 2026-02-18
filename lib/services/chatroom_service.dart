@@ -206,4 +206,40 @@ class ChatroomService {
       debugPrint('Error marking as read: $e');
     }
   }
+
+  /// Leave a private chatroom: remove current user from participants,
+  /// delete the document if no participants remain.
+  Future<void> leavePrivateChatroom(String chatRoomId) async {
+    try {
+      final currentUser = _firebaseService.currentUser;
+      if (currentUser == null) throw Exception('User not logged in');
+
+      final docRef = _chatroomsCollection.doc(chatRoomId);
+      final doc = await docRef.get();
+
+      if (!doc.exists) return;
+
+      final data = doc.data();
+      if (data == null) return;
+
+      final participants = List<String>.from(data['participants'] ?? []);
+      participants.remove(currentUser.uid);
+
+      if (participants.isEmpty) {
+        // No one left — delete the chatroom
+        await docRef.delete();
+      } else {
+        // Remove user from participants
+        await docRef.update({
+          'participants': participants,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      debugPrint('Left private chatroom: $chatRoomId');
+    } catch (e) {
+      debugPrint('Error leaving private chatroom: $e');
+      throw Exception('Failed to leave chatroom: $e');
+    }
+  }
 }

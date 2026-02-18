@@ -3175,6 +3175,24 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'참여할 수 없습니다.'**
   String get opentingCannotJoinBanned;
+
+  /// No description provided for @privateChatLeaveChat.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅 나가기'**
+  String get privateChatLeaveChat;
+
+  /// No description provided for @privateChatLeaveConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'정말로 이 채팅방을 나가시겠습니까?'**
+  String get privateChatLeaveConfirm;
+
+  /// No description provided for @privateChatLeaveFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방 나가기 실패'**
+  String get privateChatLeaveFailed;
 }
 
 class _AppLocalizationsDelegate

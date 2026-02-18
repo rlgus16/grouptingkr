@@ -123,7 +123,7 @@ class _PrivateChatViewState extends State<PrivateChatView> with WidgetsBindingOb
                 ),
                 SizedBox(width: 4),
                 Text(
-                  '1:1 Private Chat',
+                  '1:1 Chat',
                   style: TextStyle(
                     fontSize: 12,
                     color: AppTheme.textSecondary,
@@ -149,11 +149,47 @@ class _PrivateChatViewState extends State<PrivateChatView> with WidgetsBindingOb
           IconButton(
             icon: const Icon(Icons.more_vert),
             onPressed: () {
-               // We need a UserModel to show options.
-               // We only have targetUserId and targetUserNickname here.
-               // Ideally we should fetch the user model or pass it in.
-               // For simplicity, let's fetch it or just rely on avatar long press.
-               // Let's implement fetch for better UX? Or just leave it for now.
+              final l10n = AppLocalizations.of(context)!;
+              showDialog(
+                context: context,
+                builder: (dialogContext) {
+                  return AlertDialog(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    title: Text(l10n.privateChatLeaveChat),
+                    content: Text(l10n.privateChatLeaveConfirm),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(dialogContext).pop(),
+                        child: Text(l10n.commonCancel),
+                      ),
+                      TextButton(
+                        onPressed: () async {
+                          Navigator.of(dialogContext).pop(); // close dialog
+                          final navigator = Navigator.of(context);
+                          final messenger = ScaffoldMessenger.of(context);
+                          try {
+                            final chatroomService = ChatroomService();
+                            await chatroomService.leavePrivateChatroom(widget.chatRoomId);
+                            if (mounted) {
+                              navigator.pop(); // go back
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              messenger.showSnackBar(
+                                SnackBar(content: Text(l10n.privateChatLeaveFailed)),
+                              );
+                            }
+                          }
+                        },
+                        child: Text(
+                          l10n.privateChatLeaveChat,
+                          style: const TextStyle(color: Colors.red),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              );
             },
           ),
         ],

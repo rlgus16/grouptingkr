@@ -549,5 +549,9 @@
   "opentingSendMessageFailed": "Failed to send message",
   "opentingLeaveSuccess": "Left chatroom successfully!",
   "opentingLeaveFailed": "Failed to leave chatroom",
-  "opentingCannotJoinBanned": "You cannot join this chatroom."
+  "opentingCannotJoinBanned": "You cannot join this chatroom.",
+  "privateChatLeaveChat": "Leave Chat",
+  "privateChatLeaveConfirm": "Are you sure you want to leave this chat?",
+  "privateChatLeaveFailed": "Failed to leave chat",
+  "commonCancel": "Cancel"
 }
