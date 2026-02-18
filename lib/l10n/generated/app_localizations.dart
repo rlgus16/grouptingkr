@@ -2381,7 +2381,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeNavChat.
   ///
   /// In ko, this message translates to:
-  /// **'채팅'**
+  /// **'1:1 채팅'**
   String get homeNavChat;
 
   /// No description provided for @homeNavMyPage.

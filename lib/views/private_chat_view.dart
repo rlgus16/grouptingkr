@@ -4,7 +4,8 @@ import '../controllers/auth_controller.dart';
 import '../controllers/chat_controller.dart';
 import '../models/user_model.dart';
 import '../services/fcm_service.dart';
-import '../services/chatroom_service.dart'; // Added
+import '../services/chatroom_service.dart';
+import '../services/user_service.dart';
 import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../widgets/message_bubble.dart';
@@ -29,12 +30,16 @@ class PrivateChatView extends StatefulWidget {
 class _PrivateChatViewState extends State<PrivateChatView> with WidgetsBindingObserver {
   ChatController? _chatController;
   final ChatroomService _chatroomService = ChatroomService();
+  final UserService _userService = UserService();
+  UserModel? _targetUserProfile;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     FCMService().setCurrentChatRoom(widget.chatRoomId);
+
+    _loadTargetUserProfile();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _chatroomService.markAsRead(widget.chatRoomId);
@@ -49,6 +54,19 @@ class _PrivateChatViewState extends State<PrivateChatView> with WidgetsBindingOb
         }
       }
     });
+  }
+
+  Future<void> _loadTargetUserProfile() async {
+    try {
+      final user = await _userService.getUserById(widget.targetUserId);
+      if (mounted && user != null) {
+        setState(() {
+          _targetUserProfile = user;
+        });
+      }
+    } catch (e) {
+      debugPrint('Failed to load target user profile: $e');
+    }
   }
 
   @override
@@ -107,32 +125,38 @@ class _PrivateChatViewState extends State<PrivateChatView> with WidgetsBindingOb
       backgroundColor: const Color(0xFFF5F6F8),
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: Column(
-          children: [
-            Text(
-              widget.targetUserNickname,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-            ),
-            const Row(
-              mainAxisSize: MainAxisSize.min,
+        title: Consumer<ChatController>(
+          builder: (context, chatController, _) {
+            final memberCount = chatController.matchedGroupMembers.length;
+            return Column(
               children: [
-                Icon(
-                  Icons.lock_outline_rounded,
-                  size: 13,
-                  color: AppTheme.textSecondary,
-                ),
-                SizedBox(width: 4),
-                Text(
+                const Text(
                   '1:1 Chat',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary,
-                    fontWeight: FontWeight.normal,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                 ),
+                if (memberCount > 0)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.group_rounded,
+                        size: 13,
+                        color: AppTheme.textSecondary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$memberCount',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary.withValues(alpha: 0.8),
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                    ],
+                  ),
               ],
-            ),
-          ],
+            );
+          },
         ),
         backgroundColor: Colors.white,
         foregroundColor: AppTheme.textPrimary,
@@ -221,27 +245,19 @@ class _PrivateChatViewState extends State<PrivateChatView> with WidgetsBindingOb
                       return _buildSystemMessage(message);
                     }
 
-                    // For private chat, we need to know who sent it.
-                    // If it's me, senderProfile is null (handled by MessageBubble).
-                    // If it's the other person, we might want their profile.
-                    // We don't have the full profile list here like in GroupController.
-                    // But we can construct a dummy one with just ID and nickname if needed, OR
-                    // better, fetch it.
-                    // MessageBubble treats null senderProfile as "don't show avatar" if not IsMe?
-                    // Let's check MessageBubble logic.
-                    // Ideally we pass a User object.
-                    
-                    // For now, let's just pass null and let MessageBubble handle it or 
-                    // maybe we should fetch the target user model in initState.
+
+                    final isMe = chatController.isMyMessage(message);
+                    final senderProfile = !isMe ? _targetUserProfile : null;
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 4.0),
                       child: MessageBubble(
                         message: message,
-                        isMe: chatController.isMyMessage(message),
-                        senderProfile: null, // Avatar logic might need adjustment if we want to show it.
-                        // Private chat usually shows avatar for the other person.
-                        onAvatarLongPress: null, 
+                        isMe: isMe,
+                        senderProfile: senderProfile,
+                        onAvatarLongPress: senderProfile != null
+                            ? () => _showUserOptions(context, senderProfile)
+                            : null,
                       ),
                     );
                   },
