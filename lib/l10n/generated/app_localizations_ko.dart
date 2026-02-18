@@ -593,6 +593,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get invitationNewGroup => '새로운 그룹에 초대되었어요!';
 
   @override
+  String get invitationNewPrivateChat => '1:1 채팅에 초대되었어요!';
+
+  @override
   String get invitationExpiredLabel => '유효기간이 만료된 초대입니다';
 
   @override

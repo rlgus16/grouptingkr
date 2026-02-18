@@ -240,29 +240,14 @@ class _InvitationListViewState extends State<InvitationListView> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  l10n.invitationNewGroup,
+                                  invitation.type == InvitationType.private
+                                      ? l10n.invitationNewPrivateChat
+                                      : l10n.invitationNewGroup,
                                   style: const TextStyle(
                                     fontSize: 13,
                                     color: AppTheme.textSecondary,
                                   ),
                                 ),
-                                if (invitation.type == InvitationType.private)
-                                  Container(
-                                    margin: const EdgeInsets.only(top: 4),
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: const Text(
-                                      '1:1 Chat',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: AppTheme.primaryColor,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
                               ],
                             ),
                           ),

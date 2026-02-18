@@ -603,6 +603,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get invitationNewGroup => 'You\'ve been invited to a new group!';
 
   @override
+  String get invitationNewPrivateChat => 'You\'ve been invited to a 1:1 chat!';
+
+  @override
   String get invitationExpiredLabel => 'This invitation has expired';
 
   @override

@@ -1256,6 +1256,12 @@ abstract class AppLocalizations {
   /// **'새로운 그룹에 초대되었어요!'**
   String get invitationNewGroup;
 
+  /// No description provided for @invitationNewPrivateChat.
+  ///
+  /// In ko, this message translates to:
+  /// **'1:1 채팅에 초대되었어요!'**
+  String get invitationNewPrivateChat;
+
   /// No description provided for @invitationExpiredLabel.
   ///
   /// In ko, this message translates to:

@@ -367,11 +367,11 @@ export const notifyMatchOnChatroomCreate = onDocumentCreated("chatrooms/{chatroo
   usersQuery.forEach((doc) => {
     const userData = doc.data();
     if (userData.matchingNotification === false) return;
-    
+
     if (userData.fcmToken) {
       // Determine language (Default to Korean if not set or invalid)
       const lang = userData.languageCode === 'en' ? 'en' : 'ko';
-      
+
       if (lang === 'en') {
         tokensEn.push(userData.fcmToken);
       } else {
@@ -420,7 +420,7 @@ export const notifyMatchOnChatroomCreate = onDocumentCreated("chatrooms/{chatroo
     try {
       const response = await admin.messaging().sendEachForMulticast(messagePayload as any);
       console.log(`Match notifications (KO) sent. Success: ${response.successCount}, Failure: ${response.failureCount}`);
-      
+
       if (response.failureCount > 0) {
         response.responses.forEach((resp, idx) => {
           if (!resp.success) {
@@ -468,7 +468,7 @@ export const notifyMatchOnChatroomCreate = onDocumentCreated("chatrooms/{chatroo
     try {
       const response = await admin.messaging().sendEachForMulticast(messagePayload as any);
       console.log(`Match notifications (EN) sent. Success: ${response.successCount}, Failure: ${response.failureCount}`);
-      
+
       if (response.failureCount > 0) {
         response.responses.forEach((resp, idx) => {
           if (!resp.success) {
@@ -524,9 +524,9 @@ export const notifyInvitation = onDocumentCreated("invitations/{invitationId}", 
 
   const lang = (userData?.languageCode === 'en' ? 'en' : 'ko') as keyof typeof NOTIFICATIONS;
   const texts = NOTIFICATIONS[lang];
-  const inviteBody = lang === 'en' 
-    ? (fromUserNickname ? `${fromUserNickname} invited you to a group.` : texts.inviteBody)
-    : texts.inviteBody; // Keep Korean generic for consistency with client-side if needed, or update if desired
+  const inviteBody = lang === 'en'
+    ? (fromUserNickname ? `You've received a new invitation.` : texts.inviteBody)
+    : texts.inviteBody;
 
   // Construct the data-only message payload
   // Note: Using data-only (no notification field) prevents FCM from auto-showing notifications

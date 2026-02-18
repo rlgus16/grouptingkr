@@ -208,6 +208,7 @@
   "inviteNoMessage": "No message",
 
   "invitationNewGroup": "You've been invited to a new group!",
+  "invitationNewPrivateChat": "You've been invited to a 1:1 chat!",
   "invitationExpiredLabel": "This invitation has expired",
   "invitationJoinedSuccess": "Joined the group!",
   "invitationRejectedInfo": "Invitation rejected",
