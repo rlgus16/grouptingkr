@@ -271,11 +271,11 @@ class GroupController extends ChangeNotifier {
       int averageAge = members.isEmpty ? 0 : (totalAge / members.length).round();
       int averageHeight = members.isEmpty ? 0 : (totalHeight / members.length).round();
 
-      String groupGender = '혼성';
+      String groupGender = 'Mixed';
       if (maleCount > 0 && femaleCount == 0) {
-        groupGender = '남자';
+        groupGender = 'Male';
       } else if (femaleCount > 0 && maleCount == 0) {
-        groupGender = '여자';
+        groupGender = 'Female';
       }
 
       // Firebase에 필터 및 그룹 통계 업데이트
@@ -328,11 +328,11 @@ class GroupController extends ChangeNotifier {
         int averageAge = (totalAge / members.length).round();
         int averageHeight = (totalHeight / members.length).round();
 
-        String groupGender = '혼성';
+        String groupGender = 'Mixed';
         if (maleCount > 0 && femaleCount == 0) {
-          groupGender = '남자';
+          groupGender = 'Male';
         } else if (femaleCount > 0 && maleCount == 0) {
-          groupGender = '여자';
+          groupGender = 'Female';
         }
 
         stats = {

@@ -301,7 +301,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
     double initMaxDistance = (group?.maxDistance.toDouble() ?? 100.0).clamp(2.0, 100.0);
     double currentDistance = initMaxDistance;
 
-    String selectedGender = group?.preferredGender ?? '상관없음';
+    String selectedGender = group?.preferredGender ?? 'Any';
 
     showModalBottomSheet(
       context: context,
@@ -366,13 +366,13 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(child: _buildGenderChip(AppLocalizations.of(context)!.homeFilterMale, selectedGender, (val) => setModalState(() => selectedGender = val))),
+                      Expanded(child: _buildGenderChip(AppLocalizations.of(context)!.homeFilterMale, 'Male', selectedGender, (val) => setModalState(() => selectedGender = val))),
                       const SizedBox(width: 8),
-                      Expanded(child: _buildGenderChip(AppLocalizations.of(context)!.homeFilterFemale, selectedGender, (val) => setModalState(() => selectedGender = val))),
+                      Expanded(child: _buildGenderChip(AppLocalizations.of(context)!.homeFilterFemale, 'Female', selectedGender, (val) => setModalState(() => selectedGender = val))),
                       const SizedBox(width: 8),
-                      Expanded(child: _buildGenderChip(AppLocalizations.of(context)!.homeFilterMixed, selectedGender, (val) => setModalState(() => selectedGender = val))),
+                      Expanded(child: _buildGenderChip(AppLocalizations.of(context)!.homeFilterMixed, 'Mixed', selectedGender, (val) => setModalState(() => selectedGender = val))),
                       const SizedBox(width: 8),
-                      Expanded(child: _buildGenderChip(AppLocalizations.of(context)!.homeFilterAny, selectedGender, (val) => setModalState(() => selectedGender = val))),
+                      Expanded(child: _buildGenderChip(AppLocalizations.of(context)!.homeFilterAny, 'Any', selectedGender, (val) => setModalState(() => selectedGender = val))),
                     ],
                   ),
 
@@ -572,14 +572,14 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
     );
   }
 
-  // 개선된 성별 선택 칩 위젯
-  Widget _buildGenderChip(String label, String currentSelection, Function(String) onSelected) {
-    final bool isSelected = label == currentSelection;
-    // '상관없음' 텍스트가 너무 길 경우를 대비해 폰트 사이즈 조정
+  // 개선된 성별 선택 칩 위젯 (label: 표시용 로컬라이즈 텍스트, value: Firestore 저장용 영문값)
+  Widget _buildGenderChip(String label, String value, String currentSelection, Function(String) onSelected) {
+    final bool isSelected = value == currentSelection;
+    // 텍스트가 너무 길 경우를 대비해 폰트 사이즈 조정
     final double fontSize = label.length > 3 ? 12 : 13;
 
     return GestureDetector(
-      onTap: () => onSelected(label),
+      onTap: () => onSelected(value),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(

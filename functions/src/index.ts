@@ -94,8 +94,8 @@ export const handleGroupUpdate = onDocumentUpdated("groups/{groupId}", async (ev
     console.log(`Group ${groupId} started matching with filters.`);
 
     // 현재 그룹의 정보 및 필터 가져오기
-    const myGender = afterData.groupGender || "혼성";
-    const myPrefGender = afterData.preferredGender || "상관없음";
+    const myGender = afterData.groupGender || "Mixed";
+    const myPrefGender = afterData.preferredGender || "Any";
     const myAvgAge = afterData.averageAge || 0;
     const myMinAge = afterData.minAge || 0;
     const myMaxAge = afterData.maxAge || 100;
@@ -159,13 +159,13 @@ export const handleGroupUpdate = onDocumentUpdated("groups/{groupId}", async (ev
       }
 
       // [필터 조건 1] 성별 매칭 (양방향 확인)
-      const targetGender = targetData.groupGender || "혼성";
-      const targetPrefGender = targetData.preferredGender || "상관없음";
+      const targetGender = targetData.groupGender || "Mixed";
+      const targetPrefGender = targetData.preferredGender || "Any";
 
       // 내가 원하는 상대 성별 확인
-      const isTargetGenderValid = (myPrefGender === "상관없음") || (myPrefGender === targetGender);
+      const isTargetGenderValid = (myPrefGender === "Any") || (myPrefGender === targetGender);
       // 상대가 원하는 내 성별 확인
-      const isMyGenderValid = (targetPrefGender === "상관없음") || (targetPrefGender === myGender);
+      const isMyGenderValid = (targetPrefGender === "Any") || (targetPrefGender === myGender);
 
       if (!isTargetGenderValid || !isMyGenderValid) continue;
 
