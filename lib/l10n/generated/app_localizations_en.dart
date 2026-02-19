@@ -1671,6 +1671,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get privateChatListYesterday => 'Yesterday';
 
   @override
+  String get privateChatStarted => '1:1 chat has started!';
+
+  @override
   String get privateChatLeaveChat => 'Leave Chat';
 
   @override

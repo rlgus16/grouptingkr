@@ -556,6 +556,7 @@
   "privateChatListEmpty": "No chats yet",
   "privateChatListEmptyDesc": "Start a conversation by\ninviting someone to chat!",
   "privateChatListYesterday": "Yesterday",
+  "privateChatStarted": "A new chat has started!",
   "privateChatLeaveChat": "Leave Chat",
   "privateChatLeaveConfirm": "Are you sure you want to leave this chat?",
   "privateChatLeaveFailed": "Failed to leave chat",

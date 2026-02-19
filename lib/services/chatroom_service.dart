@@ -59,6 +59,18 @@ class ChatroomService {
       // set() with merge: true is safer than set() alone for race conditions
       await docRef.set(newChatroom.toFirestore(), SetOptions(merge: true));
 
+      // Send a welcome system message for new private chatrooms
+      if (type == ChatroomType.private) {
+        try {
+          await sendSystemMessage(
+            chatRoomId: chatRoomId,
+            content: '__private_chat_started__',
+          );
+        } catch (e) {
+          debugPrint('Failed to send private chat start system message: $e');
+        }
+      }
+
       return newChatroom;
     } catch (e) {
       debugPrint('Error in getOrCreateChatroom: $e');

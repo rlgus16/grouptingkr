@@ -1630,6 +1630,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get privateChatListYesterday => '어제';
 
   @override
+  String get privateChatStarted => '1:1 채팅이 시작되었습니다!';
+
+  @override
   String get privateChatLeaveChat => '채팅 나가기';
 
   @override

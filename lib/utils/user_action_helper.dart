@@ -76,6 +76,14 @@ class UserActionHelper {
                     Navigator.pop(context);
                     showRequestPrivateChatDialog(context, targetUser);
                   },
+                  subtitle: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.info_outline, size: 12, color: AppTheme.warningColor),
+                      const SizedBox(width: 4),
+                      Text(l10n.costFiveTing, style: const TextStyle(color: AppTheme.warningColor, fontSize: 12)),
+                    ],
+                  ),
                 ),
                 ListTile(
                   leading: Icon(
@@ -568,6 +576,16 @@ Platform: ${Theme.of(context).platform}
   static void showRequestPrivateChatDialog(BuildContext context, UserModel targetUser) {
     final TextEditingController messageController = TextEditingController();
     final l10n = AppLocalizations.of(context)!;
+    final currentUser = context.read<AuthController>().currentUserModel;
+    if (currentUser == null) return;
+
+    const int privateChatCost = 5;
+    if (currentUser.tingBalance < privateChatCost) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.profileEditInsufficientTings)),
+      );
+      return;
+    }
 
     showDialog(
       context: context,
@@ -577,7 +595,16 @@ Platform: ${Theme.of(context).platform}
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text('상대방이 수락하면 1:1 채팅방이 개설됩니다.'),
-            const SizedBox(height: 16),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                const Icon(Icons.info_outline, size: 12, color: AppTheme.warningColor),
+                const SizedBox(width: 4),
+                Text(l10n.costFiveTing, style: const TextStyle(color: AppTheme.warningColor, fontSize: 12)),
+              ],
+            ),
+            const SizedBox(height: 4),
             TextField(
               controller: messageController,
               decoration: const InputDecoration(
@@ -596,14 +623,6 @@ Platform: ${Theme.of(context).platform}
           ElevatedButton(
             onPressed: () async {
               try {
-                // Get current user phone number or some way to identify?
-                // InvitationService.sendInvitation uses phone number to find target user.
-                // But here we already have targetUser.
-                
-                // Wait, InvitationService.sendInvitation takes toUserPhoneNumber.
-                // We should probably update InvitationService to take UID or UserModel if we have it,
-                // OR just use the phone number from targetUser.
-                
                 if (targetUser.phoneNumber == null || targetUser.phoneNumber!.isEmpty) {
                    throw ('상대방의 전화번호 정보가 없습니다.'); 
                 }
@@ -613,8 +632,13 @@ Platform: ${Theme.of(context).platform}
                   message: messageController.text.trim().isEmpty ? null : messageController.text.trim(),
                   type: InvitationType.private,
                 );
+
+                // Deduct 5 Ting only after invitation succeeds
+                final userService = UserService();
+                await userService.deductTings(currentUser.uid, privateChatCost);
                 
                 if (context.mounted) {
+                  await context.read<AuthController>().refreshCurrentUser();
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('1:1 대화 신청을 보냈습니다.')),

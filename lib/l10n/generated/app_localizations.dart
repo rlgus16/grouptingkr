@@ -3212,6 +3212,12 @@ abstract class AppLocalizations {
   /// **'어제'**
   String get privateChatListYesterday;
 
+  /// No description provided for @privateChatStarted.
+  ///
+  /// In ko, this message translates to:
+  /// **'1:1 채팅이 시작되었습니다!'**
+  String get privateChatStarted;
+
   /// No description provided for @privateChatLeaveChat.
   ///
   /// In ko, this message translates to:

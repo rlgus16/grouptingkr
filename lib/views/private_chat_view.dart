@@ -338,6 +338,13 @@ class _PrivateChatViewState extends State<PrivateChatView> with WidgetsBindingOb
   }
 
   Widget _buildSystemMessage(dynamic message) {
+    final l10n = AppLocalizations.of(context)!;
+    // Translate known system message keys
+    final Map<String, String> systemMessageKeys = {
+      '__private_chat_started__': l10n.privateChatStarted,
+    };
+    final displayContent = systemMessageKeys[message.content] ?? message.content;
+
     return Align(
       alignment: Alignment.center,
       child: Container(
@@ -348,7 +355,7 @@ class _PrivateChatViewState extends State<PrivateChatView> with WidgetsBindingOb
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
-          message.content,
+          displayContent,
           style: TextStyle(
             color: AppTheme.textSecondary.withValues(alpha:0.8),
             fontSize: 12,
