@@ -318,14 +318,14 @@ export const handleMatchingCompletion = onDocumentUpdated("groups/{groupId}", as
 // Translation Dictionaries
 const NOTIFICATIONS = {
   ko: {
-    matchTitle: "매칭 성공! 🎉",
-    matchBody: "새로운 그룹과 매칭되었습니다. 지금 채팅을 시작해보세요!",
+    matchTitle: "그룹팅",
+    matchBody: "매칭되었습니다! 🎉 지금 채팅을 시작해보세요!",
     inviteTitle: "그룹팅",
-    inviteBody: "새로운 초대가 도착했습니다."
+    inviteBody: "새로운 초대를 받았습니다."
   },
   en: {
-    matchTitle: "It's a Match! 🎉",
-    matchBody: "You've been matched. Start chatting now!",
+    matchTitle: "Groupting",
+    matchBody: "You've been matched! 🎉 Start chatting now!",
     inviteTitle: "Groupting",
     inviteBody: "You have received a new invitation."
   }

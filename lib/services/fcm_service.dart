@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -10,6 +11,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'firebase_service.dart';
 import '../main.dart' as main_file;
 import '../views/chat_view.dart';
+import '../views/private_chat_view.dart';
 import '../views/invitation_list_view.dart';
 
 class FCMService {
@@ -526,10 +528,22 @@ class FCMService {
         return;
       }
 
-      // 알림 데이터를 payload에 JSON으로 저장
-      final payload = message.data.isNotEmpty 
-          ? Uri.encodeComponent(message.data.toString()) 
-          : '';
+      // 알림 데이터를 구조화된 JSON payload로 저장 (navigation용)
+      String payload = '';
+      if (data.isNotEmpty) {
+        final messageType = data['type'] ?? '';
+        final Map<String, String> payloadMap = {'type': messageType};
+
+        if (messageType == 'matching_completed') {
+          payloadMap['chatRoomId'] = data['chatRoomId'] ?? '';
+        } else if (messageType == 'new_message') {
+          payloadMap['chatroomId'] = data['chatroomId'] ?? '';
+        } else if (messageType == 'new_invitation') {
+          payloadMap['invitationId'] = data['invitationId'] ?? '';
+        }
+
+        payload = jsonEncode(payloadMap);
+      }
 
       debugPrint('알림 payload: $payload');
 
@@ -603,7 +617,45 @@ class FCMService {
         final payload = notificationResponse.payload!;
         debugPrint('로컬 알림에서 페이로드: $payload');
         
-        // 초대 ID인 경우 (일반적으로 길이가 20자 이상)
+        // JSON 형식 payload 파싱 시도 (새 포맷)
+        try {
+          final data = jsonDecode(payload) as Map<String, dynamic>;
+          final type = data['type'] ?? '';
+          
+          switch (type) {
+            case 'matching_completed':
+              final chatRoomId = data['chatRoomId'] ?? '';
+              if (chatRoomId.isNotEmpty) {
+                debugPrint('매칭 완료 알림 클릭 -> 채팅방 이동: $chatRoomId');
+                _navigateToChat(chatRoomId);
+              } else {
+                _navigateToHome();
+              }
+              break;
+            case 'new_message':
+              final chatroomId = data['chatroomId'] ?? '';
+              if (chatroomId.isNotEmpty) {
+                debugPrint('새 메시지 알림 클릭 -> 채팅방 이동: $chatroomId');
+                _navigateToChat(chatroomId);
+              } else {
+                _navigateToHome();
+              }
+              break;
+            case 'new_invitation':
+              debugPrint('초대 알림 클릭 -> 초대 목록 이동');
+              _navigateToInvitations();
+              break;
+            default:
+              debugPrint('알 수 없는 알림 타입: $type, 홈 화면으로 이동');
+              _navigateToHome();
+          }
+          return;
+        } catch (_) {
+          // JSON 파싱 실패 시 레거시 처리로 폴백
+          debugPrint('JSON 파싱 실패, 레거시 페이로드 처리');
+        }
+        
+        // 레거시 폴백: 초대 ID인 경우 (일반적으로 길이가 20자 이상)
         if (payload.length > 15 && !payload.contains('_')) {
           debugPrint('초대 알림 클릭 -> 초대 목록 이동: $payload');
           _navigateToInvitations();
@@ -721,20 +773,71 @@ class FCMService {
     }
   }
 
-  // 채팅방으로 이동
-  void _navigateToChat(String chatroomId) {
+  // 채팅방으로 이동 (chatroom type에 따라 올바른 화면으로)
+  Future<void> _navigateToChat(String chatroomId) async {
     try {
       final context = main_file.navigatorKey.currentContext;
-      if (context != null) {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (context) => ChatView(groupId: chatroomId),
-          ),
-        );
-        debugPrint('채팅방 이동 완료: $chatroomId');
-      } else {
+      if (context == null) {
         debugPrint('네비게이터 컨텍스트를 찾을 수 없음');
+        return;
       }
+
+      // Firestore에서 chatroom 문서를 조회하여 type 확인
+      try {
+        final chatroomDoc = await FirebaseFirestore.instance
+            .collection('chatrooms')
+            .doc(chatroomId)
+            .get();
+
+        if (chatroomDoc.exists) {
+          final data = chatroomDoc.data();
+          final type = data?['type'] ?? '';
+
+          if (type == 'private') {
+            // Private 1:1 채팅방 -> PrivateChatView로 이동
+            final participants = List<String>.from(data?['participants'] ?? []);
+            final currentUser = _firebaseService.currentUser;
+            final targetUserId = participants.firstWhere(
+              (id) => id != currentUser?.uid,
+              orElse: () => '',
+            );
+
+            // 상대방 닉네임 조회
+            String targetNickname = '';
+            if (targetUserId.isNotEmpty) {
+              final userDoc = await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(targetUserId)
+                  .get();
+              targetNickname = userDoc.data()?['nickname'] ?? '';
+            }
+
+            if (main_file.navigatorKey.currentContext != null) {
+              Navigator.of(main_file.navigatorKey.currentContext!).push(
+                MaterialPageRoute(
+                  builder: (context) => PrivateChatView(
+                    chatRoomId: chatroomId,
+                    targetUserNickname: targetNickname,
+                    targetUserId: targetUserId,
+                  ),
+                ),
+              );
+              debugPrint('Private 채팅방 이동 완료: $chatroomId');
+            }
+            return;
+          }
+        }
+      } catch (e) {
+        debugPrint('Chatroom 타입 조회 실패, 기본 ChatView로 이동: $e');
+      }
+
+      // 기본: ChatView로 이동 (group_match 또는 조회 실패 시)
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => ChatView(groupId: chatroomId),
+        ),
+      );
+      debugPrint('채팅방 이동 완료: $chatroomId');
     } catch (e) {
       debugPrint('채팅방 이동 실패: $e');
     }
