@@ -68,7 +68,7 @@ class _PrivateChatListViewState extends State<PrivateChatListView> {
                   Icon(Icons.error_outline_rounded, size: 48, color: AppTheme.gray400),
                   const SizedBox(height: 12),
                   Text(
-                    'Something went wrong',
+                    l10n.privateChatListError,
                     style: TextStyle(color: AppTheme.gray500, fontSize: 15),
                   ),
                 ],
@@ -79,7 +79,7 @@ class _PrivateChatListViewState extends State<PrivateChatListView> {
           final chatrooms = snapshot.data ?? [];
 
           if (chatrooms.isEmpty) {
-            return _buildEmptyState();
+            return _buildEmptyState(l10n);
           }
 
           return ListView.builder(
@@ -264,7 +264,7 @@ class _PrivateChatListViewState extends State<PrivateChatListView> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -283,9 +283,9 @@ class _PrivateChatListViewState extends State<PrivateChatListView> {
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'No chats yet',
-            style: TextStyle(
+          Text(
+            l10n.privateChatListEmpty,
+            style: const TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
               color: AppTheme.textPrimary,
@@ -294,7 +294,7 @@ class _PrivateChatListViewState extends State<PrivateChatListView> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Start a conversation by\ninviting someone to chat!',
+            l10n.privateChatListEmptyDesc,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
@@ -376,7 +376,7 @@ class _PrivateChatListViewState extends State<PrivateChatListView> {
     if (difference.inDays == 0) {
       return DateFormat('HH:mm').format(date);
     } else if (difference.inDays == 1) {
-      return 'Yesterday';
+      return AppLocalizations.of(context)!.privateChatListYesterday;
     } else if (difference.inDays < 7) {
       return DateFormat('EEE').format(date);
     } else {

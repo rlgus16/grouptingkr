@@ -1615,6 +1615,21 @@ class AppLocalizationsKo extends AppLocalizations {
   String get opentingCannotJoinBanned => '참여할 수 없습니다.';
 
   @override
+  String get privateChatTitle => '1:1 채팅';
+
+  @override
+  String get privateChatListError => '오류가 발생했습니다';
+
+  @override
+  String get privateChatListEmpty => '채팅이 없습니다';
+
+  @override
+  String get privateChatListEmptyDesc => '누군가를 채팅에 초대해서\n대화를 시작해보세요!';
+
+  @override
+  String get privateChatListYesterday => '어제';
+
+  @override
   String get privateChatLeaveChat => '채팅 나가기';
 
   @override

@@ -1655,6 +1655,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get opentingCannotJoinBanned => 'You cannot join this chatroom.';
 
   @override
+  String get privateChatTitle => '1:1 Chat';
+
+  @override
+  String get privateChatListError => 'Something went wrong';
+
+  @override
+  String get privateChatListEmpty => 'No chats yet';
+
+  @override
+  String get privateChatListEmptyDesc =>
+      'Start a conversation by\ninviting someone to chat!';
+
+  @override
+  String get privateChatListYesterday => 'Yesterday';
+
+  @override
   String get privateChatLeaveChat => 'Leave Chat';
 
   @override

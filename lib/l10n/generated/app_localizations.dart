@@ -3182,6 +3182,36 @@ abstract class AppLocalizations {
   /// **'참여할 수 없습니다.'**
   String get opentingCannotJoinBanned;
 
+  /// No description provided for @privateChatTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'1:1 채팅'**
+  String get privateChatTitle;
+
+  /// No description provided for @privateChatListError.
+  ///
+  /// In ko, this message translates to:
+  /// **'오류가 발생했습니다'**
+  String get privateChatListError;
+
+  /// No description provided for @privateChatListEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅이 없습니다'**
+  String get privateChatListEmpty;
+
+  /// No description provided for @privateChatListEmptyDesc.
+  ///
+  /// In ko, this message translates to:
+  /// **'누군가를 채팅에 초대해서\n대화를 시작해보세요!'**
+  String get privateChatListEmptyDesc;
+
+  /// No description provided for @privateChatListYesterday.
+  ///
+  /// In ko, this message translates to:
+  /// **'어제'**
+  String get privateChatListYesterday;
+
   /// No description provided for @privateChatLeaveChat.
   ///
   /// In ko, this message translates to:
