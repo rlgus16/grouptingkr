@@ -1522,7 +1522,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ratingAlreadyRated => 'You have already rated this user';
 
   @override
-  String get opentingTitle => 'Openting';
+  String get opentingTitle => 'Open Chat';
 
   @override
   String get opentingLeaveChat => 'Leave Open Chat';

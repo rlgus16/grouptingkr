@@ -1484,10 +1484,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get ratingAlreadyRated => '이미 이 사용자를 평가하셨습니다';
 
   @override
-  String get opentingTitle => '오픈팅';
+  String get opentingTitle => '오픈채팅';
 
   @override
-  String get opentingLeaveChat => '오픈팅 나가기';
+  String get opentingLeaveChat => '오픈채팅 나가기';
 
   @override
   String get opentingNoMembers => '멤버가 없습니다';
@@ -1499,7 +1499,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get opentingStartConversation => '다른 참가자들과 대화를 시작해보세요';
 
   @override
-  String get opentingCreateRoomTitle => '오픈팅 방 만들기';
+  String get opentingCreateRoomTitle => '오픈채팅 방 만들기';
 
   @override
   String get opentingRoomTitle => '방 제목';
@@ -1519,7 +1519,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get opentingEnterRoomTitle => '방 제목을 입력해주세요';
 
   @override
-  String get opentingCreateSuccess => '오픈팅 방이 생성되었습니다!';
+  String get opentingCreateSuccess => '오픈채팅 방이 생성되었습니다!';
 
   @override
   String get opentingCreateFailed => '채팅방 생성에 실패했습니다';
@@ -1558,10 +1558,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get opentingCreateRoom => '방 만들기';
 
   @override
-  String get opentingNoRooms => '오픈팅 방이 없습니다';
+  String get opentingNoRooms => '오픈채팅 방이 없습니다';
 
   @override
-  String get opentingBeFirst => '첫 번째로 오픈팅 방을 만들어보세요!';
+  String get opentingBeFirst => '첫 번째로 오픈채팅 방을 만들어보세요!';
 
   @override
   String get opentingHideFullRooms => '만석인 방 숨기기';

@@ -978,7 +978,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
               );
               break;
             case 3:
-            // 오픈팅
+            // 오픈채팅
               Navigator.push(
                 context,
                 MaterialPageRoute(

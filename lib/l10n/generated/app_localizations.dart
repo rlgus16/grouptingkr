@@ -2939,13 +2939,13 @@ abstract class AppLocalizations {
   /// No description provided for @opentingTitle.
   ///
   /// In ko, this message translates to:
-  /// **'오픈팅'**
+  /// **'오픈채팅'**
   String get opentingTitle;
 
   /// No description provided for @opentingLeaveChat.
   ///
   /// In ko, this message translates to:
-  /// **'오픈팅 나가기'**
+  /// **'오픈채팅 나가기'**
   String get opentingLeaveChat;
 
   /// No description provided for @opentingNoMembers.
@@ -2969,7 +2969,7 @@ abstract class AppLocalizations {
   /// No description provided for @opentingCreateRoomTitle.
   ///
   /// In ko, this message translates to:
-  /// **'오픈팅 방 만들기'**
+  /// **'오픈채팅 방 만들기'**
   String get opentingCreateRoomTitle;
 
   /// No description provided for @opentingRoomTitle.
@@ -3005,7 +3005,7 @@ abstract class AppLocalizations {
   /// No description provided for @opentingCreateSuccess.
   ///
   /// In ko, this message translates to:
-  /// **'오픈팅 방이 생성되었습니다!'**
+  /// **'오픈채팅 방이 생성되었습니다!'**
   String get opentingCreateSuccess;
 
   /// No description provided for @opentingCreateFailed.
@@ -3083,13 +3083,13 @@ abstract class AppLocalizations {
   /// No description provided for @opentingNoRooms.
   ///
   /// In ko, this message translates to:
-  /// **'오픈팅 방이 없습니다'**
+  /// **'오픈채팅 방이 없습니다'**
   String get opentingNoRooms;
 
   /// No description provided for @opentingBeFirst.
   ///
   /// In ko, this message translates to:
-  /// **'첫 번째로 오픈팅 방을 만들어보세요!'**
+  /// **'첫 번째로 오픈채팅 방을 만들어보세요!'**
   String get opentingBeFirst;
 
   /// No description provided for @opentingHideFullRooms.
