@@ -216,19 +216,33 @@ class _PrivateChatListViewState extends State<PrivateChatListView> {
                     Row(
                       children: [
                         Expanded(
-                          child: Text(
-                            lastMessage?.content ?? '',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: unreadCount > 0
-                                  ? AppTheme.warningColor
-                                  : AppTheme.gray500,
-                              fontWeight: unreadCount > 0 ? FontWeight.w500 : FontWeight.w400,
-                              fontFamily: 'Pretendard',
-                              height: 1.3,
-                            ),
+                          child: Builder(
+                            builder: (context) {
+                              String content = lastMessage?.content ?? '';
+                              final l10n = AppLocalizations.of(context)!;
+                              
+                              if (content == '__private_chat_started__') {
+                                content = l10n.privateChatStarted;
+                              } else if (content.startsWith('__user_left__:')) {
+                                final nickname = content.substring('__user_left__:'.length);
+                                content = l10n.systemUserLeft(nickname);
+                              }
+                              
+                              return Text(
+                                content,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: unreadCount > 0
+                                      ? AppTheme.warningColor
+                                      : AppTheme.gray500,
+                                  fontWeight: unreadCount > 0 ? FontWeight.w500 : FontWeight.w400,
+                                  fontFamily: 'Pretendard',
+                                  height: 1.3,
+                                ),
+                              );
+                            }
                           ),
                         ),
                         if (unreadCount > 0) ...[

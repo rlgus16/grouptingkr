@@ -62,14 +62,12 @@ class MemberAvatar extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: AppTheme.gray200,
-              border: (showMatchedBadge || showOwnerBadge)
-                  ? Border.all(
-                      color: (showOwnerBadge && userGender == '여')
-                          ? AppTheme.secondaryColor
-                          : AppTheme.primaryColor,
-                      width: 2,
-                    )
-                  : null,
+              border: Border.all(
+                color: (userGender == '여')
+                    ? AppTheme.secondaryColor
+                    : AppTheme.primaryColor,
+                width: 2,
+              ),
             ),
             child: ClipOval(
               child: profileImage != null
