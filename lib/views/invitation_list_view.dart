@@ -11,7 +11,6 @@ import '../models/invitation_model.dart'; // Added
 import '../views/profile_detail_view.dart';
 import '../views/private_chat_view.dart'; // Added
 import '../widgets/custom_toast.dart';
-import '../services/invitation_service.dart'; // Added for fetching invitation details if needed
 
 class InvitationListView extends StatefulWidget {
   const InvitationListView({super.key});

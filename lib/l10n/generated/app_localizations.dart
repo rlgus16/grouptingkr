@@ -3215,8 +3215,14 @@ abstract class AppLocalizations {
   /// No description provided for @privateChatStarted.
   ///
   /// In ko, this message translates to:
-  /// **'1:1 채팅이 시작되었습니다!'**
+  /// **'새로운 채팅이 시작되었습니다!'**
   String get privateChatStarted;
+
+  /// No description provided for @systemUserLeft.
+  ///
+  /// In ko, this message translates to:
+  /// **'{nickname}님이 나갔습니다.'**
+  String systemUserLeft(Object nickname);
 
   /// No description provided for @privateChatLeaveChat.
   ///

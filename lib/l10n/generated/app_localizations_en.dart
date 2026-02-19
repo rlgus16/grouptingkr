@@ -1671,7 +1671,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get privateChatListYesterday => 'Yesterday';
 
   @override
-  String get privateChatStarted => '1:1 chat has started!';
+  String get privateChatStarted => 'A new chat has started!';
+
+  @override
+  String systemUserLeft(Object nickname) {
+    return '$nickname has left the chat.';
+  }
 
   @override
   String get privateChatLeaveChat => 'Leave Chat';

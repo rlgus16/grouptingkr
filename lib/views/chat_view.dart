@@ -468,10 +468,13 @@ class _ChatViewState extends State<ChatView> with WidgetsBindingObserver {
   Widget _buildSystemMessage(dynamic message) {
     final l10n = AppLocalizations.of(context)!;
     // Translate known system message keys
-    final Map<String, String> systemMessageKeys = {
-      '__private_chat_started__': l10n.privateChatStarted,
-    };
-    final displayContent = systemMessageKeys[message.content] ?? message.content;
+    String displayContent = message.content;
+    if (message.content == '__private_chat_started__') {
+      displayContent = l10n.privateChatStarted;
+    } else if (message.content.toString().startsWith('__user_left__:')) {
+      final nickname = message.content.toString().substring('__user_left__:'.length);
+      displayContent = l10n.systemUserLeft(nickname);
+    }
 
     return Align(
       alignment: Alignment.center,

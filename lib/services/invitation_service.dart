@@ -250,7 +250,7 @@ class InvitationService {
           } else {
             var systemMessage = MessageModel.createSystemMessage(
               groupId: currentGroupId,
-              content: '${currentUserInfo.nickname}님이 나갔습니다.',
+              content: '__user_left__:${currentUserInfo.nickname}',
             );
             systemMessage = systemMessage.copyWith(
               id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -334,7 +334,7 @@ class InvitationService {
       try {
         await _chatroomService.sendSystemMessage(
           chatRoomId: oldGroupId,
-          content: '${currentUserInfo.nickname}님이 나갔습니다.',
+          content: '__user_left__:${currentUserInfo.nickname}',
         );
       } catch (e) {
         debugPrint('Failed to send system message for old pre-match group: $e');

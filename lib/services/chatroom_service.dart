@@ -243,7 +243,7 @@ class ChatroomService {
           final nickname = user?.nickname ?? 'Unknown';
           await sendSystemMessage(
             chatRoomId: chatRoomId,
-            content: '$nickname님이 나갔습니다.',
+            content: '__user_left__:$nickname',
           );
         } catch (e) {
           debugPrint('Failed to send leave system message: $e');

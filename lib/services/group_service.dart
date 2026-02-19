@@ -247,7 +247,7 @@ class GroupService {
             // Insert System Message directly into the chatroom doc
             var systemMessage = MessageModel.createSystemMessage(
               groupId: groupId,
-              content: '$nickname님이 나갔습니다.',
+              content: '__user_left__:$nickname',
             );
             systemMessage = systemMessage.copyWith(
               id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -307,7 +307,7 @@ class GroupService {
 
             var systemMessage = MessageModel.createSystemMessage(
               groupId: groupId,
-              content: '$nickname님이 나갔습니다.',
+              content: '__user_left__:$nickname',
             );
             // Ensure ID is set (createSystemMessage makes empty ID)
             systemMessage = systemMessage.copyWith(
@@ -325,22 +325,6 @@ class GroupService {
           }
         }
       });
-
-      /*
-      if (!groupDeleted) {
-        try {
-          // [FIX] Use ChatroomService to update the chatroom/messages
-          // This works because ChatController listens to the chatroom stream
-          // even for pre-match groups (which have a corresponding chatroom doc)
-          await _chatroomService.sendSystemMessage(
-            chatRoomId: groupId,
-            content: '$nickname님이 나갔습니다.',
-          );
-        } catch (e) {
-          debugPrint('Failed to send system message for pre-match group: $e');
-        }
-      }
-      */
 
       await _userService.updateCurrentGroupId(userId, null);
     }

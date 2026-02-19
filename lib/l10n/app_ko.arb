@@ -578,6 +578,7 @@
   "privateChatListEmptyDesc": "누군가를 채팅에 초대해서\n대화를 시작해보세요!",
   "privateChatListYesterday": "어제",
   "privateChatStarted": "새로운 채팅이 시작되었습니다!",
+  "systemUserLeft": "{nickname}님이 나갔습니다.",
   "privateChatLeaveChat": "채팅 나가기",
   "privateChatLeaveConfirm": "정말로 이 채팅방을 나가시겠습니까?",
   "privateChatLeaveFailed": "채팅방 나가기 실패",
