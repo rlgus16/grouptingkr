@@ -155,6 +155,55 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
     );
   }
 
+  Future<void> _leaveExistingChatrooms(String userId) async {
+    try {
+      final existingRoomsSnapshot = await _firestore
+          .collection('openChatrooms')
+          .where('participants', arrayContains: userId)
+          .where('isActive', isEqualTo: true)
+          .get();
+
+      for (var doc in existingRoomsSnapshot.docs) {
+        final data = doc.data();
+        final participantCount = data['participantCount'] ?? 0;
+        final creatorId = data['creatorId'];
+        final participants = List<dynamic>.from(data['participants'] ?? []);
+
+        if (participantCount <= 1) {
+          await doc.reference.delete();
+        } else {
+          participants.remove(userId);
+          
+          final updateData = <String, dynamic>{
+            'participants': participants,
+            'participantCount': FieldValue.increment(-1),
+            'updatedAt': FieldValue.serverTimestamp(),
+          };
+
+          if (creatorId == userId && participants.isNotEmpty) {
+            final newOwnerId = participants.first;
+            try {
+              final userDoc = await _firestore.collection('users').doc(newOwnerId).get();
+              if (userDoc.exists) {
+                final newOwnerName = userDoc.data()?['nickname'] ?? 'Someone';
+                updateData['creatorId'] = newOwnerId;
+                updateData['creatorNickname'] = newOwnerName;
+              } else {
+                updateData['creatorId'] = newOwnerId;
+              }
+            } catch (_) {
+              updateData['creatorId'] = newOwnerId;
+            }
+          }
+
+          await doc.reference.update(updateData);
+        }
+      }
+    } catch (e) {
+      // Ignore errors when leaving
+    }
+  }
+
   Future<void> _createOpenChatroom() async {
     final authController = context.read<AuthController>();
     final currentUser = authController.currentUserModel;
@@ -180,12 +229,19 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
         'isActive': true,
       };
 
-      await _firestore.collection('openChatrooms').add(chatroomData);
+      await _leaveExistingChatrooms(currentUser.uid);
+      final docRef = await _firestore.collection('openChatrooms').add(chatroomData);
 
       _titleController.clear();
 
       if (mounted) {
         CustomToast.showSuccess(context, AppLocalizations.of(context)!.opentingCreateSuccess);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OpenChatroomChatView(chatroomId: docRef.id),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -259,6 +315,8 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
         return;
       }
 
+      await _leaveExistingChatrooms(currentUser.uid);
+
       await chatroomRef.update({
         'participants': FieldValue.arrayUnion([currentUser.uid]),
         'participantCount': FieldValue.increment(1),
@@ -267,6 +325,12 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
 
       if (mounted) {
         CustomToast.showSuccess(context, AppLocalizations.of(context)!.opentingJoinSuccess);
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OpenChatroomChatView(chatroomId: roomId),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
