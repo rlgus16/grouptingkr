@@ -9,6 +9,7 @@ import '../widgets/custom_toast.dart';
 import '../widgets/member_avatar.dart';
 import '../models/user_model.dart';
 import 'profile_detail_view.dart';
+import 'openting_chat_view.dart';
 
 class OpenChatroomListView extends StatefulWidget {
   const OpenChatroomListView({super.key});
@@ -688,37 +689,50 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
               final isJoining = _joiningRooms.contains(roomId);
               final hasJoined = currentUserId != null && participants.contains(currentUserId);
 
-              return Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white,
-                      AppTheme.gray50.withValues(alpha: 0.3),
+              return GestureDetector(
+                onTap: (hasJoined || isJoining)
+                    ? () {
+                        if (hasJoined) {
+                           Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OpenChatroomChatView(chatroomId: roomId),
+                            ),
+                          );
+                        }
+                      }
+                    : () => _joinChatroom(roomId, participants, participantCount, maxParticipants),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white,
+                        AppTheme.gray50.withValues(alpha: 0.3),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.08),
+                        blurRadius: 20,
+                        offset: const Offset(0, 4),
+                        spreadRadius: 0,
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, 2),
+                        spreadRadius: -2,
+                      ),
                     ],
-                  ),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.08),
-                      blurRadius: 20,
-                      offset: const Offset(0, 4),
-                      spreadRadius: 0,
+                    border: Border.all(
+                      color: AppTheme.gray200.withValues(alpha: 0.5),
+                      width: 1.5,
                     ),
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 12,
-                      offset: const Offset(0, 2),
-                      spreadRadius: -2,
-                    ),
-                  ],
-                  border: Border.all(
-                    color: AppTheme.gray200.withValues(alpha: 0.5),
-                    width: 1.5,
                   ),
-                ),
-                child: Padding(
+                  child: Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -833,54 +847,11 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          onPressed: (hasJoined || isJoining)
-                              ? null
-                              : () => _joinChatroom(roomId, participants, participantCount, maxParticipants),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: AppTheme.gray700,
-                            elevation: 0,
-                            shadowColor: Colors.transparent,
-                            side: const BorderSide(color: AppTheme.gray300),
-                            disabledBackgroundColor: AppTheme.gray200,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                          child: isJoining
-                              ? const SizedBox(
-                                  height: 22,
-                                  width: 22,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2.5,
-                                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
-                                  ),
-                                )
-                              : Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      l10n.homeEnterChat,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        fontFamily: 'Pretendard',
-                                        letterSpacing: -0.2,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                        ),
-                      ),
                     ],
                   ),
-                ),
-              );
+                  ), // Close Padding
+                ), // Close Container
+              ); // Close GestureDetector
             },
           );
         },

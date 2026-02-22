@@ -623,12 +623,12 @@ Platform: ${Theme.of(context).platform}
           ElevatedButton(
             onPressed: () async {
               try {
-                if (targetUser.phoneNumber == null || targetUser.phoneNumber!.isEmpty) {
+                if (targetUser.phoneNumber.isEmpty) {
                    throw ('상대방의 전화번호 정보가 없습니다.'); 
                 }
 
                 await InvitationService().sendInvitation(
-                  toUserPhoneNumber: targetUser.phoneNumber!, 
+                  toUserPhoneNumber: targetUser.phoneNumber, 
                   message: messageController.text.trim().isEmpty ? null : messageController.text.trim(),
                   type: InvitationType.private,
                 );

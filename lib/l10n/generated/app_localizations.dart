@@ -2945,7 +2945,7 @@ abstract class AppLocalizations {
   /// No description provided for @opentingLeaveChat.
   ///
   /// In ko, this message translates to:
-  /// **'오픈채팅 나가기'**
+  /// **'채팅방 나가기'**
   String get opentingLeaveChat;
 
   /// No description provided for @opentingNoMembers.

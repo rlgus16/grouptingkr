@@ -1487,7 +1487,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get opentingTitle => '오픈채팅';
 
   @override
-  String get opentingLeaveChat => '오픈채팅 나가기';
+  String get opentingLeaveChat => '채팅방 나가기';
 
   @override
   String get opentingNoMembers => '멤버가 없습니다';
