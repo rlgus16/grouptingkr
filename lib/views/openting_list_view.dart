@@ -922,41 +922,93 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
       );
     },
   ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primaryColor.withValues(alpha: 0.4),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-              spreadRadius: 0,
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (currentUserId != null)
+            StreamBuilder<QuerySnapshot>(
+              stream: _firestore
+                  .collection('openChatrooms')
+                  .where('participants', arrayContains: currentUserId)
+                  .where('isActive', isEqualTo: true)
+                  .limit(1)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                  final chatroomId = snapshot.data!.docs.first.id;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryColor.withValues(alpha: 0.4),
+                            blurRadius: 16,
+                            offset: const Offset(0, 6),
+                            spreadRadius: 0,
+                          ),
+                        ],
+                      ),
+                      child: FloatingActionButton(
+                        heroTag: 'opentingMyRoomBtn',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => OpenChatroomChatView(chatroomId: chatroomId),
+                            ),
+                          );
+                        },
+                        backgroundColor: Colors.white,
+                        elevation: 0,
+                        child: const Icon(Icons.forum_rounded, color: AppTheme.primaryColor, size: 28),
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
             ),
-          ],
-        ),
-        child: FloatingActionButton.extended(
-          onPressed: _showCreateRoomDialog,
-          backgroundColor: AppTheme.primaryColor,
-          elevation: 0,
-          icon: Container(
-            padding: const EdgeInsets.all(2),
+          Container(
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.4),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                  spreadRadius: 0,
+                ),
+              ],
             ),
-            child: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
-          ),
-          label: Text(
-            l10n.opentingCreateRoom,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontFamily: 'Pretendard',
-              fontSize: 15,
-              letterSpacing: -0.2,
+            child: FloatingActionButton.extended(
+              heroTag: 'opentingCreateRoomBtn',
+              onPressed: _showCreateRoomDialog,
+              backgroundColor: AppTheme.primaryColor,
+              elevation: 0,
+              icon: Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
+              ),
+              label: Text(
+                l10n.opentingCreateRoom,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'Pretendard',
+                  fontSize: 15,
+                  letterSpacing: -0.2,
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
