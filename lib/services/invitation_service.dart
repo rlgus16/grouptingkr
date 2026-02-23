@@ -147,7 +147,7 @@ class InvitationService {
         status: InvitationStatus.pending,
         type: type,
         createdAt: DateTime.now(),
-        expiresAt: DateTime.now().add(const Duration(days: 7)),
+        expiresAt: DateTime.now().add(const Duration(hours: 24)),
         message: message,
       );
 
