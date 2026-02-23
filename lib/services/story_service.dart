@@ -45,8 +45,10 @@ class StoryService {
 
   // 2. Read Stories Stream (Real-Time Updates)
   Stream<List<StoryModel>> getStoriesStream() {
+    final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
     return _firestore
         .collection(collectionName)
+        .where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(sevenDaysAgo))
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
