@@ -1484,7 +1484,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get ratingAlreadyRated => '이미 이 사용자를 평가하셨습니다';
 
   @override
-  String get opentingTitle => '오픈채팅';
+  String get opentingTitle => '오픈팅';
+
+  @override
+  String get opentingTabList => '오픈채팅';
+
+  @override
+  String get opentingTabStory => '스토리';
 
   @override
   String get opentingLeaveChat => '채팅방 나가기';

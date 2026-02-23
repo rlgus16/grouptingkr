@@ -646,7 +646,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
     return Scaffold(
       backgroundColor: AppTheme.gray50,
       appBar: AppBar(
-        title: Text(l10n.opentingTitle),
+        title: Text(l10n.opentingTabList),
         backgroundColor: AppTheme.gray50,
         scrolledUnderElevation: 0,
         actions: [

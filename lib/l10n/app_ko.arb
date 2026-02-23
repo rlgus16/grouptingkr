@@ -530,7 +530,9 @@
   "ratingSaved": "매력점수가 저장되었습니다!",
   "ratingAlreadyRated": "이미 이 사용자를 평가하셨습니다",
 
-  "opentingTitle": "오픈채팅",
+  "opentingTitle": "오픈팅",
+  "opentingTabList": "오픈채팅",
+  "opentingTabStory": "스토리",
   "opentingLeaveChat": "채팅방 나가기",
   "opentingNoMembers": "멤버가 없습니다",
   "opentingWelcome": "채팅방에 오신 것을 환영합니다!",

@@ -509,7 +509,9 @@
   "ratingSaved": "Rating saved!",
   "ratingAlreadyRated": "You have already rated this user",
 
-  "opentingTitle": "Open Chat",
+  "opentingTitle": "Openting",
+  "opentingTabList": "Open Chat",
+  "opentingTabStory": "Story",
   "opentingLeaveChat": "Leave Open Chat",
   "opentingNoMembers": "No members",
   "opentingWelcome": "Welcome to the chatroom!",

@@ -2939,8 +2939,20 @@ abstract class AppLocalizations {
   /// No description provided for @opentingTitle.
   ///
   /// In ko, this message translates to:
-  /// **'오픈채팅'**
+  /// **'오픈팅'**
   String get opentingTitle;
+
+  /// No description provided for @opentingTabList.
+  ///
+  /// In ko, this message translates to:
+  /// **'오픈채팅'**
+  String get opentingTabList;
+
+  /// No description provided for @opentingTabStory.
+  ///
+  /// In ko, this message translates to:
+  /// **'스토리'**
+  String get opentingTabStory;
 
   /// No description provided for @opentingLeaveChat.
   ///
