@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -19,7 +20,7 @@ import 'utils/app_theme.dart';
 import 'services/fcm_service.dart';
 import 'firebase_options.dart';
 import 'services/version_service.dart';
-import 'views/update_view.dart';
+import 'widgets/update_dialog.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -240,7 +241,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
 // 앱 시작 시 버전 체크를 수행하는 위젯
 class VersionCheckWrapper extends StatefulWidget {
   final Widget child;
@@ -265,9 +265,22 @@ class _VersionCheckWrapperState extends State<VersionCheckWrapper> {
     // 버전 체크 수행
     final result = await versionService.checkVersion();
 
+    // 오늘 하루 보지 않기 여부 체크
+    bool shouldShowDialog = false;
+    if (result.needsUpdate) {
+      final prefs = await SharedPreferences.getInstance();
+      final hiddenDate = prefs.getString('update_dialog_hidden_date');
+      final now = DateTime.now();
+      final todayString = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      
+      if (hiddenDate != todayString) {
+        shouldShowDialog = true;
+      }
+    }
+
     if (mounted) {
       setState(() {
-        _result = result;
+        _result = shouldShowDialog ? result : VersionCheckResult(needsUpdate: false, storeUrl: result.storeUrl, message: result.message);
         _isLoading = false;
       });
       // 로딩이 완료되면(버전 체크 끝) 스플래시 화면 제거
@@ -284,14 +297,29 @@ class _VersionCheckWrapperState extends State<VersionCheckWrapper> {
     }
 
     if (_result != null && _result!.needsUpdate) {
-      // 업데이트가 필요하면 강제 업데이트 화면 표시
-      return UpdateView(
-        storeUrl: _result!.storeUrl ?? '',
-        message: _result!.message ?? '업데이트가 필요합니다.',
+      // 업데이트가 필요하면 팝업 다이얼로그 표시 (한 번만)
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        // 이미 다이얼로그가 표시되었을 수 있으므로 이 로직은 앱 진입 시 한 번만 실행됨을 가정
+        if (navigatorKey.currentContext != null) {
+          showDialog(
+            context: navigatorKey.currentContext!,
+            barrierDismissible: false, // You must explicitly choose "Later" to dismiss
+            builder: (context) => UpdateDialog(
+              storeUrl: _result!.storeUrl ?? '',
+              message: _result!.message ?? '업데이트가 필요합니다.',
+            ),
+          );
+        }
+      });
+      // Set to false to avoid showing it multiple times if this rebuilds
+      _result = VersionCheckResult(
+        needsUpdate: false, 
+        storeUrl: _result!.storeUrl, 
+        message: _result!.message
       );
     }
 
-    // 업데이트가 필요 없으면 기존 흐름(AuthWrapper)으로 진행
+    // 기존 흐름(AuthWrapper)으로 진행하며 위에 다이얼로그를 띄움
     return widget.child;
   }
 }
