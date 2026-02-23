@@ -47,19 +47,25 @@ class StoryCard extends StatelessWidget {
     final isLiked = story.likes.contains(currentUserId);
     final isAuthor = story.authorId == currentUserId;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppTheme.gray200),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppTheme.backgroundColor,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(12),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 1. Header (Author Info + Options)
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             child: Row(
               children: [
                 MemberAvatar(
@@ -86,7 +92,7 @@ class StoryCard extends StatelessWidget {
                     }
                   },
                   onLongPress: () async {
-                    if (isAuthor) return; // Don't show options for own avatar
+                    if (isAuthor) return;
 
                     try {
                       final doc = await FirebaseFirestore.instance
@@ -117,10 +123,11 @@ class StoryCard extends StatelessWidget {
                         story.authorNickname,
                         style: const TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.bold,
                           color: AppTheme.textPrimary,
                         ),
                       ),
+                      const SizedBox(height: 2),
                       Text(
                         _formatTime(story.createdAt),
                         style: const TextStyle(
@@ -133,7 +140,9 @@ class StoryCard extends StatelessWidget {
                 ),
                 if (isAuthor)
                   IconButton(
-                    icon: const Icon(Icons.more_vert, color: AppTheme.gray500),
+                    icon: const Icon(Icons.more_horiz, color: AppTheme.gray500),
+                    constraints: const BoxConstraints(),
+                    padding: EdgeInsets.zero,
                     onPressed: () {
                       _showOptionsMenu(context, l10n);
                     },
@@ -145,73 +154,91 @@ class StoryCard extends StatelessWidget {
           // 2. Text Content (if any)
           if (story.text != null && story.text!.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
               child: Text(
                 story.text!,
                 style: const TextStyle(
                   fontSize: 15,
                   height: 1.5,
+                  letterSpacing: -0.2, // slightly tighter tracking for modern feel
                   color: AppTheme.textPrimary,
                 ),
               ),
             ),
-            
-          const SizedBox(height: 8),
 
           // 3. Image Content (if any)
           if (story.imageUrl != null && story.imageUrl!.isNotEmpty)
-            Container(
-              constraints: const BoxConstraints(
-                minHeight: 200,
-                maxHeight: 400,
-              ),
-              width: double.infinity,
-              color: AppTheme.gray100,
-              child: CachedNetworkImage(
-                imageUrl: story.imageUrl!,
-                fit: BoxFit.cover,
-                placeholder: (context, url) => const Center(
-                  child: CircularProgressIndicator(),
-                ),
-                errorWidget: (context, url, error) => const Icon(
-                  Icons.error_outline,
-                  color: AppTheme.errorColor,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  constraints: const BoxConstraints(
+                    minHeight: 200,
+                    maxHeight: 400,
+                  ),
+                  width: double.infinity,
+                  color: AppTheme.gray100,
+                  child: CachedNetworkImage(
+                    imageUrl: story.imageUrl!,
+                    fit: BoxFit.cover,
+                    placeholder: (context, url) => const Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    errorWidget: (context, url, error) => const Icon(
+                      Icons.error_outline,
+                      color: AppTheme.errorColor,
+                    ),
+                  ),
                 ),
               ),
             ),
 
-          // 4. Footer (Likes)
+          // 4. Footer (Likes and Comments pill buttons)
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
             child: Row(
               children: [
-                IconButton(
-                  icon: Icon(
-                    isLiked ? Icons.favorite : Icons.favorite_border,
-                    color: isLiked ? AppTheme.secondaryColor : AppTheme.gray500,
+                GestureDetector(
+                  onTap: onLike,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isLiked ? AppTheme.secondaryColor.withAlpha(30) : AppTheme.gray50,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          isLiked ? Icons.favorite : Icons.favorite_border,
+                          color: isLiked ? AppTheme.secondaryColor : AppTheme.gray600,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${story.likes.length}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: isLiked ? AppTheme.secondaryColor : AppTheme.gray600,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  onPressed: onLike,
                 ),
-                Text(
-                  '${story.likes.length}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppTheme.textSecondary,
-                  ),
-                ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
                 
-                // Add Comments Icon
-                IconButton(
-                  icon: const Icon(Icons.mode_comment_outlined, color: AppTheme.gray500),
-                  onPressed: () {
+                // Comments Pill
+                GestureDetector(
+                  onTap: () {
                     final currentUser = context.read<AuthController>().currentUserModel;
                     if (currentUser != null) {
                       showModalBottomSheet(
                         context: context,
                         isScrollControlled: true,
-                        backgroundColor: Colors.transparent, // transparent to see rounded corners of sheet
+                        backgroundColor: Colors.transparent, 
                         builder: (context) => StoryCommentsSheet(
                           storyId: story.id,
                           currentUser: currentUser,
@@ -219,24 +246,42 @@ class StoryCard extends StatelessWidget {
                       );
                     }
                   },
-                ),
-                StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('stories')
-                      .doc(story.id)
-                      .collection('comments')
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    final commentCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
-                    return Text(
-                      '$commentCount',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: AppTheme.textSecondary,
-                      ),
-                    );
-                  }
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.gray50,
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.mode_comment_outlined,
+                          color: AppTheme.gray600,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('stories')
+                              .doc(story.id)
+                              .collection('comments')
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            final commentCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
+                            return Text(
+                              '$commentCount',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.gray600,
+                              ),
+                            );
+                          }
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
