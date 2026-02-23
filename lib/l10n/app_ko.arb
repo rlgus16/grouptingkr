@@ -538,6 +538,13 @@
   "opentingWelcome": "채팅방에 오신 것을 환영합니다!",
   "opentingStartConversation": "다른 참가자들과 대화를 시작해보세요",
   
+  "storyCreateTitle": "새 게시물",
+  "storyCreateContentHint": "무슨 생각을 하고 계신가요?",
+  "storyCreatePostButton": "게시",
+  "storyEmpty": "아직 스토리가 없습니다. 첫 번째로 스토리를 올려보세요!",
+  "storyDeleteConfirm": "이 게시물을 정말 삭제하시겠습니까?",
+  "storyImageSelectError": "이미지 선택에 실패했습니다",
+  
   "opentingCreateRoomTitle": "오픈채팅 방 만들기",
   "opentingRoomTitle": "방 제목",
   "opentingRoomTitleHint": "방 제목을 입력하세요",

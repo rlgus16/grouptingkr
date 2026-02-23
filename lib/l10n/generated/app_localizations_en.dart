@@ -1544,6 +1544,24 @@ class AppLocalizationsEn extends AppLocalizations {
       'Start a conversation with other participants';
 
   @override
+  String get storyCreateTitle => 'New Post';
+
+  @override
+  String get storyCreateContentHint => 'What\'s on your mind?';
+
+  @override
+  String get storyCreatePostButton => 'Post';
+
+  @override
+  String get storyEmpty => 'No stories yet. Be the first to post!';
+
+  @override
+  String get storyDeleteConfirm => 'Are you sure you want to delete this post?';
+
+  @override
+  String get storyImageSelectError => 'Failed to select image';
+
+  @override
   String get opentingCreateRoomTitle => 'Create Open Chatroom';
 
   @override

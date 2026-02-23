@@ -517,6 +517,13 @@
   "opentingWelcome": "Welcome to the chatroom!",
   "opentingStartConversation": "Start a conversation with other participants",
   
+  "storyCreateTitle": "New Post",
+  "storyCreateContentHint": "What's on your mind?",
+  "storyCreatePostButton": "Post",
+  "storyEmpty": "No stories yet. Be the first to post!",
+  "storyDeleteConfirm": "Are you sure you want to delete this post?",
+  "storyImageSelectError": "Failed to select image",
+  
   "opentingCreateRoomTitle": "Create Open Chatroom",
   "opentingRoomTitle": "Room Title",
   "opentingRoomTitleHint": "Enter room title",

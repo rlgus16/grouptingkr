@@ -2978,6 +2978,42 @@ abstract class AppLocalizations {
   /// **'다른 참가자들과 대화를 시작해보세요'**
   String get opentingStartConversation;
 
+  /// No description provided for @storyCreateTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 게시물'**
+  String get storyCreateTitle;
+
+  /// No description provided for @storyCreateContentHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'무슨 생각을 하고 계신가요?'**
+  String get storyCreateContentHint;
+
+  /// No description provided for @storyCreatePostButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'게시'**
+  String get storyCreatePostButton;
+
+  /// No description provided for @storyEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'아직 스토리가 없습니다. 첫 번째로 스토리를 올려보세요!'**
+  String get storyEmpty;
+
+  /// No description provided for @storyDeleteConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 게시물을 정말 삭제하시겠습니까?'**
+  String get storyDeleteConfirm;
+
+  /// No description provided for @storyImageSelectError.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미지 선택에 실패했습니다'**
+  String get storyImageSelectError;
+
   /// No description provided for @opentingCreateRoomTitle.
   ///
   /// In ko, this message translates to:
