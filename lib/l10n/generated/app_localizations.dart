@@ -3289,6 +3289,36 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'채팅방 나가기 실패'**
   String get privateChatLeaveFailed;
+
+  /// No description provided for @storyCommentsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'댓글'**
+  String get storyCommentsTitle;
+
+  /// No description provided for @storyCommentHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'댓글을 입력하세요...'**
+  String get storyCommentHint;
+
+  /// No description provided for @storyCommentPost.
+  ///
+  /// In ko, this message translates to:
+  /// **'등록'**
+  String get storyCommentPost;
+
+  /// No description provided for @storyCommentEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'아직 댓글이 없습니다. 첫 댓글을 남겨보세요!'**
+  String get storyCommentEmpty;
+
+  /// No description provided for @storyCommentDeleteConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 댓글을 삭제하시겠습니까?'**
+  String get storyCommentDeleteConfirm;
 }
 
 class _AppLocalizationsDelegate

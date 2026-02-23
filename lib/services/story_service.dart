@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:uuid/uuid.dart';
 import '../models/story_model.dart';
+import '../models/story_comment_model.dart';
 
 class StoryService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -89,5 +90,57 @@ class StoryService {
 
     // Delete Firestore document
     await _firestore.collection(collectionName).doc(storyId).delete();
+  }
+
+  // 5. Add Comment
+  Future<void> addComment({
+    required String storyId,
+    required String authorId,
+    required String authorNickname,
+    String? authorProfileUrl,
+    required String text,
+  }) async {
+    final newRef = _firestore
+        .collection(collectionName)
+        .doc(storyId)
+        .collection('comments')
+        .doc();
+
+    final comment = StoryCommentModel(
+      id: newRef.id,
+      storyId: storyId,
+      authorId: authorId,
+      authorNickname: authorNickname,
+      authorProfileUrl: authorProfileUrl,
+      text: text,
+      createdAt: DateTime.now(),
+    );
+
+    await newRef.set(comment.toFirestore());
+  }
+
+  // 6. Read Comments Stream
+  Stream<List<StoryCommentModel>> getCommentsStream(String storyId) {
+    return _firestore
+        .collection(collectionName)
+        .doc(storyId)
+        .collection('comments')
+        .orderBy('createdAt', descending: false)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => StoryCommentModel.fromFirestore(doc))
+          .toList();
+    });
+  }
+
+  // 7. Delete Comment
+  Future<void> deleteComment(String storyId, String commentId) async {
+    await _firestore
+        .collection(collectionName)
+        .doc(storyId)
+        .collection('comments')
+        .doc(commentId)
+        .delete();
   }
 }

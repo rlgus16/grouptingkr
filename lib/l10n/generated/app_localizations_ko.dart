@@ -1669,4 +1669,19 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get privateChatLeaveFailed => '채팅방 나가기 실패';
+
+  @override
+  String get storyCommentsTitle => '댓글';
+
+  @override
+  String get storyCommentHint => '댓글을 입력하세요...';
+
+  @override
+  String get storyCommentPost => '등록';
+
+  @override
+  String get storyCommentEmpty => '아직 댓글이 없습니다. 첫 댓글을 남겨보세요!';
+
+  @override
+  String get storyCommentDeleteConfirm => '이 댓글을 삭제하시겠습니까?';
 }

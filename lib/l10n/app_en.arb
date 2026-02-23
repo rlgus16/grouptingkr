@@ -570,5 +570,11 @@
   "privateChatLeaveChat": "Leave Chat",
   "privateChatLeaveConfirm": "Are you sure you want to leave this chat?",
   "privateChatLeaveFailed": "Failed to leave chat",
-  "commonCancel": "Cancel"
+  "commonCancel": "Cancel",
+  
+  "storyCommentsTitle": "Comments",
+  "storyCommentHint": "Add a comment...",
+  "storyCommentPost": "Post",
+  "storyCommentEmpty": "No comments yet. Be the first to comment!",
+  "storyCommentDeleteConfirm": "Delete this comment?"
 }

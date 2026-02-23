@@ -591,5 +591,11 @@
   "privateChatLeaveChat": "채팅 나가기",
   "privateChatLeaveConfirm": "정말로 이 채팅방을 나가시겠습니까?",
   "privateChatLeaveFailed": "채팅방 나가기 실패",
-  "commonCancel": "취소"
+  "commonCancel": "취소",
+
+  "storyCommentsTitle": "댓글",
+  "storyCommentHint": "댓글을 입력하세요...",
+  "storyCommentPost": "등록",
+  "storyCommentEmpty": "아직 댓글이 없습니다. 첫 댓글을 남겨보세요!",
+  "storyCommentDeleteConfirm": "이 댓글을 삭제하시겠습니까?"
 }

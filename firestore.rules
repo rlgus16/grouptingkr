@@ -287,6 +287,16 @@ service cloud.firestore {
           )
         )
       );
+
+      // 스토리 댓글 (서브컬렉션)
+      match /comments/{commentId} {
+        // 읽기: 누구나 가능
+        allow read: if request.auth != null;
+        // 작성: 본인만 가능
+        allow create: if request.auth != null && request.auth.uid == request.resource.data.authorId;
+        // 수정/삭제: 작성자 본인만 가능 (추가로, 원본 스토리 작성자도 삭제할 수 있게 하려면 여기에 추가 가능)
+        allow update, delete: if request.auth != null && request.auth.uid == resource.data.authorId;
+      }
     }
   }
 }

@@ -7,6 +7,9 @@ import '../l10n/generated/app_localizations.dart';
 import '../views/profile_detail_view.dart';
 import '../utils/user_action_helper.dart';
 import 'member_avatar.dart';
+import 'story_comments_sheet.dart';
+import 'package:provider/provider.dart';
+import '../controllers/auth_controller.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class StoryCard extends StatelessWidget {
@@ -198,7 +201,43 @@ class StoryCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-                // Could add comments icon here in future
+                
+                // Add Comments Icon
+                IconButton(
+                  icon: const Icon(Icons.mode_comment_outlined, color: AppTheme.gray500),
+                  onPressed: () {
+                    final currentUser = context.read<AuthController>().currentUserModel;
+                    if (currentUser != null) {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent, // transparent to see rounded corners of sheet
+                        builder: (context) => StoryCommentsSheet(
+                          storyId: story.id,
+                          currentUser: currentUser,
+                        ),
+                      );
+                    }
+                  },
+                ),
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('stories')
+                      .doc(story.id)
+                      .collection('comments')
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    final commentCount = snapshot.hasData ? snapshot.data!.docs.length : 0;
+                    return Text(
+                      '$commentCount',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: AppTheme.textSecondary,
+                      ),
+                    );
+                  }
+                ),
               ],
             ),
           ),

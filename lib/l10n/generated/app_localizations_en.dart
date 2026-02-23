@@ -1711,4 +1711,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privateChatLeaveFailed => 'Failed to leave chat';
+
+  @override
+  String get storyCommentsTitle => 'Comments';
+
+  @override
+  String get storyCommentHint => 'Add a comment...';
+
+  @override
+  String get storyCommentPost => 'Post';
+
+  @override
+  String get storyCommentEmpty => 'No comments yet. Be the first to comment!';
+
+  @override
+  String get storyCommentDeleteConfirm => 'Delete this comment?';
 }
