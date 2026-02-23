@@ -19,6 +19,7 @@ class MemberAvatar extends StatelessWidget {
   final String? gender;
   final double size;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   const MemberAvatar({
     super.key,
@@ -30,16 +31,17 @@ class MemberAvatar extends StatelessWidget {
     this.gender,
     this.size = 50,
     this.onTap,
+    this.onLongPress,
   });
 
   // UserModel을 사용하는 생성자
   const MemberAvatar.fromUser({
     super.key,
-    required UserModel user,
+    required this.user,
     this.size = 50,
     this.onTap,
-  }) : user = user,
-       imageUrl = null,
+    this.onLongPress,
+  }) : imageUrl = null,
        name = null,
        isOwner = null,
        isMatched = null,
@@ -54,6 +56,7 @@ class MemberAvatar extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
+      onLongPress: onLongPress,
       child: Stack(
         children: [
           Container(

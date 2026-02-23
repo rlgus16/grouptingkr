@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../models/story_model.dart';
+import '../models/user_model.dart';
 import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../views/profile_detail_view.dart';
+import '../utils/user_action_helper.dart';
+import 'member_avatar.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class StoryCard extends StatelessWidget {
   final StoryModel story;
@@ -54,15 +59,51 @@ class StoryCard extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: AppTheme.gray200,
-                  backgroundImage: story.authorProfileUrl != null
-                      ? CachedNetworkImageProvider(story.authorProfileUrl!)
-                      : null,
-                  child: story.authorProfileUrl == null
-                      ? const Icon(Icons.person, color: AppTheme.gray500)
-                      : null,
+                MemberAvatar(
+                  imageUrl: story.authorProfileUrl,
+                  name: story.authorNickname,
+                  size: 40,
+                  onTap: () async {
+                    try {
+                      final doc = await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(story.authorId)
+                          .get();
+                      if (doc.exists && context.mounted) {
+                        final userModel = UserModel.fromFirestore(doc);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProfileDetailView(user: userModel),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      debugPrint('Error fetching user profile: $e');
+                    }
+                  },
+                  onLongPress: () async {
+                    if (isAuthor) return; // Don't show options for own avatar
+
+                    try {
+                      final doc = await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(story.authorId)
+                          .get();
+                      if (doc.exists && context.mounted) {
+                        final userModel = UserModel.fromFirestore(doc);
+                        UserActionHelper.showUserOptionsBottomSheet(
+                          context: context,
+                          targetUser: userModel,
+                          openChatroomId: null,
+                          isChatRoomOwner: false,
+                          isTargetUserInChatroom: false,
+                        );
+                      }
+                    } catch (e) {
+                      debugPrint('Error fetching user profile for options: $e');
+                    }
+                  },
                 ),
                 const SizedBox(width: 12),
                 Expanded(
