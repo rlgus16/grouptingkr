@@ -20,7 +20,11 @@ class StoryView extends StatelessWidget {
       backgroundColor: AppTheme.surfaceColor,
       body: Consumer<StoryController>(
         builder: (context, controller, child) {
-          if (controller.stories.isEmpty) {
+          final filteredStories = controller.stories.where((story) {
+            return !authController.blockedUserIds.contains(story.authorId);
+          }).toList();
+
+          if (filteredStories.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -51,9 +55,9 @@ class StoryView extends StatelessWidget {
             },
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: controller.stories.length,
+              itemCount: filteredStories.length,
               itemBuilder: (context, index) {
-                final story = controller.stories[index];
+                final story = filteredStories[index];
                 return StoryCard(
                   story: story,
                   currentUserId: currentUser?.uid ?? '',
