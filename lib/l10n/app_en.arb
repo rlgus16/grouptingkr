@@ -577,5 +577,10 @@
   "storyCommentHint": "Add a comment...",
   "storyCommentPost": "Post",
   "storyCommentEmpty": "No comments yet. Be the first to comment!",
-  "storyCommentDeleteConfirm": "Delete this comment?"
+  "storyCommentDeleteConfirm": "Delete this comment?",
+  "storyFilterTitle": "Filter Stories",
+  "storyFilterAny": "Any",
+  "storyFilterMale": "Male",
+  "storyFilterFemale": "Female",
+  "mainTabStory": "Story"
 }

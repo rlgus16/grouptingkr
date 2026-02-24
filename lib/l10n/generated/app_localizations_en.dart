@@ -1731,4 +1731,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get storyCommentDeleteConfirm => 'Delete this comment?';
+
+  @override
+  String get storyFilterTitle => 'Filter Stories';
+
+  @override
+  String get storyFilterAny => 'Any';
+
+  @override
+  String get storyFilterMale => 'Male';
+
+  @override
+  String get storyFilterFemale => 'Female';
+
+  @override
+  String get mainTabStory => 'Story';
 }

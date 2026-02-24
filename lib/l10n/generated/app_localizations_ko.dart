@@ -1689,4 +1689,19 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get storyCommentDeleteConfirm => '이 댓글을 삭제하시겠습니까?';
+
+  @override
+  String get storyFilterTitle => '스토리 필터';
+
+  @override
+  String get storyFilterAny => '상관없음';
+
+  @override
+  String get storyFilterMale => '남자';
+
+  @override
+  String get storyFilterFemale => '여자';
+
+  @override
+  String get mainTabStory => '스토리';
 }

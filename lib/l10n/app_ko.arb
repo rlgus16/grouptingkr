@@ -598,5 +598,10 @@
   "storyCommentHint": "댓글을 입력하세요...",
   "storyCommentPost": "등록",
   "storyCommentEmpty": "아직 댓글이 없습니다. 첫 댓글을 남겨보세요!",
-  "storyCommentDeleteConfirm": "이 댓글을 삭제하시겠습니까?"
+  "storyCommentDeleteConfirm": "이 댓글을 삭제하시겠습니까?",
+  "storyFilterTitle": "스토리 필터",
+  "storyFilterAny": "상관없음",
+  "storyFilterMale": "남자",
+  "storyFilterFemale": "여자",
+  "mainTabStory": "스토리"
 }

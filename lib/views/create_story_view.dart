@@ -63,6 +63,7 @@ class _CreateStoryViewState extends State<CreateStoryView> {
       await storyController.createStory(
         authorId: user.uid,
         authorNickname: user.nickname,
+        authorGender: user.gender,
         authorProfileUrl: user.mainProfileImage,
         text: text.isNotEmpty ? text : null,
         imageFile: _selectedImage,

@@ -4,6 +4,7 @@ class StoryModel {
   final String id;
   final String authorId;
   final String authorNickname;
+  final String? authorGender;
   final String? authorProfileUrl;
   final String? text;
   final String? imageUrl;
@@ -14,6 +15,7 @@ class StoryModel {
     required this.id,
     required this.authorId,
     required this.authorNickname,
+    this.authorGender,
     this.authorProfileUrl,
     this.text,
     this.imageUrl,
@@ -27,6 +29,7 @@ class StoryModel {
       id: doc.id,
       authorId: data['authorId'] ?? '',
       authorNickname: data['authorNickname'] ?? 'Unknown',
+      authorGender: data['authorGender'],
       authorProfileUrl: data['authorProfileUrl'],
       text: data['text'],
       imageUrl: data['imageUrl'],
@@ -39,6 +42,7 @@ class StoryModel {
     return {
       'authorId': authorId,
       'authorNickname': authorNickname,
+      'authorGender': authorGender,
       'authorProfileUrl': authorProfileUrl,
       'text': text,
       'imageUrl': imageUrl,
@@ -51,6 +55,7 @@ class StoryModel {
     String? id,
     String? authorId,
     String? authorNickname,
+    String? authorGender,
     String? authorProfileUrl,
     String? text,
     String? imageUrl,
@@ -61,6 +66,7 @@ class StoryModel {
       id: id ?? this.id,
       authorId: authorId ?? this.authorId,
       authorNickname: authorNickname ?? this.authorNickname,
+      authorGender: authorGender ?? this.authorGender,
       authorProfileUrl: authorProfileUrl ?? this.authorProfileUrl,
       text: text ?? this.text,
       imageUrl: imageUrl ?? this.imageUrl,

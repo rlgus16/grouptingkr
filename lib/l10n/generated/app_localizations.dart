@@ -3325,6 +3325,36 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'이 댓글을 삭제하시겠습니까?'**
   String get storyCommentDeleteConfirm;
+
+  /// No description provided for @storyFilterTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'스토리 필터'**
+  String get storyFilterTitle;
+
+  /// No description provided for @storyFilterAny.
+  ///
+  /// In ko, this message translates to:
+  /// **'상관없음'**
+  String get storyFilterAny;
+
+  /// No description provided for @storyFilterMale.
+  ///
+  /// In ko, this message translates to:
+  /// **'남자'**
+  String get storyFilterMale;
+
+  /// No description provided for @storyFilterFemale.
+  ///
+  /// In ko, this message translates to:
+  /// **'여자'**
+  String get storyFilterFemale;
+
+  /// No description provided for @mainTabStory.
+  ///
+  /// In ko, this message translates to:
+  /// **'스토리'**
+  String get mainTabStory;
 }
 
 class _AppLocalizationsDelegate

@@ -29,6 +29,7 @@ class StoryController extends ChangeNotifier {
   Future<void> createStory({
     required String authorId,
     required String authorNickname,
+    String? authorGender,
     String? authorProfileUrl,
     String? text,
     File? imageFile,
@@ -40,6 +41,7 @@ class StoryController extends ChangeNotifier {
       await _storyService.createStory(
         authorId: authorId,
         authorNickname: authorNickname,
+        authorGender: authorGender,
         authorProfileUrl: authorProfileUrl,
         text: text,
         imageFile: imageFile,

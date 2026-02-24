@@ -11,10 +11,10 @@ class StoryService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final String collectionName = 'stories';
 
-  // 1. Create Story
   Future<void> createStory({
     required String authorId,
     required String authorNickname,
+    String? authorGender,
     String? authorProfileUrl,
     String? text,
     File? imageFile,
@@ -38,6 +38,7 @@ class StoryService {
       id: newRef.id,
       authorId: authorId,
       authorNickname: authorNickname,
+      authorGender: authorGender,
       authorProfileUrl: authorProfileUrl,
       text: text,
       imageUrl: imageUrl,
