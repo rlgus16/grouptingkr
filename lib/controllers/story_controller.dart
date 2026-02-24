@@ -3,24 +3,44 @@ import 'package:flutter/material.dart';
 import '../models/story_model.dart';
 import '../models/story_comment_model.dart';
 import '../services/story_service.dart';
+import '../models/user_model.dart';
+import '../services/user_service.dart';
 
 class StoryController extends ChangeNotifier {
   final StoryService _storyService = StoryService();
+  final UserService _userService = UserService();
 
   List<StoryModel> _stories = [];
   bool _isLoading = false;
+  Map<String, UserModel> _authorProfiles = {};
 
   List<StoryModel> get stories => _stories;
   bool get isLoading => _isLoading;
+  
+  UserModel? getAuthorProfile(String uid) => _authorProfiles[uid];
 
   StoryController() {
     _listenToStories();
   }
 
   void _listenToStories() {
-    _storyService.getStoriesStream().listen((fetchedStories) {
+    _storyService.getStoriesStream().listen((fetchedStories) async {
       _stories = fetchedStories;
       notifyListeners();
+
+      // Fetch live user profiles for the authors
+      final uniqueAuthorIds = _stories.map((s) => s.authorId).toSet().toList();
+      if (uniqueAuthorIds.isNotEmpty) {
+        try {
+          final authorsList = await _userService.getUsersByIds(uniqueAuthorIds);
+          for (var user in authorsList) {
+            _authorProfiles[user.uid] = user;
+          }
+          notifyListeners();
+        } catch (e) {
+          debugPrint('Failed to fetch author profiles: $e');
+        }
+      }
     }, onError: (error) {
       debugPrint('Error listening to stories stream: $error');
     });
