@@ -500,6 +500,9 @@ class FCMService {
           // [초대 알림 처리 추가]
           title = data['localNotificationTitle'] ?? '그룹팅';
           body = '새로운 초대가 도착했습니다.';
+        } else if (messageType == 'new_story_comment') {
+          title = data['localNotificationTitle'] ?? '그룹팅';
+          body = data['localNotificationBody'] ?? '스토리에 새로운 댓글이 달렸습니다.';
         } else if (messageType == 'new_message') {
           title = data['senderNickname'] ?? '새 메시지';
           body = data['content'] ?? '';
@@ -540,6 +543,8 @@ class FCMService {
           payloadMap['chatroomId'] = data['chatroomId'] ?? '';
         } else if (messageType == 'new_invitation') {
           payloadMap['invitationId'] = data['invitationId'] ?? '';
+        } else if (messageType == 'new_story_comment') {
+          payloadMap['storyId'] = data['storyId'] ?? '';
         }
 
         payload = jsonEncode(payloadMap);
@@ -645,6 +650,10 @@ class FCMService {
               debugPrint('초대 알림 클릭 -> 초대 목록 이동');
               _navigateToInvitations();
               break;
+            case 'new_story_comment':
+              debugPrint('스토리 댓글 알림 클릭 -> 스토리를 포함한 홈 화면 이동');
+              _navigateToHome();
+              break;
             default:
               debugPrint('알 수 없는 알림 타입: $type, 홈 화면으로 이동');
               _navigateToHome();
@@ -747,6 +756,11 @@ class FCMService {
           // 초대 목록 화면으로 이동 (홈에서 확인 가능)
           debugPrint('새 초대 알림으로 홈 화면 이동');
           _navigateToInvitations();
+          break;
+
+        case 'new_story_comment':
+          debugPrint('새 스토리 댓글 알림으로 홈 화면 이동');
+          _navigateToHome();
           break;
 
         case 'matching_completed':

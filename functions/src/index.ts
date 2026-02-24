@@ -321,13 +321,17 @@ const NOTIFICATIONS = {
     matchTitle: "그룹팅",
     matchBody: "매칭되었습니다! 🎉 지금 채팅을 시작해보세요!",
     inviteTitle: "그룹팅",
-    inviteBody: "새로운 초대를 받았습니다."
+    inviteBody: "새로운 초대를 받았습니다.",
+    storyCommentTitle: "그룹팅",
+    storyCommentBody: "스토리에 새로운 댓글이 달렸습니다."
   },
   en: {
     matchTitle: "Groupting",
     matchBody: "You've been matched! 🎉 Start chatting now!",
     inviteTitle: "Groupting",
-    inviteBody: "You have received a new invitation."
+    inviteBody: "You have received a new invitation.",
+    storyCommentTitle: "Groupting",
+    storyCommentBody: "Someone commented on your story."
   }
 };
 
@@ -872,5 +876,93 @@ export const notifyNewMessage = onDocumentUpdated("chatrooms/{chatroomId}", asyn
 
   } catch (error) {
     console.error("Error sending message notifications:", error);
+  }
+});
+
+// [STORY COMMENT NOTIFICATION]
+// Triggers when a new comment is added to a story
+export const notifyStoryComment = onDocumentCreated("stories/{storyId}/comments/{commentId}", async (event) => {
+  const snapshot = event.data;
+  if (!snapshot) return;
+
+  const commentData = snapshot.data();
+  const storyId = event.params.storyId;
+  const commenterId = commentData?.authorId;
+  const commenterNickname = commentData?.authorNickname || "Someone";
+
+  if (!commenterId) return;
+
+  // Get the parent story to find the story owner
+  const storyDoc = await db.collection("stories").doc(storyId).get();
+  if (!storyDoc.exists) {
+    console.log(`Story ${storyId} not found.`);
+    return;
+  }
+
+  const storyData = storyDoc.data();
+  const storyOwnerId = storyData?.authorId;
+
+  // Don't notify if the user commented on their own story
+  if (!storyOwnerId || storyOwnerId === commenterId) {
+    return;
+  }
+
+  console.log(`Sending story comment notification to user: ${storyOwnerId}`);
+
+  // Get the story owner's FCM token and language
+  const userDoc = await db.collection("users").doc(storyOwnerId).get();
+  if (!userDoc.exists) {
+    console.log(`User ${storyOwnerId} not found.`);
+    return;
+  }
+
+  const userData = userDoc.data();
+  const fcmToken = userData?.fcmToken;
+
+  if (!fcmToken) {
+    console.log(`No FCM token for user ${storyOwnerId}.`);
+    return;
+  }
+
+  // Determine language (Default to Korean if not set or invalid)
+  const lang = (userData?.languageCode === 'en' ? 'en' : 'ko') as keyof typeof NOTIFICATIONS;
+  const texts = NOTIFICATIONS[lang];
+
+  const commentBody = lang === 'en'
+    ? `${commenterNickname} commented on your story.`
+    : `${commenterNickname}님이 스토리에 댓글을 남겼습니다.`;
+
+  const message = {
+    token: fcmToken,
+    data: {
+      type: "new_story_comment",
+      storyId: storyId,
+      commenterNickname: commenterNickname,
+      localNotificationTitle: texts.storyCommentTitle,
+      localNotificationBody: commentBody,
+      showAsLocalNotification: "true",
+      click_action: "FLUTTER_NOTIFICATION_CLICK",
+    },
+    android: {
+      priority: "high" as const,
+    },
+    apns: {
+      payload: {
+        aps: {
+          "content-available": 1,
+          sound: "default",
+        }
+      },
+      headers: {
+        "apns-priority": "10",
+      }
+    },
+  };
+
+  try {
+    await admin.messaging().send(message);
+    console.log(`Story comment notification sent to ${storyOwnerId} in ${lang}`);
+  } catch (error) {
+    console.error("Error sending story comment notification:", error);
   }
 });
