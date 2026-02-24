@@ -133,8 +133,8 @@ class _PrivateChatViewState extends State<PrivateChatView> with WidgetsBindingOb
             final memberCount = chatController.matchedGroupMembers.length;
             return Column(
               children: [
-                  Text(
-                  AppLocalizations.of(context)!.privateChatTitle,
+                Text(
+                  l10n.privateChatTitle,
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                 ),
                 if (memberCount > 0)

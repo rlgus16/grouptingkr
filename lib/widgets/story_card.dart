@@ -71,6 +71,7 @@ class StoryCard extends StatelessWidget {
                 MemberAvatar(
                   imageUrl: story.authorProfileUrl,
                   name: story.authorNickname,
+                  gender: story.authorGender,
                   size: 40,
                   onTap: () async {
                     try {
