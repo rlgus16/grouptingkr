@@ -249,20 +249,24 @@ class _StoryViewState extends State<StoryView> {
             
             // Distance filter check
             if (_maxDistance < 100) {
+              final authorProfile = controller.getAuthorProfile(story.authorId);
+              
               if (currentUser != null &&
                   currentUser.latitude != 0 &&
                   currentUser.longitude != 0 &&
-                  story.authorLatitude != null &&
-                  story.authorLongitude != null) {
+                  authorProfile != null &&
+                  authorProfile.latitude != 0 &&
+                  authorProfile.longitude != 0) {
                 final distance = Geolocator.distanceBetween(
                   currentUser.latitude,
                   currentUser.longitude,
-                  story.authorLatitude!,
-                  story.authorLongitude!,
+                  authorProfile.latitude,
+                  authorProfile.longitude,
                 ) / 1000; // Convert to km
 
                 if (distance > _maxDistance) return false;
               }
+
             }
             
             return true;
