@@ -24,7 +24,12 @@ class StoryService {
     if (imageFile != null) {
       final fileName = const Uuid().v4();
       final ref = _storage.ref().child('stories/$authorId/$fileName.jpg');
-      await ref.putFile(imageFile);
+      
+      final metadata = SettableMetadata(
+        contentType: 'image/jpeg',
+      );
+      
+      await ref.putFile(imageFile, metadata);
       imageUrl = await ref.getDownloadURL();
     }
 

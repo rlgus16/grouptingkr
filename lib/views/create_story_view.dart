@@ -23,7 +23,12 @@ class _CreateStoryViewState extends State<CreateStoryView> {
 
   Future<void> _pickImage() async {
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+        maxWidth: 1080,
+        maxHeight: 1920,
+      );
       if (image != null) {
         setState(() {
           _selectedImage = File(image.path);
