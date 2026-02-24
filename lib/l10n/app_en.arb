@@ -516,6 +516,7 @@
   "opentingNoMembers": "No members",
   "opentingWelcome": "Welcome to the chatroom!",
   "opentingStartConversation": "Start a conversation with other participants",
+  "opentingReplyTo": "Replying to {nickname}",
   
   "storyCreateTitle": "New Post",
   "storyCreateContentHint": "What's on your mind?",

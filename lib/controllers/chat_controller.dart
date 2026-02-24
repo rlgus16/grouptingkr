@@ -322,7 +322,7 @@ class ChatController extends ChangeNotifier {
 
   // --- Messaging Actions ---
 
-  Future<bool> sendMessage() async {
+  Future<bool> sendMessage({MessageModel? replyMessage}) async {
     final content = _messageController.text.trim();
     if (content.isEmpty || _currentGroupId == null) return false;
 
@@ -334,6 +334,7 @@ class ChatController extends ChangeNotifier {
       await _chatroomService.sendMessage(
         chatRoomId: _currentGroupId!,
         content: content,
+        replyMessage: replyMessage,
       );
 
       _performanceMonitor.recordMessageSent(messageId, stopwatch);

@@ -14,6 +14,11 @@ class MessageModel {
   final String? imageUrl;
   final String? senderProfileImage;
   final Map<String, dynamic>? metadata;
+  
+  // Reply Feature support
+  final String? replyToMessageId;
+  final String? replyToMessageSenderNickname;
+  final String? replyToMessageContent;
 
   MessageModel({
     required this.id,
@@ -27,6 +32,9 @@ class MessageModel {
     this.imageUrl,
     this.senderProfileImage,
     this.metadata,
+    this.replyToMessageId,
+    this.replyToMessageSenderNickname,
+    this.replyToMessageContent,
   });
 
   // Factory for Firestore
@@ -47,6 +55,9 @@ class MessageModel {
       imageUrl: data['imageUrl'],
       senderProfileImage: data['senderProfileImage'],
       metadata: data['metadata'],
+      replyToMessageId: data['replyToMessageId'],
+      replyToMessageSenderNickname: data['replyToMessageSenderNickname'],
+      replyToMessageContent: data['replyToMessageContent'],
     );
   }
 
@@ -69,6 +80,9 @@ class MessageModel {
       imageUrl: data['imageUrl'],
       senderProfileImage: data['senderProfileImage'],
       metadata: data['metadata'],
+      replyToMessageId: data['replyToMessageId'],
+      replyToMessageSenderNickname: data['replyToMessageSenderNickname'],
+      replyToMessageContent: data['replyToMessageContent'],
     );
   }
 
@@ -86,6 +100,9 @@ class MessageModel {
       'imageUrl': imageUrl,
       'senderProfileImage': senderProfileImage,
       'metadata': metadata,
+      'replyToMessageId': replyToMessageId,
+      'replyToMessageSenderNickname': replyToMessageSenderNickname,
+      'replyToMessageContent': replyToMessageContent,
     };
   }
 
@@ -102,6 +119,9 @@ class MessageModel {
     String? imageUrl,
     String? senderProfileImage,
     Map<String, dynamic>? metadata,
+    String? replyToMessageId,
+    String? replyToMessageSenderNickname,
+    String? replyToMessageContent,
   }) {
     return MessageModel(
       id: id ?? this.id,
@@ -115,6 +135,9 @@ class MessageModel {
       imageUrl: imageUrl ?? this.imageUrl,
       senderProfileImage: senderProfileImage ?? this.senderProfileImage,
       metadata: metadata ?? this.metadata,
+      replyToMessageId: replyToMessageId ?? this.replyToMessageId,
+      replyToMessageSenderNickname: replyToMessageSenderNickname ?? this.replyToMessageSenderNickname,
+      replyToMessageContent: replyToMessageContent ?? this.replyToMessageContent,
     );
   }
 

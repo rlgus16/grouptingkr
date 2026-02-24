@@ -13,6 +13,7 @@ class MessageBubble extends StatefulWidget {
   final bool isChatRoomOwner;
   final bool isSenderInChatroom;
   final VoidCallback? onAvatarLongPress;
+  final VoidCallback? onReply;
 
   const MessageBubble({
     super.key,
@@ -23,6 +24,7 @@ class MessageBubble extends StatefulWidget {
     this.isChatRoomOwner = false,
     this.isSenderInChatroom = true,
     this.onAvatarLongPress,
+    this.onReply,
   });
 
   @override
@@ -95,6 +97,7 @@ class _MessageBubbleState extends State<MessageBubble> {
             ),
             child: GestureDetector(
               onTap: _toggleTime,
+              onLongPress: widget.onReply,
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
@@ -136,6 +139,49 @@ class _MessageBubbleState extends State<MessageBubble> {
                         ),
                       ),
                       const SizedBox(height: 4),
+                    ],
+
+                    // Reply Context (If replying to a message)
+                    if (widget.message.replyToMessageId != null) ...[
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: widget.isMe 
+                              ? Colors.white
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border(
+                            left: BorderSide(
+                              color: AppTheme.primaryColor,
+                              width: 4,
+                            ),
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.message.replyToMessageSenderNickname ?? 'Unknown',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              widget.message.replyToMessageContent ?? '',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.textPrimary,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
 
                     // 메시지 내용

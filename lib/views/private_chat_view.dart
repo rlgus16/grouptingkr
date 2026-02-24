@@ -8,6 +8,7 @@ import '../services/chatroom_service.dart';
 import '../services/user_service.dart';
 import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../models/message_model.dart';
 import '../widgets/message_bubble.dart';
 import '../utils/user_action_helper.dart';
 import '../widgets/chat_input_area.dart';
@@ -33,6 +34,7 @@ class _PrivateChatViewState extends State<PrivateChatView> with WidgetsBindingOb
   final ChatroomService _chatroomService = ChatroomService();
   final UserService _userService = UserService();
   UserModel? _targetUserProfile;
+  MessageModel? _replyMessage;
 
   @override
   void initState() {
@@ -259,6 +261,13 @@ class _PrivateChatViewState extends State<PrivateChatView> with WidgetsBindingOb
                         onAvatarLongPress: senderProfile != null
                             ? () => _showUserOptions(context, senderProfile)
                             : null,
+                        onReply: message.senderId != 'system'
+                            ? () {
+                                setState(() {
+                                  _replyMessage = message;
+                                });
+                              }
+                            : null,
                       ),
                     );
                   },
@@ -266,8 +275,20 @@ class _PrivateChatViewState extends State<PrivateChatView> with WidgetsBindingOb
               ),
               ChatInputArea(
                 controller: chatController.messageController,
-                onSend: () async => await chatController.sendMessage(),
                 isKeyboardVisible: isKeyboardVisible,
+                replyMessage: _replyMessage,
+                onCancelReply: () {
+                  setState(() {
+                    _replyMessage = null;
+                  });
+                },
+                onSend: () async {
+                  final reply = _replyMessage;
+                  setState(() {
+                    _replyMessage = null;
+                  });
+                  await chatController.sendMessage(replyMessage: reply);
+                },
               ),
             ],
           );

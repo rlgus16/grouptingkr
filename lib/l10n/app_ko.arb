@@ -537,6 +537,7 @@
   "opentingNoMembers": "멤버가 없습니다",
   "opentingWelcome": "채팅방에 오신 것을 환영합니다!",
   "opentingStartConversation": "다른 참가자들과 대화를 시작해보세요",
+  "opentingReplyTo": "{nickname}님에게 답장",
   
   "storyCreateTitle": "새 게시물",
   "storyCreateContentHint": "무슨 생각을 하고 계신가요?",

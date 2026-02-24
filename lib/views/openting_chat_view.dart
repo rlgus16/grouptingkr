@@ -38,6 +38,7 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
 
   List<MessageModel> _messages = [];
   Map<String, UserModel> _userProfiles = {};
+  MessageModel? _replyMessage;
   StreamSubscription<DocumentSnapshot>? _messageSubscription;
   StreamSubscription<DocumentSnapshot>? _chatroomSubscription;
 
@@ -238,7 +239,15 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
         createdAt: DateTime.now(),
         readBy: [currentUser.uid],
         senderProfileImage: currentUser.mainProfileImage,
+        replyToMessageId: _replyMessage?.id,
+        replyToMessageSenderNickname: _replyMessage?.senderNickname,
+        replyToMessageContent: _replyMessage?.content,
       );
+
+      // Clear reply state before awaiting
+      setState(() {
+        _replyMessage = null;
+      });
 
       await _firestore.collection('openChatrooms').doc(widget.chatroomId).update({
         'messages': FieldValue.arrayUnion([newMessage.toFirestore()]),
@@ -526,6 +535,13 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
                             onAvatarLongPress: message.senderId != 'system' && senderProfile != null
                                 ? () => _showUserOptions(context, senderProfile)
                                 : null,
+                            onReply: message.senderId != 'system'
+                                ? () {
+                                    setState(() {
+                                      _replyMessage = message;
+                                    });
+                                  }
+                                : null,
                           ),
                         );
                       },
@@ -535,8 +551,14 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
           // Fixed message input at bottom
           ChatInputArea(
             controller: _messageController,
-            onSend: _sendMessage,
             isKeyboardVisible: isKeyboardVisible,
+            replyMessage: _replyMessage,
+            onCancelReply: () {
+              setState(() {
+                _replyMessage = null;
+              });
+            },
+            onSend: _sendMessage,
           ),
         ],
       ),

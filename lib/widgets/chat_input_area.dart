@@ -1,17 +1,22 @@
 import 'package:flutter/material.dart';
 import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../models/message_model.dart';
 
 class ChatInputArea extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSend;
   final bool isKeyboardVisible;
+  final MessageModel? replyMessage;
+  final VoidCallback? onCancelReply;
 
   const ChatInputArea({
     super.key,
     required this.controller,
     required this.onSend,
     required this.isKeyboardVisible,
+    this.replyMessage,
+    this.onCancelReply,
   });
 
   @override
@@ -30,9 +35,68 @@ class ChatInputArea extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (replyMessage != null) ...[
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppTheme.gray100,
+                borderRadius: BorderRadius.circular(12),
+                border: const Border(
+                  left: BorderSide(
+                    color: AppTheme.primaryColor,
+                    width: 3,
+                  ),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l10n.opentingReplyTo(replyMessage!.senderNickname),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          replyMessage!.content,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppTheme.gray600,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: onCancelReply,
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                    color: AppTheme.gray500,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    style: IconButton.styleFrom(
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
           Expanded(
             child: Container(
               constraints: const BoxConstraints(maxHeight: 120),
@@ -76,6 +140,8 @@ class ChatInputArea extends StatelessWidget {
               ),
             ),
           ),
+          ],
+        ),
         ],
       ),
     );

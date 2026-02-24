@@ -1544,6 +1544,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Start a conversation with other participants';
 
   @override
+  String opentingReplyTo(Object nickname) {
+    return 'Replying to $nickname';
+  }
+
+  @override
   String get storyCreateTitle => 'New Post';
 
   @override

@@ -2978,6 +2978,12 @@ abstract class AppLocalizations {
   /// **'다른 참가자들과 대화를 시작해보세요'**
   String get opentingStartConversation;
 
+  /// No description provided for @opentingReplyTo.
+  ///
+  /// In ko, this message translates to:
+  /// **'{nickname}님에게 답장'**
+  String opentingReplyTo(Object nickname);
+
   /// No description provided for @storyCreateTitle.
   ///
   /// In ko, this message translates to:

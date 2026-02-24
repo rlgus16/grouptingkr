@@ -119,6 +119,7 @@ class ChatroomService {
     MessageType type = MessageType.text,
     String? imageUrl,
     Map<String, dynamic>? metadata,
+    MessageModel? replyMessage,
   }) async {
     try {
       final currentUser = _firebaseService.currentUser;
@@ -142,6 +143,9 @@ class ChatroomService {
         imageUrl: imageUrl,
         senderProfileImage: senderProfileImage,
         metadata: metadata,
+        replyToMessageId: replyMessage?.id,
+        replyToMessageSenderNickname: replyMessage?.senderNickname,
+        replyToMessageContent: replyMessage?.content,
       );
 
       // Atomically add the message to the array and update stats

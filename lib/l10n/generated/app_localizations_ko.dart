@@ -1505,6 +1505,11 @@ class AppLocalizationsKo extends AppLocalizations {
   String get opentingStartConversation => '다른 참가자들과 대화를 시작해보세요';
 
   @override
+  String opentingReplyTo(Object nickname) {
+    return '$nickname님에게 답장';
+  }
+
+  @override
   String get storyCreateTitle => '새 게시물';
 
   @override
