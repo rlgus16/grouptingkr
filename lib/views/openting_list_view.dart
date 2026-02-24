@@ -25,6 +25,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
   int _selectedMaxParticipants = 10;
   double _maxDistance = 100.0; // Distance filter in km
   bool _hideFullRooms = false; // Hide full rooms filter
+  final Map<String, UserModel> _userProfileCache = {}; // Cache profiles for fast access
 
   @override
   void dispose() {
@@ -347,10 +348,15 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
 
   Future<UserModel?> _fetchSingleProfile(String userId) async {
     if (userId.isEmpty) return null;
+    if (_userProfileCache.containsKey(userId)) {
+      return _userProfileCache[userId];
+    }
     try {
       final userDoc = await _firestore.collection('users').doc(userId).get();
       if (userDoc.exists) {
-        return UserModel.fromFirestore(userDoc);
+        final profile = UserModel.fromFirestore(userDoc);
+        _userProfileCache[userId] = profile;
+        return profile;
       }
     } catch (e) {
       // Failed to load user
@@ -903,6 +909,56 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                                           ),
                                         ],
                                       ),
+                                    ),
+                                    FutureBuilder<UserModel?>(
+                                      future: _fetchSingleProfile(creatorId),
+                                      builder: (context, snapshot) {
+                                        final ownerProfile = snapshot.data;
+                                        double distance = -1.0;
+                                        final currentUser = authController.currentUserModel;
+                                        if (ownerProfile != null && currentUser != null) {
+                                          if (currentUser.latitude != 0 && currentUser.longitude != 0 && 
+                                              ownerProfile.latitude != 0 && ownerProfile.longitude != 0) {
+                                            distance = Geolocator.distanceBetween(
+                                              currentUser.latitude,
+                                              currentUser.longitude,
+                                              ownerProfile.latitude,
+                                              ownerProfile.longitude,
+                                            ) / 1000;
+                                          }
+                                        }
+                                        if (distance < 0) return const SizedBox.shrink();
+                                        
+                                        final String distanceText = distance >= 100 
+                                            ? "100km+" 
+                                            : (distance < 1 ? "<1km" : "${distance.round()}km");
+                                            
+                                        return Container(
+                                          margin: const EdgeInsets.only(left: 8),
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: AppTheme.gray100,
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: AppTheme.gray200, width: 1),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.location_on_rounded, size: 14, color: AppTheme.gray600),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                distanceText,
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: AppTheme.gray600,
+                                                  fontFamily: 'Pretendard',
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ],
                                 ),
