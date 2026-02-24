@@ -579,6 +579,7 @@
   "storyCommentEmpty": "No comments yet. Be the first to comment!",
   "storyCommentDeleteConfirm": "Delete this comment?",
   "storyFilterTitle": "Filter Stories",
+  "storyFilterGender": "Gender",
   "storyFilterAny": "Any",
   "storyFilterMale": "Male",
   "storyFilterFemale": "Female",

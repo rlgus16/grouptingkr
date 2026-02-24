@@ -1736,6 +1736,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storyFilterTitle => 'Filter Stories';
 
   @override
+  String get storyFilterGender => 'Gender';
+
+  @override
   String get storyFilterAny => 'Any';
 
   @override

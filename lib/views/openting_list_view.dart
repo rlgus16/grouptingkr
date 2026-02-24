@@ -496,7 +496,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        l10n.opentingMaxDistance,
+                        l10n.homeFilterDistance,
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,

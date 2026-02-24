@@ -680,7 +680,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get homeFilterHeight => '상대 그룹 평균 키';
 
   @override
-  String get homeFilterDistance => '거리 범위 (방장 기준)';
+  String get homeFilterDistance => '거리 범위';
 
   @override
   String get homeFilterApply => '적용하기';
@@ -1692,6 +1692,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get storyFilterTitle => '스토리 필터';
+
+  @override
+  String get storyFilterGender => '성별';
 
   @override
   String get storyFilterAny => '상관없음';

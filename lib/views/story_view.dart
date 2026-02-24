@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart';
 import '../controllers/story_controller.dart';
 import '../controllers/auth_controller.dart';
 import '../utils/app_theme.dart';
@@ -16,6 +17,7 @@ class StoryView extends StatefulWidget {
 
 class _StoryViewState extends State<StoryView> {
   String _genderFilter = 'any'; // 'any', 'male', 'female'
+  double _maxDistance = 100.0;
 
   Widget _buildFilterSectionTitle(String title) {
     return Text(
@@ -63,6 +65,7 @@ class _StoryViewState extends State<StoryView> {
 
   void _showFilterDialog(BuildContext context, AppLocalizations l10n) {
     String tempGenderFilter = _genderFilter;
+    double tempMaxDistance = _maxDistance;
 
     showModalBottomSheet(
       context: context,
@@ -103,7 +106,7 @@ class _StoryViewState extends State<StoryView> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        l10n.storyFilterTitle,
+                        l10n.homeFilterTitle,
                         style: const TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
@@ -121,7 +124,7 @@ class _StoryViewState extends State<StoryView> {
                   const SizedBox(height: 32),
 
                   // Gender Section
-                  _buildFilterSectionTitle(l10n.homeFilterGender),
+                  _buildFilterSectionTitle(l10n.storyFilterGender),
                   const SizedBox(height: 12),
                   Row(
                     children: [
@@ -133,6 +136,48 @@ class _StoryViewState extends State<StoryView> {
                     ],
                   ),
 
+                  const SizedBox(height: 32),
+
+                  // Distance Section
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildFilterSectionTitle(l10n.homeFilterDistance),
+                      Text(
+                        tempMaxDistance >= 100 ? "100km+" : "${tempMaxDistance.round()}km",
+                        style: const TextStyle(
+                          color: AppTheme.primaryColor,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  SliderTheme(
+                    data: SliderThemeData(
+                      trackHeight: 8,
+                      activeTrackColor: AppTheme.primaryColor,
+                      inactiveTrackColor: AppTheme.gray200,
+                      thumbColor: AppTheme.primaryColor,
+                      overlayColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 12,
+                        elevation: 3,
+                      ),
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
+                    ),
+                    child: Slider(
+                      value: tempMaxDistance,
+                      min: 2,
+                      max: 100,
+                      divisions: 49,
+                      onChanged: (double value) {
+                        setModalState(() => tempMaxDistance = value);
+                      },
+                    ),
+                  ),
+
                   const SizedBox(height: 40),
 
                   // Apply Button
@@ -140,6 +185,7 @@ class _StoryViewState extends State<StoryView> {
                     onPressed: () {
                       setState(() {
                         _genderFilter = tempGenderFilter;
+                        _maxDistance = tempMaxDistance;
                       });
                       Navigator.pop(context);
                     },
@@ -199,6 +245,24 @@ class _StoryViewState extends State<StoryView> {
             // Gender filter check
             if (_genderFilter != 'any') {
               if (story.authorGender != _genderFilter) return false;
+            }
+            
+            // Distance filter check
+            if (_maxDistance < 100) {
+              if (currentUser != null &&
+                  currentUser.latitude != 0 &&
+                  currentUser.longitude != 0 &&
+                  story.authorLatitude != null &&
+                  story.authorLongitude != null) {
+                final distance = Geolocator.distanceBetween(
+                  currentUser.latitude,
+                  currentUser.longitude,
+                  story.authorLatitude!,
+                  story.authorLongitude!,
+                ) / 1000; // Convert to km
+
+                if (distance > _maxDistance) return false;
+              }
             }
             
             return true;

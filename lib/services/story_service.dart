@@ -18,6 +18,8 @@ class StoryService {
     String? authorProfileUrl,
     String? text,
     File? imageFile,
+    double? authorLatitude,
+    double? authorLongitude,
   }) async {
     String? imageUrl;
 
@@ -42,6 +44,8 @@ class StoryService {
       authorProfileUrl: authorProfileUrl,
       text: text,
       imageUrl: imageUrl,
+      authorLatitude: authorLatitude,
+      authorLongitude: authorLongitude,
       createdAt: DateTime.now(),
       likes: [],
     );

@@ -1421,7 +1421,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeFilterDistance.
   ///
   /// In ko, this message translates to:
-  /// **'거리 범위 (방장 기준)'**
+  /// **'거리 범위'**
   String get homeFilterDistance;
 
   /// No description provided for @homeFilterApply.
@@ -3331,6 +3331,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'스토리 필터'**
   String get storyFilterTitle;
+
+  /// No description provided for @storyFilterGender.
+  ///
+  /// In ko, this message translates to:
+  /// **'성별'**
+  String get storyFilterGender;
 
   /// No description provided for @storyFilterAny.
   ///

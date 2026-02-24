@@ -65,6 +65,8 @@ class _CreateStoryViewState extends State<CreateStoryView> {
         authorNickname: user.nickname,
         authorGender: user.gender,
         authorProfileUrl: user.mainProfileImage,
+        authorLatitude: user.latitude,
+        authorLongitude: user.longitude,
         text: text.isNotEmpty ? text : null,
         imageFile: _selectedImage,
       );

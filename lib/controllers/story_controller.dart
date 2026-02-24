@@ -33,6 +33,8 @@ class StoryController extends ChangeNotifier {
     String? authorProfileUrl,
     String? text,
     File? imageFile,
+    double? authorLatitude,
+    double? authorLongitude,
   }) async {
     _isLoading = true;
     notifyListeners();
@@ -45,6 +47,8 @@ class StoryController extends ChangeNotifier {
         authorProfileUrl: authorProfileUrl,
         text: text,
         imageFile: imageFile,
+        authorLatitude: authorLatitude,
+        authorLongitude: authorLongitude,
       );
     } catch (e) {
       debugPrint('Failed to create story: $e');

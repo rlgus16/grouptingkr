@@ -8,6 +8,8 @@ class StoryModel {
   final String? authorProfileUrl;
   final String? text;
   final String? imageUrl;
+  final double? authorLatitude;
+  final double? authorLongitude;
   final DateTime createdAt;
   final List<String> likes;
 
@@ -19,6 +21,8 @@ class StoryModel {
     this.authorProfileUrl,
     this.text,
     this.imageUrl,
+    this.authorLatitude,
+    this.authorLongitude,
     required this.createdAt,
     required this.likes,
   });
@@ -33,6 +37,8 @@ class StoryModel {
       authorProfileUrl: data['authorProfileUrl'],
       text: data['text'],
       imageUrl: data['imageUrl'],
+      authorLatitude: (data['authorLatitude'] as num?)?.toDouble(),
+      authorLongitude: (data['authorLongitude'] as num?)?.toDouble(),
       createdAt: (data['createdAt'] as Timestamp? ?? Timestamp.now()).toDate(),
       likes: List<String>.from(data['likes'] ?? []),
     );
@@ -46,6 +52,8 @@ class StoryModel {
       'authorProfileUrl': authorProfileUrl,
       'text': text,
       'imageUrl': imageUrl,
+      'authorLatitude': authorLatitude,
+      'authorLongitude': authorLongitude,
       'createdAt': Timestamp.fromDate(createdAt),
       'likes': likes,
     };
@@ -59,6 +67,8 @@ class StoryModel {
     String? authorProfileUrl,
     String? text,
     String? imageUrl,
+    double? authorLatitude,
+    double? authorLongitude,
     DateTime? createdAt,
     List<String>? likes,
   }) {
@@ -70,6 +80,8 @@ class StoryModel {
       authorProfileUrl: authorProfileUrl ?? this.authorProfileUrl,
       text: text ?? this.text,
       imageUrl: imageUrl ?? this.imageUrl,
+      authorLatitude: authorLatitude ?? this.authorLatitude,
+      authorLongitude: authorLongitude ?? this.authorLongitude,
       createdAt: createdAt ?? this.createdAt,
       likes: likes ?? this.likes,
     );
