@@ -518,119 +518,34 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
   // 프로필 카드 표시 여부 결정 (새로운 로직)
   bool _shouldShowProfileCard(AuthController authController) {
     final user = authController.currentUserModel;
-    final firebaseUser = authController.firebaseService.currentUser;
+    if (user == null) return false;
 
-    // 1. 사용자 데이터가 없는 경우 - 계정 자체에 문제가 있음
-    if (user == null || firebaseUser?.email == null) {
-      return true; // 회원가입 유도
-    }
-
-    // 2. 기본 정보 부족 여부 체크
-    final hasBasicInfo = user.phoneNumber.isNotEmpty &&
-        user.birthDate.isNotEmpty &&
-        user.gender.isNotEmpty;
-
-    if (!hasBasicInfo) {
-      return true; // 기본 정보 입력 유도
-    }
-
-    // 3. 프로필 완성 여부 체크
-    final hasCompleteProfile = user.nickname.isNotEmpty &&
-        user.height > 0 &&
-        user.activityArea.isNotEmpty &&
-        user.introduction.isNotEmpty;
-
-    if (!hasCompleteProfile) {
-      return true; // 프로필 완성 유도
-    }
-
-    // 4. 모든 정보가 완성된 경우
-    return false;
+    return user.nickname.isEmpty ||
+        user.height <= 0 ||
+        user.activityArea.isEmpty ||
+        user.introduction.isEmpty;
   }
 
   // 프로필 카드 상태별 메시지 생성 (새로운 로직)
   String _getProfileCardTitle(UserModel? user, User? firebaseUser, AppLocalizations l10n) {
-    if (user == null || firebaseUser?.email == null) {
-      return l10n.homeProfileSignup;
-    }
-
-    final hasBasicInfo = user.phoneNumber.isNotEmpty &&
-        user.birthDate.isNotEmpty &&
-        user.gender.isNotEmpty;
-
-    if (!hasBasicInfo) {
-      return l10n.homeProfileBasicInfo;
-    }
-
     return l10n.homeProfileComplete;
   }
 
   String _getProfileCardSubtitle(UserModel? user, User? firebaseUser, AppLocalizations l10n) {
-    if (user == null || firebaseUser?.email == null) {
-      return l10n.homeProfileSignupDesc;
-    }
-
-    final hasBasicInfo = user.phoneNumber.isNotEmpty &&
-        user.birthDate.isNotEmpty &&
-        user.gender.isNotEmpty;
-
-    if (!hasBasicInfo) {
-      return l10n.homeProfileBasicInfoDesc;
-    }
-
     return l10n.homeProfileCompleteDesc;
   }
 
   String _getProfileCardDescription(UserModel? user, User? firebaseUser, AppLocalizations l10n) {
-    if (user == null || firebaseUser?.email == null) {
-      return l10n.homeProfileSignupDesc;
-    }
-
-    final hasBasicInfo = user.phoneNumber.isNotEmpty &&
-        user.birthDate.isNotEmpty &&
-        user.gender.isNotEmpty;
-
-    if (!hasBasicInfo) {
-      return l10n.homeProfileBasicInfoLong;
-    }
-
     return l10n.homeProfileCompleteLong;
   }
 
   String _getProfileCardButtonText(UserModel? user, User? firebaseUser, AppLocalizations l10n) {
-    if (user == null || firebaseUser?.email == null) {
-      return l10n.homeProfileSignup;
-    }
-
-    final hasBasicInfo = user.phoneNumber.isNotEmpty &&
-        user.birthDate.isNotEmpty &&
-        user.gender.isNotEmpty;
-
-    if (!hasBasicInfo) {
-      return l10n.homeProfileBasicInfo;
-    }
-
     return l10n.homeProfileNow;
   }
 
   void _handleProfileCardAction(UserModel? user, User? firebaseUser) {
-    if (user == null || firebaseUser?.email == null) {
-      // 회원가입 페이지로 이동
-      Navigator.pushNamed(context, '/register');
-      return;
-    }
-
-    final hasBasicInfo = user.phoneNumber.isNotEmpty &&
-        user.birthDate.isNotEmpty &&
-        user.gender.isNotEmpty;
-
-    if (!hasBasicInfo) {
-      // 기본 정보가 부족한 경우 회원가입 페이지로 이동 (기본 정보 입력용)
-      Navigator.pushNamed(context, '/register');
-    } else {
-      // 프로필 완성 페이지로 이동
-      Navigator.push(context, MaterialPageRoute(builder: (context) => ProfileEditView()));
-    }
+    if (user == null) return;
+    Navigator.push(context, MaterialPageRoute(builder: (context) => ProfileEditView()));
   }
 
   @override
