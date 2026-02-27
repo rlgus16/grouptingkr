@@ -21,6 +21,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../services/chatroom_service.dart';
 import '../models/chatroom_model.dart';
 import '../utils/user_action_helper.dart';
+import '../widgets/profile_incomplete_card.dart';
 
 // 프로필 검증 결과 클래스
 class ProfileValidationResult {
@@ -526,28 +527,6 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
         user.introduction.isEmpty;
   }
 
-  // 프로필 카드 상태별 메시지 생성 (새로운 로직)
-  String _getProfileCardTitle(UserModel? user, User? firebaseUser, AppLocalizations l10n) {
-    return l10n.homeProfileComplete;
-  }
-
-  String _getProfileCardSubtitle(UserModel? user, User? firebaseUser, AppLocalizations l10n) {
-    return l10n.homeProfileCompleteDesc;
-  }
-
-  String _getProfileCardDescription(UserModel? user, User? firebaseUser, AppLocalizations l10n) {
-    return l10n.homeProfileCompleteLong;
-  }
-
-  String _getProfileCardButtonText(UserModel? user, User? firebaseUser, AppLocalizations l10n) {
-    return l10n.homeProfileNow;
-  }
-
-  void _handleProfileCardAction(UserModel? user, User? firebaseUser) {
-    if (user == null) return;
-    Navigator.push(context, MaterialPageRoute(builder: (context) => ProfileEditView()));
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -681,7 +660,7 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
                         children: [
                           // 프로필 미완성 카드
                           if (!_isProfileCardHidden && _shouldShowProfileCard(authController)) ...[
-                            _buildProfileIncompleteCard(),
+                            ProfileIncompleteCard(onHide: _hideProfileCard),
                             const SizedBox(height: 24),
                           ],
 
@@ -712,130 +691,6 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
         ),
       ),
 
-    );
-  }
-
-  Widget _buildProfileIncompleteCard() {
-    return Consumer<AuthController>(
-      builder: (context, authController, _) {
-        final user = authController.currentUserModel;
-        final firebaseUser = authController.firebaseService.currentUser;
-
-        // 디버깅용 로그
-        if (user != null) {
-          debugPrint('홈 화면 - 사용자 정보: uid=${user.uid}, email=${firebaseUser?.email ?? ""}, phone=${user.phoneNumber}, isComplete=${user.isProfileComplete}');
-        } else {
-          debugPrint('홈 화면 - 사용자 정보 없음 (currentUserModel이 null)');
-          debugPrint('홈 화면 - Firebase Auth 상태: ${authController.isLoggedIn}');
-        }
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.orange.shade50, Colors.orange.shade100],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.orange.shade200),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.orange.shade600,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(
-                        Icons.edit_outlined,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _getProfileCardTitle(user, firebaseUser, AppLocalizations.of(context)!),
-                            style: TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: Colors.orange.shade800,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _getProfileCardSubtitle(user, firebaseUser, AppLocalizations.of(context)!),
-                            style: TextStyle(
-                              color: Colors.orange.shade600,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  _getProfileCardDescription(user, firebaseUser, AppLocalizations.of(context)!),
-                  style: TextStyle(
-                    color: Colors.orange.shade700,
-                    fontSize: 14,
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      flex: 1,
-                      child: OutlinedButton(
-                        onPressed: _hideProfileCard,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.orange.shade600,
-                          side: BorderSide(color: Colors.orange.shade300),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text(AppLocalizations.of(context)!.homeLater),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
-                      child: ElevatedButton.icon(
-                        onPressed: () => _handleProfileCardAction(user, firebaseUser),
-                        icon: const Icon(Icons.arrow_forward, size: 18),
-                        label: Text(_getProfileCardButtonText(user, firebaseUser, AppLocalizations.of(context)!)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange.shade600,
-                          foregroundColor: Colors.white,
-                          elevation: 2,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 
