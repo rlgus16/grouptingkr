@@ -4,10 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/user_model.dart';
-import '../models/invitation_model.dart'; // Added
+import '../models/invitation_model.dart';
 import '../controllers/auth_controller.dart';
 import '../services/user_service.dart';
-import '../services/invitation_service.dart'; // Added
+import '../services/invitation_service.dart';
 import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
 
@@ -71,7 +71,7 @@ class UserActionHelper {
                 ),
                 ListTile(
                   leading: const Icon(Icons.mail_outline, color: AppTheme.primaryColor),
-                  title: const Text('1:1 대화 신청'), // Localization needed ideally
+                  title: Text(l10n.userActionPrivateChat),
                   onTap: () {
                     Navigator.pop(context);
                     showRequestPrivateChatDialog(context, targetUser);
@@ -590,11 +590,11 @@ Platform: ${Theme.of(context).platform}
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('${targetUser.nickname}님께 1:1 대화 신청'),
+        title: Text(l10n.userActionPrivateChatTitle(targetUser.nickname)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('상대방이 수락하면 1:1 채팅방이 개설됩니다.'),
+            Text(l10n.userActionPrivateChatDesc),
             const SizedBox(height: 4),
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -607,9 +607,9 @@ Platform: ${Theme.of(context).platform}
             const SizedBox(height: 4),
             TextField(
               controller: messageController,
-              decoration: const InputDecoration(
-                hintText: '초대 메시지를 입력하세요 (선택 사항)',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: l10n.userActionPrivateChatHint,
+                border: const OutlineInputBorder(),
               ),
               maxLines: 3,
             ),
@@ -624,7 +624,7 @@ Platform: ${Theme.of(context).platform}
             onPressed: () async {
               try {
                 if (targetUser.phoneNumber.isEmpty) {
-                   throw ('상대방의 전화번호 정보가 없습니다.'); 
+                   throw (l10n.userActionNoPhoneNumber);
                 }
 
                 await InvitationService().sendInvitation(
@@ -641,18 +641,18 @@ Platform: ${Theme.of(context).platform}
                   await context.read<AuthController>().refreshCurrentUser();
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('1:1 대화 신청을 보냈습니다.')),
+                    SnackBar(content: Text(l10n.userActionPrivateChatSent)),
                   );
                 }
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('오류 발생: $e')),
+                    SnackBar(content: Text(l10n.commonErrorWithValue(e.toString()))),
                   );
                 }
               }
             },
-            child: const Text('보내기'),
+            child: Text(l10n.helpSend),
           ),
         ],
       ),

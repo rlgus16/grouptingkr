@@ -1660,6 +1660,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get userActionBan => 'Remove';
 
   @override
+  String get userActionPrivateChat => 'Invite 1:1 Chat';
+
+  @override
+  String userActionPrivateChatTitle(Object nickname) {
+    return 'Invite 1:1 Chat with $nickname';
+  }
+
+  @override
+  String get userActionPrivateChatDesc =>
+      'A 1:1 chat room will be created if the other person accepts.';
+
+  @override
+  String get userActionPrivateChatHint => 'Enter an invite message (optional)';
+
+  @override
+  String get userActionNoPhoneNumber =>
+      'The other person\'s phone number is not available.';
+
+  @override
+  String get userActionPrivateChatSent => '1:1 chat invite sent.';
+
+  @override
   String commonErrorWithValue(Object error) {
     return 'Error occurred: $error';
   }

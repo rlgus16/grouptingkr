@@ -1621,6 +1621,26 @@ class AppLocalizationsKo extends AppLocalizations {
   String get userActionBan => '강퇴';
 
   @override
+  String get userActionPrivateChat => '1:1 대화 초대';
+
+  @override
+  String userActionPrivateChatTitle(Object nickname) {
+    return '$nickname님께 1:1 대화 초대';
+  }
+
+  @override
+  String get userActionPrivateChatDesc => '상대방이 수락하면 1:1 채팅방이 개설됩니다.';
+
+  @override
+  String get userActionPrivateChatHint => '초대 메시지를 입력하세요 (선택 사항)';
+
+  @override
+  String get userActionNoPhoneNumber => '상대방의 전화번호 정보가 없습니다.';
+
+  @override
+  String get userActionPrivateChatSent => '1:1 대화 초대를 보냈습니다.';
+
+  @override
   String commonErrorWithValue(Object error) {
     return '오류가 발생했습니다: $error';
   }

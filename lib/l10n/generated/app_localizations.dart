@@ -3194,6 +3194,42 @@ abstract class AppLocalizations {
   /// **'강퇴'**
   String get userActionBan;
 
+  /// No description provided for @userActionPrivateChat.
+  ///
+  /// In ko, this message translates to:
+  /// **'1:1 대화 초대'**
+  String get userActionPrivateChat;
+
+  /// No description provided for @userActionPrivateChatTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'{nickname}님께 1:1 대화 초대'**
+  String userActionPrivateChatTitle(Object nickname);
+
+  /// No description provided for @userActionPrivateChatDesc.
+  ///
+  /// In ko, this message translates to:
+  /// **'상대방이 수락하면 1:1 채팅방이 개설됩니다.'**
+  String get userActionPrivateChatDesc;
+
+  /// No description provided for @userActionPrivateChatHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'초대 메시지를 입력하세요 (선택 사항)'**
+  String get userActionPrivateChatHint;
+
+  /// No description provided for @userActionNoPhoneNumber.
+  ///
+  /// In ko, this message translates to:
+  /// **'상대방의 전화번호 정보가 없습니다.'**
+  String get userActionNoPhoneNumber;
+
+  /// No description provided for @userActionPrivateChatSent.
+  ///
+  /// In ko, this message translates to:
+  /// **'1:1 대화 초대를 보냈습니다.'**
+  String get userActionPrivateChatSent;
+
   /// No description provided for @commonErrorWithValue.
   ///
   /// In ko, this message translates to:
