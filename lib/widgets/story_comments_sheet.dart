@@ -88,12 +88,20 @@ class _StoryCommentsSheetState extends State<StoryCommentsSheet> {
     final l10n = AppLocalizations.of(context)!;
     final storyController = context.read<StoryController>();
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.75, // 75% height
-      decoration: const BoxDecoration(
-        color: AppTheme.surfaceColor,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
+    return AnimatedPadding(
+      padding: EdgeInsets.only(bottom: keyboardHeight),
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.75,
+        ),
+        decoration: const BoxDecoration(
+          color: AppTheme.surfaceColor,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
       child: Column(
         children: [
           // Header
@@ -280,6 +288,7 @@ class _StoryCommentsSheetState extends State<StoryCommentsSheet> {
           ),
         ],
       ),
-    );
+      ), // Container
+    ); // AnimatedPadding
   }
 }
