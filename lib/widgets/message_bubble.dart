@@ -149,11 +149,11 @@ class _MessageBubbleState extends State<MessageBubble> {
                         decoration: BoxDecoration(
                           color: widget.isMe 
                               ? Colors.white
-                              : Colors.white,
+                              : Colors.grey.shade200,
                           borderRadius: BorderRadius.circular(8),
                           border: Border(
                             left: BorderSide(
-                              color: AppTheme.primaryColor,
+                              color: AppTheme.gray300,
                               width: 4,
                             ),
                           ),
