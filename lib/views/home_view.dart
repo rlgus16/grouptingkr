@@ -44,7 +44,6 @@ class HomeView extends StatefulWidget {
 // SingleTickerProviderStateMixin (애니메이션 사용을 위해 필요)
 class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   final ChatroomService _chatroomService = ChatroomService();
-  bool _isProfileCardHidden = false;
   GroupController? _groupController; // 컨트롤러 인스턴스 저장
   late AnimationController _animationController; // 애니메이션 컨트롤러 정의
 
@@ -64,9 +63,6 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkLoginStatus();
     });
-
-    // 프로필 카드 숨김 상태 로드
-    _loadProfileCardVisibility();
 
     // 그룹 컨트롤러 초기화
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -112,60 +108,6 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
       });
     }
   }
-
-  // 프로필 카드 숨김 상태 로드
-  Future<void> _loadProfileCardVisibility() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final authController = context.read<AuthController>();
-      final userId = authController.currentUserModel?.uid ??
-          authController.firebaseService.currentUser?.uid;
-
-      if (userId != null) {
-        final isHidden = prefs.getBool('profile_card_hidden_$userId') ?? false;
-        if (mounted) {
-          setState(() {
-            _isProfileCardHidden = isHidden;
-          });
-        }
-      }
-    } catch (e) {
-      debugPrint('프로필 카드 상태 로드 실패: $e');
-    }
-  }
-
-  // 프로필 카드 숨김 상태 저장
-  Future<void> _hideProfileCard() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final authController = context.read<AuthController>();
-      final userId = authController.currentUserModel?.uid ??
-          authController.firebaseService.currentUser?.uid;
-
-      if (userId != null) {
-        await prefs.setBool('profile_card_hidden_$userId', true);
-        if (mounted) {
-          setState(() {
-            _isProfileCardHidden = true;
-          });
-
-          try {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(AppLocalizations.of(context)!.homeProfileCardHidden),
-                  duration: Duration(seconds: 3),
-                ),
-              );
-          } catch (e) {
-            // 위젯이 이미 dispose된 경우 무시
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('프로필 카드 숨김 실패: $e');
-    }
-  }
-
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
@@ -659,8 +601,8 @@ class _HomeViewState extends State<HomeView> with WidgetsBindingObserver, Single
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           // 프로필 미완성 카드
-                          if (!_isProfileCardHidden && _shouldShowProfileCard(authController)) ...[
-                            ProfileIncompleteCard(onHide: _hideProfileCard),
+                          if (_shouldShowProfileCard(authController)) ...[
+                            const ProfileIncompleteCard(),
                             const SizedBox(height: 24),
                           ],
 

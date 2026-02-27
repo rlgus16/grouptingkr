@@ -5,12 +5,7 @@ import '../l10n/generated/app_localizations.dart';
 import '../views/profile_edit_view.dart';
 
 class ProfileIncompleteCard extends StatelessWidget {
-  final VoidCallback onHide;
-
-  const ProfileIncompleteCard({
-    super.key,
-    required this.onHide,
-  });
+  const ProfileIncompleteCard({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -99,22 +94,6 @@ class ProfileIncompleteCard extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(
-                      flex: 1,
-                      child: OutlinedButton(
-                        onPressed: onHide,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.orange.shade600,
-                          side: BorderSide(color: Colors.orange.shade300),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Text(l10n.homeLater),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      flex: 2,
                       child: ElevatedButton.icon(
                         onPressed: () {
                           if (user == null) return;
