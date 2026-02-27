@@ -50,7 +50,11 @@ class StoryService {
       likes: [],
     );
 
-    await newRef.set(story.toFirestore());
+    // Use server timestamp for createdAt so the 7-day expiry
+    // query is always based on server clock, not the device clock.
+    final data = story.toFirestore();
+    data['createdAt'] = FieldValue.serverTimestamp();
+    await newRef.set(data);
   }
 
   // 2. Read Stories Stream (Real-Time Updates)
