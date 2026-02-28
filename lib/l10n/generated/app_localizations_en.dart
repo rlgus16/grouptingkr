@@ -315,6 +315,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get myPageHeight => 'Height';
 
   @override
+  String get myPageAgeLabel => 'Age';
+
+  @override
   String get myPageLocation => 'Location';
 
   @override

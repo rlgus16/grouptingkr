@@ -308,6 +308,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get myPageHeight => '키';
 
   @override
+  String get myPageAgeLabel => '나이';
+
+  @override
   String get myPageLocation => '위치';
 
   @override

@@ -692,6 +692,12 @@ abstract class AppLocalizations {
   /// **'키'**
   String get myPageHeight;
 
+  /// No description provided for @myPageAgeLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'나이'**
+  String get myPageAgeLabel;
+
   /// No description provided for @myPageLocation.
   ///
   /// In ko, this message translates to:

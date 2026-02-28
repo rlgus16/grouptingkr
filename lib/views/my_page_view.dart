@@ -262,11 +262,6 @@ class _MyPageViewState extends State<MyPageView> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildTag(
-              l10n.myPageAge(user.age),
-              color: user.gender == '남' ? AppTheme.primaryColor : AppTheme.secondaryColor,
-            ),
-            const SizedBox(width: 6),
             _buildScoreTag(_averageRating),
             const SizedBox(width: 6),
             _buildTingTag(user.tingBalance),
@@ -304,25 +299,7 @@ class _MyPageViewState extends State<MyPageView> {
     );
   }
 
-  Widget _buildTag(String text, {Color? color}) {
-    final tagColor = color ?? AppTheme.textSecondary;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: tagColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: tagColor.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 12,
-          color: tagColor,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
+
 
   Widget _buildTingTag(int tingBalance) {
     return Container(
@@ -388,6 +365,7 @@ class _MyPageViewState extends State<MyPageView> {
           ),
           const SizedBox(height: 20),
           _buildDetailRow(Icons.phone_iphone, l10n.myPagePhone, user.phoneNumber),
+          _buildDetailRow(Icons.cake_outlined, l10n.myPageAgeLabel, l10n.myPageAge(user.age)),
           _buildDetailRow(Icons.height, l10n.myPageHeight, '${user.height}cm'),
           _buildDetailRow(Icons.location_on_outlined, l10n.myPageLocation, '${user.activityArea}'),
           if (user.introduction.isNotEmpty) ...[
