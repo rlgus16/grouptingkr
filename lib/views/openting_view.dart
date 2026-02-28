@@ -3,6 +3,10 @@ import 'openting_list_view.dart';
 import 'story_view.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../utils/app_theme.dart';
+import 'package:provider/provider.dart';
+import '../controllers/auth_controller.dart';
+import '../widgets/profile_incomplete_card.dart';
+import 'home_view.dart';
 
 class OpentingView extends StatelessWidget {
   const OpentingView({super.key});
@@ -37,11 +41,46 @@ class OpentingView extends StatelessWidget {
             ],
           ),
         ),
-        body: const TabBarView(
-          children: [
-            OpenChatroomListView(),
-            StoryView(),
-          ],
+        body: Consumer<AuthController>(
+          builder: (context, authController, _) {
+            final user = authController.currentUserModel;
+            final bool isProfileIncomplete = user != null && 
+                (user.nickname.isEmpty || 
+                 user.height <= 0 || 
+                 user.activityArea.isEmpty || 
+                 user.introduction.isEmpty);
+
+            if (isProfileIncomplete) {
+              return Column(
+                children: [
+                  AppBar(
+                    backgroundColor: Colors.transparent,
+                    elevation: 0,
+                    leading: IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.black),
+                      onPressed: () {
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (context) => const HomeView()),
+                          (route) => false,
+                        );
+                      },
+                    ),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
+                    child: ProfileIncompleteCard(),
+                  ),
+                ],
+              );
+            }
+
+            return const TabBarView(
+              children: [
+                OpenChatroomListView(),
+                StoryView(),
+              ],
+            );
+          },
         ),
       ),
     );
