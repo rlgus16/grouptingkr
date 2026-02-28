@@ -206,6 +206,7 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
     final authController = context.watch<AuthController>();
     final isBlocked = authController.blockedUserIds.contains(widget.user.uid);
     final isMe = authController.currentUserModel?.uid == widget.user.uid;
+    final themeColor = widget.user.gender == '여' ? AppTheme.secondaryColor : AppTheme.primaryColor;
 
     if (isBlocked) {
       return Scaffold(
@@ -378,43 +379,45 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
                             ],
                           ),
                         ),
-                        // Rating display - show for all profiles
-                        GestureDetector(
-                          onTap: isMe ? null : () {
-                            if (_userRating > 0) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(l10n.ratingAlreadyRated)),
-                              );
-                            } else {
-                              _showRatingDialog(context);
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.pink.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.pink.withValues(alpha: 0.3)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.star, size: 20, color: Colors.pink),
-                                const SizedBox(width: 4),
-                                Text(
-                                  _averageRating > 0 ? '${_averageRating.toStringAsFixed(1)}/5' : '0.0/5',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.pink,
-                                  ),
+                      // Rating display - show for all profiles
+                      GestureDetector(
+                        onTap: isMe
+                            ? null
+                            : () {
+                                if (_userRating > 0) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text(l10n.ratingAlreadyRated)),
+                                  );
+                                } else {
+                                  _showRatingDialog(context);
+                                }
+                              },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: themeColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: themeColor.withValues(alpha: 0.3)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.star, size: 20, color: themeColor),
+                              const SizedBox(width: 4),
+                              Text(
+                                _averageRating > 0 ? '${_averageRating.toStringAsFixed(1)}/5' : '0.0/5',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: themeColor,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
+                  ),
 
                     const SizedBox(height: 32),
                     const Divider(height: 1, color: AppTheme.gray200),
