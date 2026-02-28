@@ -931,7 +931,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                                         
                                         final String distanceText = distance >= 100 
                                             ? "100km+" 
-                                            : (distance < 1 ? "<1km" : "${distance.round()}km");
+                                            : (distance < 2 ? "<2km" : "${distance.round()}km");
                                             
                                         return Container(
                                           margin: const EdgeInsets.only(left: 8),

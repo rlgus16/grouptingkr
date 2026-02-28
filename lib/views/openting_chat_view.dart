@@ -13,7 +13,7 @@ import '../models/message_model.dart';
 import 'profile_detail_view.dart';
 import '../utils/user_action_helper.dart';
 import '../widgets/chat_input_area.dart';
-
+import 'openting_view.dart';
 class OpenChatroomChatView extends StatefulWidget {
   final String chatroomId;
 
@@ -321,7 +321,10 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
 
       if (mounted) {
         CustomToast.showSuccess(context, AppLocalizations.of(context)!.opentingLeaveSuccess);
-        // Navigator.pop(context); // Handled by OpentingView
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const OpentingView()),
+          (route) => route.isFirst,
+        );
       }
     } catch (e) {
       if (mounted) {
