@@ -206,7 +206,6 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
     final authController = context.watch<AuthController>();
     final isBlocked = authController.blockedUserIds.contains(widget.user.uid);
     final isMe = authController.currentUserModel?.uid == widget.user.uid;
-    final themeColor = widget.user.gender == '여' ? AppTheme.secondaryColor : AppTheme.primaryColor;
 
     if (isBlocked) {
       return Scaffold(
@@ -376,26 +375,6 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
                                   height: 1.2,
                                 ),
                               ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: themeColor.withValues(alpha:0.1),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      l10n.myPageAge(widget.user.age),
-                                      style: TextStyle(
-                                        color: themeColor,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
                             ],
                           ),
                         ),
@@ -448,6 +427,7 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
                       spacing: 10,
                       runSpacing: 10,
                       children: [
+                        _buildInfoChip(Icons.cake_outlined, l10n.myPageAge(widget.user.age)),
                         _buildInfoChip(Icons.height_rounded, '${widget.user.height}cm'),
                         _buildInfoChip(Icons.location_on_outlined, widget.user.activityArea),
                       ],
