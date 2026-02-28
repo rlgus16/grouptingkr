@@ -262,7 +262,7 @@ class _MyPageViewState extends State<MyPageView> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildScoreTag(_averageRating),
+            _buildScoreTag(_averageRating, user.gender),
             const SizedBox(width: 6),
             _buildTingTag(user.tingBalance),
           ],
@@ -271,26 +271,28 @@ class _MyPageViewState extends State<MyPageView> {
     );
   }
 
-  Widget _buildScoreTag(double score) {
+  Widget _buildScoreTag(double score, String gender) {
     if (score <= 0) return const SizedBox.shrink();
+
+    final themeColor = gender == '여' ? AppTheme.secondaryColor : AppTheme.primaryColor;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.pink.withValues(alpha: 0.1),
+        color: themeColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.pink.withValues(alpha: 0.3)),
+        border: Border.all(color: themeColor.withValues(alpha: 0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.star_rounded, size: 14, color: Colors.pink),
+          Icon(Icons.star_rounded, size: 14, color: themeColor),
           const SizedBox(width: 4),
           Text(
             score.toStringAsFixed(1),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: Colors.pink,
+              color: themeColor,
               fontWeight: FontWeight.w600,
             ),
           ),
