@@ -12,6 +12,8 @@
 		<string>프로필 사진 등록 및 신고를 위해 갤러리 접근 권한이 필요합니다.</string>
 		<key>NSContactsUsageDescription</key>
 		<string>친구 초대를 위해 연락처 접근 권한이 필요합니다.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>음성 채팅을 위해 마이크 접근 권한이 필요합니다.</string>
 		<key>CFBundleDevelopmentRegion</key>
 		<string>$(DEVELOPMENT_LANGUAGE)</string>
 		<key>CFBundleDisplayName</key>

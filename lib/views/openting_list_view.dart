@@ -27,7 +27,8 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
   String _selectedRoomType = 'chat'; // 'chat' or 'voice'
   double _maxDistance = 100.0; // Distance filter in km
   bool _hideFullRooms = false; // Hide full rooms filter
-  final Map<String, UserModel> _userProfileCache = {}; // Cache profiles for fast access
+  final Map<String, UserModel> _userProfileCache =
+      {}; // Cache profiles for fast access
 
   @override
   void dispose() {
@@ -43,7 +44,9 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               title: Text(l10n.opentingCreateRoomTitle),
               content: SingleChildScrollView(
                 child: Column(
@@ -94,7 +97,8 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                             value: 'chat',
                             groupValue: _selectedRoomType,
                             onChanged: (value) {
-                              if (value != null) setState(() => _selectedRoomType = value);
+                              if (value != null)
+                                setState(() => _selectedRoomType = value);
                             },
                             contentPadding: EdgeInsets.zero,
                             activeColor: AppTheme.primaryColor,
@@ -106,7 +110,8 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                             value: 'voice',
                             groupValue: _selectedRoomType,
                             onChanged: (value) {
-                              if (value != null) setState(() => _selectedRoomType = value);
+                              if (value != null)
+                                setState(() => _selectedRoomType = value);
                             },
                             contentPadding: EdgeInsets.zero,
                             activeColor: AppTheme.primaryColor,
@@ -134,18 +139,23 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                         child: DropdownButton<int>(
                           value: _selectedMaxParticipants,
                           isExpanded: true,
-                          icon: const Icon(Icons.arrow_drop_down, color: AppTheme.gray600),
+                          icon: const Icon(
+                            Icons.arrow_drop_down,
+                            color: AppTheme.gray600,
+                          ),
                           items: List.generate(9, (index) => index + 2)
-                              .map((number) => DropdownMenuItem<int>(
-                                    value: number,
-                                    child: Text(
-                                      l10n.opentingParticipantsCount(number),
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        color: AppTheme.textPrimary,
-                                      ),
+                              .map(
+                                (number) => DropdownMenuItem<int>(
+                                  value: number,
+                                  child: Text(
+                                    l10n.opentingParticipantsCount(number),
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      color: AppTheme.textPrimary,
                                     ),
-                                  ))
+                                  ),
+                                ),
+                              )
                               .toList(),
                           onChanged: (value) {
                             if (value != null) {
@@ -160,20 +170,28 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                   ],
                 ),
               ),
-              actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              actionsPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
               actions: [
                 TextButton(
                   onPressed: () {
                     _titleController.clear();
                     Navigator.pop(context);
                   },
-                  style: TextButton.styleFrom(foregroundColor: AppTheme.gray600),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.gray600,
+                  ),
                   child: Text(l10n.commonCancel),
                 ),
                 TextButton(
                   onPressed: () async {
                     if (_titleController.text.trim().isEmpty) {
-                      CustomToast.showError(context, l10n.opentingEnterRoomTitle);
+                      CustomToast.showError(
+                        context,
+                        l10n.opentingEnterRoomTitle,
+                      );
                       return;
                     }
                     Navigator.pop(context);
@@ -214,7 +232,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
           await doc.reference.delete();
         } else {
           participants.remove(userId);
-          
+
           final updateData = <String, dynamic>{
             'participants': participants,
             'participantCount': FieldValue.increment(-1),
@@ -224,7 +242,10 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
           if (creatorId == userId && participants.isNotEmpty) {
             final newOwnerId = participants.first;
             try {
-              final userDoc = await _firestore.collection('users').doc(newOwnerId).get();
+              final userDoc = await _firestore
+                  .collection('users')
+                  .doc(newOwnerId)
+                  .get();
               if (userDoc.exists) {
                 final newOwnerName = userDoc.data()?['nickname'] ?? 'Someone';
                 updateData['creatorId'] = newOwnerId;
@@ -251,7 +272,10 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
 
     if (currentUser == null) {
       if (mounted) {
-        CustomToast.showError(context, AppLocalizations.of(context)!.chatInputHint);
+        CustomToast.showError(
+          context,
+          AppLocalizations.of(context)!.chatInputHint,
+        );
       }
       return;
     }
@@ -272,16 +296,21 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
       };
 
       await _leaveExistingChatrooms(currentUser.uid);
-      final docRef = await _firestore.collection('openChatrooms').add(chatroomData);
+      final docRef = await _firestore
+          .collection('openChatrooms')
+          .add(chatroomData);
 
       _titleController.clear();
 
       if (mounted) {
-        CustomToast.showSuccess(context, AppLocalizations.of(context)!.opentingCreateSuccess);
+        CustomToast.showSuccess(
+          context,
+          AppLocalizations.of(context)!.opentingCreateSuccess,
+        );
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => _selectedRoomType == 'voice' 
+            builder: (context) => _selectedRoomType == 'voice'
                 ? VoiceChatView(chatroomId: docRef.id)
                 : OpenChatroomChatView(chatroomId: docRef.id),
           ),
@@ -289,12 +318,20 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
       }
     } catch (e) {
       if (mounted) {
-        CustomToast.showError(context, AppLocalizations.of(context)!.opentingCreateFailed);
+        CustomToast.showError(
+          context,
+          AppLocalizations.of(context)!.opentingCreateFailed,
+        );
       }
     }
   }
 
-  Future<void> _joinChatroom(String roomId, List<dynamic> participants, int participantCount, int maxParticipants) async {
+  Future<void> _joinChatroom(
+    String roomId,
+    List<dynamic> participants,
+    int participantCount,
+    int maxParticipants,
+  ) async {
     if (_joiningRooms.contains(roomId)) return;
 
     final authController = context.read<AuthController>();
@@ -302,7 +339,10 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
 
     if (currentUser == null) {
       if (mounted) {
-        CustomToast.showError(context, AppLocalizations.of(context)!.chatInputHint);
+        CustomToast.showError(
+          context,
+          AppLocalizations.of(context)!.chatInputHint,
+        );
       }
       return;
     }
@@ -315,7 +355,10 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
     // Check if chatroom is full
     if (participantCount >= maxParticipants) {
       if (mounted) {
-        CustomToast.showError(context, AppLocalizations.of(context)!.opentingRoomFull);
+        CustomToast.showError(
+          context,
+          AppLocalizations.of(context)!.opentingRoomFull,
+        );
       }
       return;
     }
@@ -330,20 +373,28 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
 
       if (!chatroomDoc.exists) {
         if (mounted) {
-          CustomToast.showError(context, AppLocalizations.of(context)!.opentingLoadError);
+          CustomToast.showError(
+            context,
+            AppLocalizations.of(context)!.opentingLoadError,
+          );
         }
         return;
       }
 
       final data = chatroomDoc.data()!;
-      final currentParticipants = List<dynamic>.from(data['participants'] ?? []);
+      final currentParticipants = List<dynamic>.from(
+        data['participants'] ?? [],
+      );
       final currentParticipantCount = data['participantCount'] ?? 0;
       final bannedUsers = List<dynamic>.from(data['bannedUsers'] ?? []);
 
       // Check if user is banned
       if (bannedUsers.contains(currentUser.uid)) {
         if (mounted) {
-          CustomToast.showError(context, AppLocalizations.of(context)!.opentingCannotJoinBanned);
+          CustomToast.showError(
+            context,
+            AppLocalizations.of(context)!.opentingCannotJoinBanned,
+          );
         }
         return;
       }
@@ -354,7 +405,10 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
 
       if (currentParticipantCount >= maxParticipants) {
         if (mounted) {
-          CustomToast.showError(context, AppLocalizations.of(context)!.opentingRoomFull);
+          CustomToast.showError(
+            context,
+            AppLocalizations.of(context)!.opentingRoomFull,
+          );
         }
         return;
       }
@@ -368,12 +422,15 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
       });
 
       if (mounted) {
-        CustomToast.showSuccess(context, AppLocalizations.of(context)!.opentingJoinSuccess);
+        CustomToast.showSuccess(
+          context,
+          AppLocalizations.of(context)!.opentingJoinSuccess,
+        );
         final roomType = data['roomType'] ?? 'chat';
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => roomType == 'voice' 
+            builder: (context) => roomType == 'voice'
                 ? VoiceChatView(chatroomId: roomId)
                 : OpenChatroomChatView(chatroomId: roomId),
           ),
@@ -381,7 +438,10 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
       }
     } catch (e) {
       if (mounted) {
-        CustomToast.showError(context, AppLocalizations.of(context)!.opentingJoinFailed);
+        CustomToast.showError(
+          context,
+          AppLocalizations.of(context)!.opentingJoinFailed,
+        );
       }
     } finally {
       if (mounted) {
@@ -411,12 +471,13 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
   }
 
   Future<List<QueryDocumentSnapshot>> _filterChatroomsByDistance(
-      List<QueryDocumentSnapshot> chatrooms) async {
+    List<QueryDocumentSnapshot> chatrooms,
+  ) async {
     final authController = context.read<AuthController>();
     final currentUser = authController.currentUserModel;
 
     final filteredByDistance = await _filterByDistance(chatrooms, currentUser);
-    
+
     // Apply hide full rooms filter if enabled
     if (_hideFullRooms) {
       return filteredByDistance.where((chatroom) {
@@ -426,7 +487,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
         return participantCount < maxParticipants;
       }).toList();
     }
-    
+
     return filteredByDistance;
   }
 
@@ -453,12 +514,14 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
         if (creatorProfile != null) {
           // Calculate distance
           if (creatorProfile.latitude != 0 && creatorProfile.longitude != 0) {
-            final distance = Geolocator.distanceBetween(
-              currentUser.latitude,
-              currentUser.longitude,
-              creatorProfile.latitude,
-              creatorProfile.longitude,
-            ) / 1000; // Convert to km
+            final distance =
+                Geolocator.distanceBetween(
+                  currentUser.latitude,
+                  currentUser.longitude,
+                  creatorProfile.latitude,
+                  creatorProfile.longitude,
+                ) /
+                1000; // Convert to km
 
             if (distance <= _maxDistance) {
               filtered.add(chatroom);
@@ -509,10 +572,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                       height: 5,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [
-                            AppTheme.gray400,
-                            AppTheme.gray300,
-                          ],
+                          colors: [AppTheme.gray400, AppTheme.gray300],
                         ),
                         borderRadius: BorderRadius.circular(3),
                       ),
@@ -550,7 +610,9 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                         ),
                       ),
                       Text(
-                        currentDistance >= 100 ? "100km+" : "${currentDistance.round()}km",
+                        currentDistance >= 100
+                            ? "100km+"
+                            : "${currentDistance.round()}km",
                         style: const TextStyle(
                           color: AppTheme.primaryColor,
                           fontWeight: FontWeight.w700,
@@ -566,12 +628,16 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                       activeTrackColor: AppTheme.primaryColor,
                       inactiveTrackColor: AppTheme.gray200,
                       thumbColor: AppTheme.primaryColor,
-                      overlayColor: AppTheme.primaryColor.withValues(alpha: 0.2),
+                      overlayColor: AppTheme.primaryColor.withValues(
+                        alpha: 0.2,
+                      ),
                       thumbShape: const RoundSliderThumbShape(
                         enabledThumbRadius: 12,
                         elevation: 3,
                       ),
-                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 24),
+                      overlayShape: const RoundSliderOverlayShape(
+                        overlayRadius: 24,
+                      ),
                     ),
                     child: Slider(
                       value: currentDistance,
@@ -588,14 +654,14 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
 
                   // Hide Full Rooms Toggle
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: AppTheme.gray50,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppTheme.gray200,
-                        width: 1,
-                      ),
+                      border: Border.all(color: AppTheme.gray200, width: 1),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -724,7 +790,9 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppTheme.primaryColor,
+                ),
               ),
             );
           }
@@ -742,7 +810,9 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
               if (distanceSnapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
                   child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppTheme.primaryColor,
+                    ),
                   ),
                 );
               }
@@ -789,249 +859,338 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
               }
 
               return ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
                 itemCount: filteredChatrooms.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 16),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 16),
                 itemBuilder: (context, index) {
                   final chatroom = filteredChatrooms[index];
                   final data = chatroom.data() as Map<String, dynamic>;
-              final roomId = chatroom.id;
-              final title = data['title'] ?? 'Untitled';
-              final creatorId = data['creatorId'] ?? '';
+                  final roomId = chatroom.id;
+                  final title = data['title'] ?? 'Untitled';
+                  final creatorId = data['creatorId'] ?? '';
 
-              final participantCount = data['participantCount'] ?? 0;
-              final maxParticipants = data['maxParticipants'] ?? 10;
-              final participants = List<dynamic>.from(data['participants'] ?? []);
-              final isJoining = _joiningRooms.contains(roomId);
-              final hasJoined = currentUserId != null && participants.contains(currentUserId);
+                  final participantCount = data['participantCount'] ?? 0;
+                  final maxParticipants = data['maxParticipants'] ?? 10;
+                  final participants = List<dynamic>.from(
+                    data['participants'] ?? [],
+                  );
+                  final isJoining = _joiningRooms.contains(roomId);
+                  final hasJoined =
+                      currentUserId != null &&
+                      participants.contains(currentUserId);
 
-              return GestureDetector(
-                onTap: (hasJoined || isJoining)
-                    ? () {
-                        if (hasJoined) {
-                           Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => (data['roomType'] ?? 'chat') == 'voice' 
-                                  ? VoiceChatView(chatroomId: roomId)
-                                  : OpenChatroomChatView(chatroomId: roomId),
-                            ),
-                          );
-                        }
-                      }
-                    : () => _joinChatroom(roomId, participants, participantCount, maxParticipants),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.white,
-                        AppTheme.gray50.withValues(alpha: 0.3),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.08),
-                        blurRadius: 20,
-                        offset: const Offset(0, 4),
-                        spreadRadius: 0,
-                      ),
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 12,
-                        offset: const Offset(0, 2),
-                        spreadRadius: -2,
-                      ),
-                    ],
-                    border: Border.all(
-                      color: AppTheme.gray200.withValues(alpha: 0.5),
-                      width: 1.5,
-                    ),
-                  ),
-                  child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Owner's avatar with modern badge
-                          FutureBuilder<UserModel?>(
-                            future: _fetchSingleProfile(creatorId),
-                            builder: (context, snapshot) {
-                              final ownerProfile = snapshot.data;
-                              final isBlocked = authController.blockedUserIds.contains(creatorId);
-                              final profileImage = isBlocked ? null : ownerProfile?.mainProfileImage;
-
-                              return GestureDetector(
-                                onTap: () {
-                                  if (ownerProfile != null) {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => ProfileDetailView(user: ownerProfile),
-                                      ),
-                                    );
-                                  }
-                                },
-                                child: Stack(
-                                  clipBehavior: Clip.none,
-                                  children: [
-                                    MemberAvatar(
-                                      imageUrl: profileImage,
-                                      name: '',
-                                      isOwner: true,
-                                      gender: ownerProfile?.gender,
-                                      size: 52,
-                                    ),
-                                  ],
+                  return GestureDetector(
+                    onTap: (hasJoined || isJoining)
+                        ? () {
+                            if (hasJoined) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      (data['roomType'] ?? 'chat') == 'voice'
+                                      ? VoiceChatView(chatroomId: roomId)
+                                      : OpenChatroomChatView(
+                                          chatroomId: roomId,
+                                        ),
                                 ),
                               );
-                            },
+                            }
+                          }
+                        : () => _joinChatroom(
+                            roomId,
+                            participants,
+                            participantCount,
+                            maxParticipants,
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            Colors.white,
+                            AppTheme.gray50.withValues(alpha: 0.3),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primaryColor.withValues(
+                              alpha: 0.08,
+                            ),
+                            blurRadius: 20,
+                            offset: const Offset(0, 4),
+                            spreadRadius: 0,
+                          ),
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 12,
+                            offset: const Offset(0, 2),
+                            spreadRadius: -2,
+                          ),
+                        ],
+                        border: Border.all(
+                          color: AppTheme.gray200.withValues(alpha: 0.5),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        title,
-                                        style: const TextStyle(
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.w800,
-                                          color: AppTheme.textPrimary,
-                                          fontFamily: 'Pretendard',
-                                          letterSpacing: -0.3,
-                                          height: 1.3,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 2,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    if ((data['roomType'] ?? 'chat') == 'voice')
-                                      const Icon(Icons.mic, size: 20, color: AppTheme.primaryColor)
-                                    else
-                                      const Icon(Icons.forum_rounded, size: 18, color: AppTheme.primaryColor),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: participantCount >= maxParticipants
-                                            ? AppTheme.errorColor.withValues(alpha: 0.1)
-                                            : AppTheme.successColor.withValues(alpha: 0.1),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: participantCount >= maxParticipants
-                                              ? AppTheme.errorColor.withValues(alpha: 0.3)
-                                              : AppTheme.successColor.withValues(alpha: 0.3),
-                                          width: 1,
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(
-                                            Icons.people_rounded,
-                                            size: 14,
-                                            color: participantCount >= maxParticipants
-                                                ? AppTheme.errorColor
-                                                : AppTheme.successColor,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            '$participantCount/$maxParticipants',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w700,
-                                              color: participantCount >= maxParticipants
-                                                  ? AppTheme.errorColor
-                                                  : AppTheme.successColor,
-                                              fontFamily: 'Pretendard',
+                                // Owner's avatar with modern badge
+                                FutureBuilder<UserModel?>(
+                                  future: _fetchSingleProfile(creatorId),
+                                  builder: (context, snapshot) {
+                                    final ownerProfile = snapshot.data;
+                                    final isBlocked = authController
+                                        .blockedUserIds
+                                        .contains(creatorId);
+                                    final profileImage = isBlocked
+                                        ? null
+                                        : ownerProfile?.mainProfileImage;
+
+                                    return GestureDetector(
+                                      onTap: () {
+                                        if (ownerProfile != null) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  ProfileDetailView(
+                                                    user: ownerProfile,
+                                                  ),
                                             ),
+                                          );
+                                        }
+                                      },
+                                      child: Stack(
+                                        clipBehavior: Clip.none,
+                                        children: [
+                                          MemberAvatar(
+                                            imageUrl: profileImage,
+                                            name: '',
+                                            isOwner: true,
+                                            gender: ownerProfile?.gender,
+                                            size: 52,
                                           ),
                                         ],
                                       ),
-                                    ),
-                                    FutureBuilder<UserModel?>(
-                                      future: _fetchSingleProfile(creatorId),
-                                      builder: (context, snapshot) {
-                                        final ownerProfile = snapshot.data;
-                                        double distance = -1.0;
-                                        final currentUser = authController.currentUserModel;
-                                        if (ownerProfile != null && currentUser != null) {
-                                          if (currentUser.latitude != 0 && currentUser.longitude != 0 && 
-                                              ownerProfile.latitude != 0 && ownerProfile.longitude != 0) {
-                                            distance = Geolocator.distanceBetween(
-                                              currentUser.latitude,
-                                              currentUser.longitude,
-                                              ownerProfile.latitude,
-                                              ownerProfile.longitude,
-                                            ) / 1000;
-                                          }
-                                        }
-                                        if (distance < 0) return const SizedBox.shrink();
-                                        
-                                        final String distanceText = distance >= 100 
-                                            ? "100km+" 
-                                            : (distance < 2 ? "<2km" : "${distance.round()}km");
-                                            
-                                        return Container(
-                                          margin: const EdgeInsets.only(left: 8),
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: AppTheme.gray100,
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(color: AppTheme.gray200, width: 1),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(Icons.location_on_rounded, size: 14, color: AppTheme.gray600),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                distanceText,
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: AppTheme.gray600,
-                                                  fontFamily: 'Pretendard',
-                                                ),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              title,
+                                              style: const TextStyle(
+                                                fontSize: 17,
+                                                fontWeight: FontWeight.w800,
+                                                color: AppTheme.textPrimary,
+                                                fontFamily: 'Pretendard',
+                                                letterSpacing: -0.3,
+                                                height: 1.3,
                                               ),
-                                            ],
+                                              overflow: TextOverflow.ellipsis,
+                                              maxLines: 2,
+                                            ),
                                           ),
-                                        );
-                                      },
-                                    ),
-                                  ],
+                                          const SizedBox(width: 8),
+                                          if ((data['roomType'] ?? 'chat') ==
+                                              'voice')
+                                            const Icon(
+                                              Icons.mic,
+                                              size: 20,
+                                              color: AppTheme.primaryColor,
+                                            )
+                                          else
+                                            const Icon(
+                                              Icons.forum_rounded,
+                                              size: 18,
+                                              color: AppTheme.primaryColor,
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 4,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color:
+                                                  participantCount >=
+                                                      maxParticipants
+                                                  ? AppTheme.errorColor
+                                                        .withValues(alpha: 0.1)
+                                                  : AppTheme.successColor
+                                                        .withValues(alpha: 0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              border: Border.all(
+                                                color:
+                                                    participantCount >=
+                                                        maxParticipants
+                                                    ? AppTheme.errorColor
+                                                          .withValues(
+                                                            alpha: 0.3,
+                                                          )
+                                                    : AppTheme.successColor
+                                                          .withValues(
+                                                            alpha: 0.3,
+                                                          ),
+                                                width: 1,
+                                              ),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.people_rounded,
+                                                  size: 14,
+                                                  color:
+                                                      participantCount >=
+                                                          maxParticipants
+                                                      ? AppTheme.errorColor
+                                                      : AppTheme.successColor,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Text(
+                                                  '$participantCount/$maxParticipants',
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight: FontWeight.w700,
+                                                    color:
+                                                        participantCount >=
+                                                            maxParticipants
+                                                        ? AppTheme.errorColor
+                                                        : AppTheme.successColor,
+                                                    fontFamily: 'Pretendard',
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          FutureBuilder<UserModel?>(
+                                            future: _fetchSingleProfile(
+                                              creatorId,
+                                            ),
+                                            builder: (context, snapshot) {
+                                              final ownerProfile =
+                                                  snapshot.data;
+                                              double distance = -1.0;
+                                              final currentUser = authController
+                                                  .currentUserModel;
+                                              if (ownerProfile != null &&
+                                                  currentUser != null) {
+                                                if (currentUser.latitude != 0 &&
+                                                    currentUser.longitude !=
+                                                        0 &&
+                                                    ownerProfile.latitude !=
+                                                        0 &&
+                                                    ownerProfile.longitude !=
+                                                        0) {
+                                                  distance =
+                                                      Geolocator.distanceBetween(
+                                                        currentUser.latitude,
+                                                        currentUser.longitude,
+                                                        ownerProfile.latitude,
+                                                        ownerProfile.longitude,
+                                                      ) /
+                                                      1000;
+                                                }
+                                              }
+                                              if (distance < 0)
+                                                return const SizedBox.shrink();
+
+                                              final String distanceText =
+                                                  distance >= 100
+                                                  ? "100km+"
+                                                  : (distance < 2
+                                                        ? "<2km"
+                                                        : "${distance.round()}km");
+
+                                              return Container(
+                                                margin: const EdgeInsets.only(
+                                                  left: 8,
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: AppTheme.gray100,
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                  border: Border.all(
+                                                    color: AppTheme.gray200,
+                                                    width: 1,
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.location_on_rounded,
+                                                      size: 14,
+                                                      color: AppTheme.gray600,
+                                                    ),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      distanceText,
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        color: AppTheme.gray600,
+                                                        fontFamily:
+                                                            'Pretendard',
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  ), // Close Padding
-                ), // Close Container
-              ); // Close GestureDetector
+                          ],
+                        ),
+                      ), // Close Padding
+                    ), // Close Container
+                  ); // Close GestureDetector
+                },
+              );
             },
           );
         },
-      );
-    },
-  ),
+      ),
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -1073,17 +1232,15 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                             MaterialPageRoute(
                               builder: (context) => roomType == 'voice'
                                   ? VoiceChatView(chatroomId: chatroomId)
-                                  : OpenChatroomChatView(chatroomId: chatroomId),
+                                  : OpenChatroomChatView(
+                                      chatroomId: chatroomId,
+                                    ),
                             ),
                           );
                         },
                         backgroundColor: Colors.white,
                         elevation: 0,
-                        child: Icon(
-                          roomType == 'voice' ? Icons.mic : Icons.forum_rounded, 
-                          color: AppTheme.primaryColor, 
-                          size: 28
-                        ),
+                        child: _AnimatedRoomIcon(roomType: roomType),
                       ),
                     ),
                   );
@@ -1114,7 +1271,11 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                   color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.add_rounded, color: Colors.white, size: 24),
+                child: const Icon(
+                  Icons.add_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
               label: Text(
                 l10n.opentingCreateRoom,
@@ -1161,7 +1322,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                     color: AppTheme.primaryColor.withValues(alpha: 0.1),
                     blurRadius: 24,
                     offset: const Offset(0, 8),
-                  )
+                  ),
                 ],
               ),
               child: Icon(
@@ -1211,13 +1372,71 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
           const SizedBox(height: 16),
           Text(
             message,
-            style: const TextStyle(
-              fontSize: 16,
-              color: AppTheme.textSecondary,
-            ),
+            style: const TextStyle(fontSize: 16, color: AppTheme.textSecondary),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AnimatedRoomIcon extends StatefulWidget {
+  final String roomType;
+
+  const _AnimatedRoomIcon({super.key, required this.roomType});
+
+  @override
+  State<_AnimatedRoomIcon> createState() => _AnimatedRoomIconState();
+}
+
+class _AnimatedRoomIconState extends State<_AnimatedRoomIcon>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    )..repeat(reverse: true);
+
+    _scaleAnimation = Tween<double>(
+      begin: 0.85,
+      end: 1.15,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+    _opacityAnimation = Tween<double>(
+      begin: 0.6,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: Opacity(
+            opacity: _opacityAnimation.value,
+            child: Icon(
+              widget.roomType == 'voice' ? Icons.mic : Icons.forum_rounded,
+              color: AppTheme.primaryColor,
+              size: 28,
+            ),
+          ),
+        );
+      },
     );
   }
 }
