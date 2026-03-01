@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
+import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:permission_handler/permission_handler.dart';
+import '../utils/agora_config.dart';
 import '../controllers/auth_controller.dart';
 import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
@@ -43,6 +46,10 @@ class _VoiceChatViewState extends State<VoiceChatView> {
   StreamSubscription<DocumentSnapshot>? _messageSubscription;
   StreamSubscription<DocumentSnapshot>? _chatroomSubscription;
 
+  // Agora Engine
+  RtcEngine? _engine;
+  Map<int, bool> _remoteUsers = {}; // Tracks UIDs of active speakers
+
   // Voice Chat States
   bool _isVoiceChatActive = false;
   bool _isMuted = false;
@@ -63,6 +70,12 @@ class _VoiceChatViewState extends State<VoiceChatView> {
     _scrollController.dispose();
     _messageSubscription?.cancel();
     _chatroomSubscription?.cancel();
+    
+    // Clean up Agora engine if active
+    if (_isVoiceChatActive) {
+      _leaveVoiceChat();
+    }
+    
     super.dispose();
   }
 
@@ -374,26 +387,103 @@ class _VoiceChatViewState extends State<VoiceChatView> {
     );
   }
 
-  void _toggleVoiceChat() {
-    setState(() {
-      _isVoiceChatActive = !_isVoiceChatActive;
-      if (!_isVoiceChatActive) {
+  Future<void> _initAgora() async {
+    // Request permissions
+    await [Permission.microphone].request();
+
+    // Create and initialize the engine
+    _engine = createAgoraRtcEngine();
+    await _engine!.initialize(const RtcEngineContext(
+      appId: AgoraConfig.appId,
+      channelProfile: ChannelProfileType.channelProfileLiveBroadcasting,
+    ));
+
+    // Register event handlers
+    _engine!.registerEventHandler(
+      RtcEngineEventHandler(
+        onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
+          if (mounted) {
+            setState(() { 
+              _isVoiceChatActive = true; 
+            });
+          }
+        },
+        onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
+          if (mounted) {
+            setState(() {
+              _remoteUsers[remoteUid] = true;
+            });
+          }
+        },
+        onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
+          if (mounted) {
+            setState(() {
+              _remoteUsers.remove(remoteUid);
+            });
+          }
+        },
+      ),
+    );
+
+    // Set channel options and join
+    await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
+    await _engine!.enableAudio();
+    
+    // For this demonstration, we are joining without a token if App Certificate is disabled
+    final authController = context.read<AuthController>();
+    final uid = authController.currentUserModel?.uid.hashCode ?? 0;
+    
+    await _engine!.joinChannel(
+      token: '', // Leave empty if not using a token server 
+      channelId: widget.chatroomId,
+      uid: uid,
+      options: const ChannelMediaOptions(
+        clientRoleType: ClientRoleType.clientRoleBroadcaster,
+      ),
+    );
+  }
+
+  Future<void> _leaveVoiceChat() async {
+    if (_engine != null) {
+      await _engine!.leaveChannel();
+      await _engine!.release();
+      _engine = null;
+    }
+    
+    if (mounted) {
+      setState(() {
+        _isVoiceChatActive = false;
         _isMuted = false;
         _isSpeakerOn = true;
-      }
-    });
+        _remoteUsers.clear();
+      });
+    }
+  }
+
+  void _toggleVoiceChat() {
+    if (_isVoiceChatActive) {
+      _leaveVoiceChat();
+    } else {
+      _initAgora();
+    }
   }
 
   void _toggleMute() {
     setState(() {
       _isMuted = !_isMuted;
     });
+    if (_engine != null) {
+      _engine!.muteLocalAudioStream(_isMuted);
+    }
   }
 
   void _toggleSpeaker() {
     setState(() {
       _isSpeakerOn = !_isSpeakerOn;
     });
+    if (_engine != null) {
+      _engine!.setEnableSpeakerphone(_isSpeakerOn);
+    }
   }
 
   Widget _buildVoiceChatPanel() {
@@ -543,7 +633,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
                     const Icon(Icons.people_rounded, color: Colors.white70, size: 14),
                     const SizedBox(width: 4),
                     Text(
-                      '1',
+                      '${_remoteUsers.length + 1}', // 1 (self) + active remote users
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 12,
