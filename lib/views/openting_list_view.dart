@@ -10,6 +10,7 @@ import '../widgets/member_avatar.dart';
 import '../models/user_model.dart';
 import 'profile_detail_view.dart';
 import 'openting_chat_view.dart';
+import 'voice_chat_view.dart';
 
 class OpenChatroomListView extends StatefulWidget {
   const OpenChatroomListView({super.key});
@@ -23,6 +24,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
   final TextEditingController _titleController = TextEditingController();
   final Set<String> _joiningRooms = <String>{};
   int _selectedMaxParticipants = 10;
+  String _selectedRoomType = 'chat'; // 'chat' or 'voice'
   double _maxDistance = 100.0; // Distance filter in km
   bool _hideFullRooms = false; // Hide full rooms filter
   final Map<String, UserModel> _userProfileCache = {}; // Cache profiles for fast access
@@ -73,6 +75,44 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                           vertical: 12,
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Room Type',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppTheme.textSecondary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: RadioListTile<String>(
+                            title: const Text('Chat'),
+                            value: 'chat',
+                            groupValue: _selectedRoomType,
+                            onChanged: (value) {
+                              if (value != null) setState(() => _selectedRoomType = value);
+                            },
+                            contentPadding: EdgeInsets.zero,
+                            activeColor: AppTheme.primaryColor,
+                          ),
+                        ),
+                        Expanded(
+                          child: RadioListTile<String>(
+                            title: const Text('Voice'),
+                            value: 'voice',
+                            groupValue: _selectedRoomType,
+                            onChanged: (value) {
+                              if (value != null) setState(() => _selectedRoomType = value);
+                            },
+                            contentPadding: EdgeInsets.zero,
+                            activeColor: AppTheme.primaryColor,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -220,6 +260,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
       final now = DateTime.now();
       final chatroomData = {
         'title': _titleController.text.trim(),
+        'roomType': _selectedRoomType,
         'creatorId': currentUser.uid,
         'creatorNickname': currentUser.nickname,
         'participants': [currentUser.uid],
@@ -240,7 +281,9 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => OpenChatroomChatView(chatroomId: docRef.id),
+            builder: (context) => _selectedRoomType == 'voice' 
+                ? VoiceChatView(chatroomId: docRef.id)
+                : OpenChatroomChatView(chatroomId: docRef.id),
           ),
         );
       }
@@ -326,10 +369,13 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
 
       if (mounted) {
         CustomToast.showSuccess(context, AppLocalizations.of(context)!.opentingJoinSuccess);
+        final roomType = data['roomType'] ?? 'chat';
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => OpenChatroomChatView(chatroomId: roomId),
+            builder: (context) => roomType == 'voice' 
+                ? VoiceChatView(chatroomId: roomId)
+                : OpenChatroomChatView(chatroomId: roomId),
           ),
         );
       }
@@ -766,7 +812,9 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                            Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => OpenChatroomChatView(chatroomId: roomId),
+                              builder: (context) => (data['roomType'] ?? 'chat') == 'voice' 
+                                  ? VoiceChatView(chatroomId: roomId)
+                                  : OpenChatroomChatView(chatroomId: roomId),
                             ),
                           );
                         }
@@ -850,6 +898,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Expanded(
                                       child: Text(
@@ -866,6 +915,11 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                                         maxLines: 2,
                                       ),
                                     ),
+                                    const SizedBox(width: 8),
+                                    if ((data['roomType'] ?? 'chat') == 'voice')
+                                      const Icon(Icons.mic, size: 20, color: AppTheme.primaryColor)
+                                    else
+                                      const Icon(Icons.forum_rounded, size: 18, color: AppTheme.primaryColor),
                                   ],
                                 ),
                                 const SizedBox(height: 8),
@@ -992,7 +1046,11 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-                  final chatroomId = snapshot.data!.docs.first.id;
+                  final chatroomDoc = snapshot.data!.docs.first;
+                  final chatroomId = chatroomDoc.id;
+                  final roomData = chatroomDoc.data() as Map<String, dynamic>;
+                  final roomType = roomData['roomType'] ?? 'chat';
+
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 16.0),
                     child: Container(
@@ -1013,13 +1071,19 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => OpenChatroomChatView(chatroomId: chatroomId),
+                              builder: (context) => roomType == 'voice'
+                                  ? VoiceChatView(chatroomId: chatroomId)
+                                  : OpenChatroomChatView(chatroomId: chatroomId),
                             ),
                           );
                         },
                         backgroundColor: Colors.white,
                         elevation: 0,
-                        child: const Icon(Icons.forum_rounded, color: AppTheme.primaryColor, size: 28),
+                        child: Icon(
+                          roomType == 'voice' ? Icons.mic : Icons.forum_rounded, 
+                          color: AppTheme.primaryColor, 
+                          size: 28
+                        ),
                       ),
                     ),
                   );
