@@ -832,7 +832,6 @@ class _VoiceChatViewState extends State<VoiceChatView> {
       ),
       body: Column(
         children: [
-          _buildVoiceChatPanel(),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
@@ -900,6 +899,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
               ],
             ),
           ),
+          _buildVoiceChatPanel(),
           Expanded(
             child: Container(
               color: const Color(0xFFF5F6F8),
