@@ -15,6 +15,7 @@ class MemberAvatar extends StatelessWidget {
   final String? name;
   final bool? isOwner;
   final bool? isMatched;
+  final bool? isVoiceChatJoined;
 
   final String? gender;
   final double size;
@@ -28,6 +29,7 @@ class MemberAvatar extends StatelessWidget {
     this.name,
     this.isOwner,
     this.isMatched,
+    this.isVoiceChatJoined,
     this.gender,
     this.size = 50,
     this.onTap,
@@ -45,6 +47,7 @@ class MemberAvatar extends StatelessWidget {
        name = null,
        isOwner = null,
        isMatched = null,
+       isVoiceChatJoined = null,
        gender = null;
 
   @override
@@ -52,6 +55,7 @@ class MemberAvatar extends StatelessWidget {
     final profileImage = user?.mainProfileImage ?? imageUrl;
     final showOwnerBadge = isOwner ?? false;
     final showMatchedBadge = isMatched ?? false;
+    final showVoiceJoinedBadge = isVoiceChatJoined ?? false;
     final userGender = user?.gender ?? gender;
 
     return GestureDetector(
@@ -109,6 +113,30 @@ class MemberAvatar extends StatelessWidget {
                 child: Icon(
                   Icons.favorite,
                   size: size * 0.15,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+
+          // 보이스챗 접속 표시
+          if (showVoiceJoinedBadge)
+            Positioned(
+              right: -2,
+              top: -2,
+              child: Container(
+                width: size * 0.35,
+                height: size * 0.35,
+                decoration: BoxDecoration(
+                  color: AppTheme.successColor,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 2.0,
+                  ),
+                ),
+                child: Icon(
+                  Icons.mic,
+                  size: size * 0.2,
                   color: Colors.white,
                 ),
               ),

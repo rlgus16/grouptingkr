@@ -61,6 +61,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadChatroomData();
       _listenToMessages();
+      _initAgoraAsListener();
     });
   }
 
@@ -72,9 +73,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
     _chatroomSubscription?.cancel();
     
     // Clean up Agora engine if active
-    if (_isVoiceChatActive) {
-      _leaveVoiceChat();
-    }
+    _leaveVoiceChat();
     
     super.dispose();
   }
@@ -387,67 +386,111 @@ class _VoiceChatViewState extends State<VoiceChatView> {
     );
   }
 
-  Future<void> _initAgora() async {
-    // Request permissions
-    await [Permission.microphone].request();
+  Future<void> _initAgoraAsListener() async {
+    try {
+      _engine = createAgoraRtcEngine();
+      await _engine!.initialize(const RtcEngineContext(
+        appId: AgoraConfig.appId,
+        channelProfile: ChannelProfileType.channelProfileLiveBroadcasting,
+      ));
 
-    // Create and initialize the engine
-    _engine = createAgoraRtcEngine();
-    await _engine!.initialize(const RtcEngineContext(
-      appId: AgoraConfig.appId,
-      channelProfile: ChannelProfileType.channelProfileLiveBroadcasting,
-    ));
+      _engine!.registerEventHandler(
+        RtcEngineEventHandler(
+          onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
+            if (mounted) {
+              setState(() {
+                _remoteUsers[remoteUid] = true;
+              });
+            }
+          },
+          onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
+            if (mounted) {
+              setState(() {
+                _remoteUsers.remove(remoteUid);
+              });
+            }
+          },
+        ),
+      );
 
-    // Register event handlers
-    _engine!.registerEventHandler(
-      RtcEngineEventHandler(
-        onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-          if (mounted) {
-            setState(() { 
-              _isVoiceChatActive = true; 
-            });
-          }
-        },
-        onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-          if (mounted) {
-            setState(() {
-              _remoteUsers[remoteUid] = true;
-            });
-          }
-        },
-        onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
-          if (mounted) {
-            setState(() {
-              _remoteUsers.remove(remoteUid);
-            });
-          }
-        },
-      ),
-    );
+      await _engine!.setClientRole(role: ClientRoleType.clientRoleAudience);
+      
+      final authController = context.read<AuthController>();
+      final uid = authController.currentUserModel?.uid.hashCode ?? 0;
+      
+      await _engine!.joinChannel(
+        token: '',
+        channelId: widget.chatroomId,
+        uid: uid,
+        options: const ChannelMediaOptions(
+          clientRoleType: ClientRoleType.clientRoleAudience,
+          autoSubscribeAudio: false,
+        ),
+      );
+    } catch (e) {
+      debugPrint('Agora Listener Init Error: $e');
+    }
+  }
 
-    // Set channel options and join
-    await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
-    await _engine!.enableAudio();
-    
-    // For this demonstration, we are joining without a token if App Certificate is disabled
-    final authController = context.read<AuthController>();
-    final uid = authController.currentUserModel?.uid.hashCode ?? 0;
-    
-    await _engine!.joinChannel(
-      token: '', // Leave empty if not using a token server 
-      channelId: widget.chatroomId,
-      uid: uid,
-      options: const ChannelMediaOptions(
-        clientRoleType: ClientRoleType.clientRoleBroadcaster,
-      ),
-    );
+  Future<void> _joinAsBroadcaster() async {
+    try {
+      if (_engine == null) {
+        await _initAgoraAsListener();
+      }
+
+      // Request permissions
+      final status = await Permission.microphone.request();
+      if (status != PermissionStatus.granted) {
+        if (mounted) CustomToast.showError(context, 'Microphone permission denied');
+        return;
+      }
+
+      await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
+      await _engine!.enableAudio();
+      
+      // Update options for broadcaster
+      await _engine!.updateChannelMediaOptions(
+        const ChannelMediaOptions(
+          clientRoleType: ClientRoleType.clientRoleBroadcaster,
+          autoSubscribeAudio: true,
+          publishMicrophoneTrack: true,
+        ),
+      );
+
+      if (mounted) {
+        setState(() {
+          _isVoiceChatActive = true;
+        });
+      }
+    } catch (e) {
+      debugPrint('Agora Broadcaster Join Error: $e');
+      if (mounted) CustomToast.showError(context, 'Failed to join voice chat: $e');
+    }
   }
 
   Future<void> _leaveVoiceChat() async {
-    if (_engine != null) {
-      await _engine!.leaveChannel();
-      await _engine!.release();
-      _engine = null;
+    try {
+      if (_engine != null) {
+        if (_isVoiceChatActive) {
+          // If we were broadcasting, revert to listener role
+          await _engine!.setClientRole(role: ClientRoleType.clientRoleAudience);
+          await _engine!.updateChannelMediaOptions(
+            const ChannelMediaOptions(
+              clientRoleType: ClientRoleType.clientRoleAudience,
+              autoSubscribeAudio: false,
+              publishMicrophoneTrack: false,
+            ),
+          );
+          await _engine!.disableAudio();
+        } else {
+          // If completely disposing view
+          await _engine!.leaveChannel();
+          await _engine!.release();
+          _engine = null;
+        }
+      }
+    } catch (e) {
+      debugPrint('Agora Leave Error: $e');
     }
     
     if (mounted) {
@@ -455,7 +498,6 @@ class _VoiceChatViewState extends State<VoiceChatView> {
         _isVoiceChatActive = false;
         _isMuted = false;
         _isSpeakerOn = true;
-        _remoteUsers.clear();
       });
     }
   }
@@ -464,7 +506,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
     if (_isVoiceChatActive) {
       _leaveVoiceChat();
     } else {
-      _initAgora();
+      _joinAsBroadcaster();
     }
   }
 
@@ -814,6 +856,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
                               itemBuilder: (context, index) {
                                 final member = _chatroomMembers[index];
                                 final isBlocked = authController.blockedUserIds.contains(member.uid);
+                                final isVoiceJoined = (member.uid == currentUserId && _isVoiceChatActive) || _remoteUsers.containsKey(member.uid.hashCode);
                                 return GestureDetector(
                                   onLongPress: () => _showUserOptions(context, member),
                                   onTap: () {
@@ -834,6 +877,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
                                         imageUrl: isBlocked ? null : member.mainProfileImage,
                                         name: member.nickname,
                                         isOwner: member.uid == _currentChatroomData?['creatorId'],
+                                        isVoiceChatJoined: isVoiceJoined,
                                         gender: member.gender,
                                         size: 40,
                                       ),
