@@ -1652,6 +1652,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get costFiveTing => '5 Ting';
 
   @override
+  String get costTenTing => '10 Ting';
+
+  @override
   String get opentingBannedMessage => '강퇴 당하셨습니다.';
 
   @override

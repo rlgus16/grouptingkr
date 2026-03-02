@@ -3248,6 +3248,12 @@ abstract class AppLocalizations {
   /// **'5 Ting'**
   String get costFiveTing;
 
+  /// No description provided for @costTenTing.
+  ///
+  /// In ko, this message translates to:
+  /// **'10 Ting'**
+  String get costTenTing;
+
   /// No description provided for @opentingBannedMessage.
   ///
   /// In ko, this message translates to:

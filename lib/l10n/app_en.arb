@@ -563,6 +563,7 @@
   "userActionPrivateChatSent": "1:1 chat invite sent.",
   "commonErrorWithValue": "Error occurred: {error}",
   "costFiveTing": "5 Ting",
+  "costTenTing": "10 Ting",
   "opentingBannedMessage": "You are removed from the chatroom.",
   "opentingSendMessageFailed": "Failed to send message",
   "opentingLeaveSuccess": "Left chatroom successfully!",

@@ -11,6 +11,7 @@ import '../models/user_model.dart';
 import 'profile_detail_view.dart';
 import 'openting_chat_view.dart';
 import 'voice_chat_view.dart';
+import '../services/user_service.dart';
 
 class OpenChatroomListView extends StatefulWidget {
   const OpenChatroomListView({super.key});
@@ -89,36 +90,62 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: RadioListTile<String>(
-                            title: const Text('Chat'),
-                            value: 'chat',
-                            groupValue: _selectedRoomType,
-                            onChanged: (value) {
-                              if (value != null)
-                                setState(() => _selectedRoomType = value);
-                            },
-                            contentPadding: EdgeInsets.zero,
-                            activeColor: AppTheme.primaryColor,
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.gray50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedRoomType,
+                          isExpanded: true,
+                          icon: const Icon(
+                            Icons.arrow_drop_down,
+                            color: AppTheme.gray600,
                           ),
+                          items: [
+                            const DropdownMenuItem<String>(
+                              value: 'chat',
+                              child: Text(
+                                'Chat',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              ),
+                            ),
+                            const DropdownMenuItem<String>(
+                              value: 'voice',
+                              child: Text(
+                                'Voice',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() {
+                                _selectedRoomType = value;
+                              });
+                            }
+                          },
                         ),
-                        Expanded(
-                          child: RadioListTile<String>(
-                            title: const Text('Voice'),
-                            value: 'voice',
-                            groupValue: _selectedRoomType,
-                            onChanged: (value) {
-                              if (value != null)
-                                setState(() => _selectedRoomType = value);
-                            },
-                            contentPadding: EdgeInsets.zero,
-                            activeColor: AppTheme.primaryColor,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
+                    if (_selectedRoomType == 'voice') ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.info_outline, size: 12, color: AppTheme.warningColor),
+                          const SizedBox(width: 4),
+                          Text(l10n.costTenTing, style: const TextStyle(color: AppTheme.warningColor, fontSize: 12)),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     Text(
                       l10n.opentingMaxParticipants,
@@ -280,6 +307,19 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
       return;
     }
 
+    if (_selectedRoomType == 'voice') {
+      const int voiceChatCost = 10;
+      if (currentUser.tingBalance < voiceChatCost) {
+        if (mounted) {
+          CustomToast.showError(
+            context,
+            AppLocalizations.of(context)!.profileEditInsufficientTings,
+          );
+        }
+        return;
+      }
+    }
+
     try {
       final now = DateTime.now();
       final chatroomData = {
@@ -299,6 +339,14 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
       final docRef = await _firestore
           .collection('openChatrooms')
           .add(chatroomData);
+
+      if (_selectedRoomType == 'voice') {
+        final userService = UserService();
+        await userService.deductTings(currentUser.uid, 10);
+        if (mounted) {
+          await authController.refreshCurrentUser();
+        }
+      }
 
       _titleController.clear();
 

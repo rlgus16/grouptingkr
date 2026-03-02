@@ -584,6 +584,7 @@
   "userActionPrivateChatSent": "1:1 대화 초대를 보냈습니다.",
   "commonErrorWithValue": "오류가 발생했습니다: {error}",
   "costFiveTing": "5 Ting",
+  "costTenTing": "10 Ting",
   "opentingBannedMessage": "강퇴 당하셨습니다.",
   "opentingSendMessageFailed": "메시지 전송 실패",
   "opentingLeaveSuccess": "채팅방에서 나갔습니다!",

@@ -1693,6 +1693,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get costFiveTing => '5 Ting';
 
   @override
+  String get costTenTing => '10 Ting';
+
+  @override
   String get opentingBannedMessage => 'You are removed from the chatroom.';
 
   @override
