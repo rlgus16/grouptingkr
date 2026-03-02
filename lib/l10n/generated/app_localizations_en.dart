@@ -1693,8 +1693,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get costFiveTing => '5 Ting';
 
   @override
-  String get opentingBannedMessage =>
-      'You have been removed from the chatroom.';
+  String get opentingBannedMessage => 'You are removed from the chatroom.';
 
   @override
   String get opentingSendMessageFailed => 'Failed to send message';
@@ -1803,4 +1802,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String voiceChatJoinFailed(Object error) {
     return 'Failed to join: $error';
   }
+
+  @override
+  String get voiceChatClosedByOwner => 'The owner has closed the chatroom.';
 }

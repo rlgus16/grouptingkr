@@ -563,7 +563,7 @@
   "userActionPrivateChatSent": "1:1 chat invite sent.",
   "commonErrorWithValue": "Error occurred: {error}",
   "costFiveTing": "5 Ting",
-  "opentingBannedMessage": "You have been removed from the chatroom.",
+  "opentingBannedMessage": "You are removed from the chatroom.",
   "opentingSendMessageFailed": "Failed to send message",
   "opentingLeaveSuccess": "Left chatroom successfully!",
   "opentingLeaveFailed": "Failed to leave chatroom",
@@ -599,5 +599,6 @@
   "voiceChatMic": "Mic",
   "voiceChatLeave": "Leave",
   "voiceChatPermissionDenied": "Microphone permission denied",
-  "voiceChatJoinFailed": "Failed to join: {error}"
+  "voiceChatJoinFailed": "Failed to join: {error}",
+  "voiceChatClosedByOwner": "The owner has closed the chatroom."
 }

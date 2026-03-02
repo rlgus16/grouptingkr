@@ -620,5 +620,6 @@
   "voiceChatMic": "마이크",
   "voiceChatLeave": "나가기",
   "voiceChatPermissionDenied": "마이크 권한이 거부되었습니다.",
-  "voiceChatJoinFailed": "참여 실패: {error}"
+  "voiceChatJoinFailed": "참여 실패: {error}",
+  "voiceChatClosedByOwner": "방장이 채팅방을 종료했습니다."
 }

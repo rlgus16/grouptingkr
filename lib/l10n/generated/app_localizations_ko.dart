@@ -1759,4 +1759,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String voiceChatJoinFailed(Object error) {
     return '참여 실패: $error';
   }
+
+  @override
+  String get voiceChatClosedByOwner => '방장이 채팅방을 종료했습니다.';
 }

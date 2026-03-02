@@ -86,17 +86,40 @@ class _VoiceChatViewState extends State<VoiceChatView> {
         .listen((snapshot) {
       if (!mounted) return;
 
-      if (snapshot.exists) {
-        final data = snapshot.data();
-        final authController = context.read<AuthController>();
-        final currentUserId = authController.currentUserModel?.uid;
+      final data = snapshot.data();
+      final authController = context.read<AuthController>();
+      final currentUserId = authController.currentUserModel?.uid;
 
-        // Check if user is still a participant
-        final participants = List<String>.from(data?['participants'] ?? []);
-        if (currentUserId != null &&
-            !participants.contains(currentUserId) &&
-            !_isLeaving) {
-          
+      if (!snapshot.exists || data == null) {
+        if (mounted && !_isLeaving) {
+          CustomToast.showError(context, AppLocalizations.of(context)!.voiceChatClosedByOwner);
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const OpentingView()),
+            (route) => route.isFirst,
+          );
+        }
+        return;
+      }
+
+      if (mounted) {
+        final participants = List<String>.from(data['participants'] ?? []);
+        final isBanned = data['bannedUsers']?.contains(currentUserId) ?? false;
+        
+        if (!participants.contains(currentUserId) && !isBanned) {
+          if (!_isLeaving) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => const OpentingView()),
+              (route) => route.isFirst,
+            );
+          }
+          return;
+        }
+
+        if (isBanned && !_isLeaving) {
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const OpentingView()),
+            (route) => route.isFirst,
+          );
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(AppLocalizations.of(context)!.opentingBannedMessage),
@@ -286,11 +309,13 @@ class _VoiceChatViewState extends State<VoiceChatView> {
 
       final data = chatroomDoc.data()!;
       final participantCount = data['participantCount'] ?? 0;
+      final creatorId = data['creatorId'];
 
-      if (participantCount <= 1) {
+      if (participantCount <= 1 || creatorId == currentUserId) {
+        // Automatically destroy room if owner leaves or if room is empty
+        _isLeaving = true;
         await chatroomRef.delete();
       } else {
-        final creatorId = data['creatorId'];
         final participants = List<dynamic>.from(data['participants'] ?? []);
 
         participants.remove(currentUserId);
@@ -302,21 +327,6 @@ class _VoiceChatViewState extends State<VoiceChatView> {
           'participantCount': FieldValue.increment(-1),
           'updatedAt': FieldValue.serverTimestamp(),
         };
-
-        if (creatorId == currentUserId && participants.isNotEmpty) {
-          final newOwnerId = participants.first;
-          
-          try {
-            final userDoc = await _firestore.collection('users').doc(newOwnerId).get();
-            if (userDoc.exists) {
-              final newOwnerName = userDoc.data()?['nickname'] ?? 'Someone';
-              updateData['creatorId'] = newOwnerId;
-              updateData['creatorNickname'] = newOwnerName;
-            }
-          } catch (e) {
-            updateData['creatorId'] = newOwnerId;
-          }
-        }
 
         await chatroomRef.update(updateData);
       }
