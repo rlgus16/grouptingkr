@@ -424,7 +424,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
         uid: uid,
         options: const ChannelMediaOptions(
           clientRoleType: ClientRoleType.clientRoleAudience,
-          autoSubscribeAudio: false,
+          autoSubscribeAudio: true,
         ),
       );
     } catch (e) {
@@ -477,7 +477,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
           await _engine!.updateChannelMediaOptions(
             const ChannelMediaOptions(
               clientRoleType: ClientRoleType.clientRoleAudience,
-              autoSubscribeAudio: false,
+              autoSubscribeAudio: true,
               publishMicrophoneTrack: false,
             ),
           );
