@@ -3469,6 +3469,24 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'방장이 채팅방을 종료했습니다.'**
   String get voiceChatClosedByOwner;
+
+  /// No description provided for @opentingRoomTypeTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'방 종류'**
+  String get opentingRoomTypeTitle;
+
+  /// No description provided for @opentingRoomTypeChat.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅 방'**
+  String get opentingRoomTypeChat;
+
+  /// No description provided for @opentingRoomTypeVoice.
+  ///
+  /// In ko, this message translates to:
+  /// **'보이스 방'**
+  String get opentingRoomTypeVoice;
 }
 
 class _AppLocalizationsDelegate

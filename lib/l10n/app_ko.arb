@@ -622,5 +622,8 @@
   "voiceChatLeave": "나가기",
   "voiceChatPermissionDenied": "마이크 권한이 거부되었습니다.",
   "voiceChatJoinFailed": "참여 실패: {error}",
-  "voiceChatClosedByOwner": "방장이 채팅방을 종료했습니다."
+  "voiceChatClosedByOwner": "방장이 채팅방을 종료했습니다.",
+  "opentingRoomTypeTitle": "방 종류",
+  "opentingRoomTypeChat": "채팅 방",
+  "opentingRoomTypeVoice": "보이스 방"
 }

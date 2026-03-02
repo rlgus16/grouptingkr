@@ -82,7 +82,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Room Type',
+                      l10n.opentingRoomTypeTitle,
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -105,21 +105,21 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                             color: AppTheme.gray600,
                           ),
                           items: [
-                            const DropdownMenuItem<String>(
+                            DropdownMenuItem<String>(
                               value: 'chat',
                               child: Text(
-                                'Chat',
-                                style: TextStyle(
+                                l10n.opentingRoomTypeChat,
+                                style: const TextStyle(
                                   fontSize: 15,
                                   color: AppTheme.textPrimary,
                                 ),
                               ),
                             ),
-                            const DropdownMenuItem<String>(
+                            DropdownMenuItem<String>(
                               value: 'voice',
                               child: Text(
-                                'Voice',
-                                style: TextStyle(
+                                l10n.opentingRoomTypeVoice,
+                                style: const TextStyle(
                                   fontSize: 15,
                                   color: AppTheme.textPrimary,
                                 ),
