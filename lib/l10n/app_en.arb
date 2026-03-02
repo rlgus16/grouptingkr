@@ -590,5 +590,14 @@
   "storyFilterAny": "Any",
   "storyFilterMale": "Male",
   "storyFilterFemale": "Female",
-  "mainTabStory": "Story"
+  "mainTabStory": "Story",
+  "voiceChatTitle": "Voice Chat",
+  "voiceChatJoinPrompt": "Tap to join voice chat",
+  "voiceChatJoin": "Join",
+  "voiceChatActive": "Voice Chat Active",
+  "voiceChatSpeaker": "Speaker",
+  "voiceChatMic": "Mic",
+  "voiceChatLeave": "Leave",
+  "voiceChatPermissionDenied": "Microphone permission denied",
+  "voiceChatJoinFailed": "Failed to join: {error}"
 }

@@ -611,5 +611,14 @@
   "storyFilterAny": "상관없음",
   "storyFilterMale": "남자",
   "storyFilterFemale": "여자",
-  "mainTabStory": "스토리"
+  "mainTabStory": "스토리",
+  "voiceChatTitle": "보이스 채팅",
+  "voiceChatJoinPrompt": "탭하여 대화에 참여하세요",
+  "voiceChatJoin": "참여",
+  "voiceChatActive": "보이스 채팅 참여중",
+  "voiceChatSpeaker": "스피커",
+  "voiceChatMic": "마이크",
+  "voiceChatLeave": "나가기",
+  "voiceChatPermissionDenied": "마이크 권한이 거부되었습니다.",
+  "voiceChatJoinFailed": "참여 실패: {error}"
 }

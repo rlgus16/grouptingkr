@@ -1774,4 +1774,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get mainTabStory => 'Story';
+
+  @override
+  String get voiceChatTitle => 'Voice Chat';
+
+  @override
+  String get voiceChatJoinPrompt => 'Tap to join voice chat';
+
+  @override
+  String get voiceChatJoin => 'Join';
+
+  @override
+  String get voiceChatActive => 'Voice Chat Active';
+
+  @override
+  String get voiceChatSpeaker => 'Speaker';
+
+  @override
+  String get voiceChatMic => 'Mic';
+
+  @override
+  String get voiceChatLeave => 'Leave';
+
+  @override
+  String get voiceChatPermissionDenied => 'Microphone permission denied';
+
+  @override
+  String voiceChatJoinFailed(Object error) {
+    return 'Failed to join: $error';
+  }
 }

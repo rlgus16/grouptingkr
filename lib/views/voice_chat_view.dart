@@ -441,7 +441,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
       // Request permissions
       final status = await Permission.microphone.request();
       if (status != PermissionStatus.granted) {
-        if (mounted) CustomToast.showError(context, 'Microphone permission denied');
+        if (mounted) CustomToast.showError(context, AppLocalizations.of(context)!.voiceChatPermissionDenied);
         return;
       }
 
@@ -464,7 +464,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
       }
     } catch (e) {
       debugPrint('Agora Broadcaster Join Error: $e');
-      if (mounted) CustomToast.showError(context, 'Failed to join voice chat: $e');
+      if (mounted) CustomToast.showError(context, AppLocalizations.of(context)!.voiceChatJoinFailed(e.toString()));
     }
   }
 
@@ -530,41 +530,42 @@ class _VoiceChatViewState extends State<VoiceChatView> {
 
   Widget _buildVoiceChatPanel() {
     if (!_isVoiceChatActive) {
-      return Container(
-        margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 4),
-            )
-          ],
-          border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.record_voice_over, color: AppTheme.primaryColor, size: 22),
+      return GestureDetector(
+        onTap: _toggleVoiceChat,
+        child: Container(
+          width: double.infinity,
+          margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 4),
+              )
+            ],
+            border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.2)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(width: 16),
-                Column(
+                child: const Icon(Icons.record_voice_over, color: AppTheme.primaryColor, size: 22),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Voice Chat',
-                      style: TextStyle(
+                    Text(
+                      AppLocalizations.of(context)!.voiceChatTitle,
+                      style: const TextStyle(
                         color: AppTheme.textPrimary,
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -573,8 +574,8 @@ class _VoiceChatViewState extends State<VoiceChatView> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Tap to join the conversation',
-                      style: TextStyle(
+                      AppLocalizations.of(context)!.voiceChatJoinPrompt,
+                      style: const TextStyle(
                         color: AppTheme.textSecondary,
                         fontSize: 12,
                         fontFamily: 'Pretendard',
@@ -582,29 +583,9 @@ class _VoiceChatViewState extends State<VoiceChatView> {
                     ),
                   ],
                 ),
-              ],
-            ),
-            ElevatedButton(
-              onPressed: _toggleVoiceChat,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                elevation: 0,
               ),
-              child: const Text(
-                'Join',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'Pretendard',
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     }
@@ -653,9 +634,9 @@ class _VoiceChatViewState extends State<VoiceChatView> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
-                    'Voice Chat Active',
-                    style: TextStyle(
+                  Text(
+                    AppLocalizations.of(context)!.voiceChatActive,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: 15,
@@ -693,7 +674,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
             children: [
               _buildVoiceControlButton(
                 icon: _isSpeakerOn ? Icons.volume_up_rounded : Icons.volume_down_rounded,
-                label: 'Speaker',
+                label: AppLocalizations.of(context)!.voiceChatSpeaker,
                 isActive: _isSpeakerOn,
                 activeColor: Colors.white,
                 inactiveColor: Colors.white54,
@@ -702,7 +683,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
               const SizedBox(width: 32),
               _buildVoiceControlButton(
                 icon: _isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
-                label: 'Mic',
+                label: AppLocalizations.of(context)!.voiceChatMic,
                 isActive: !_isMuted,
                 activeColor: Colors.white,
                 inactiveColor: AppTheme.errorColor,
@@ -712,7 +693,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
               const SizedBox(width: 32),
               _buildVoiceControlButton(
                 icon: Icons.call_end_rounded,
-                label: 'Leave',
+                label: AppLocalizations.of(context)!.voiceChatLeave,
                 isActive: false,
                 activeColor: Colors.white,
                 inactiveColor: AppTheme.errorColor,

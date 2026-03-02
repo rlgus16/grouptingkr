@@ -3403,6 +3403,60 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'스토리'**
   String get mainTabStory;
+
+  /// No description provided for @voiceChatTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'보이스 채팅'**
+  String get voiceChatTitle;
+
+  /// No description provided for @voiceChatJoinPrompt.
+  ///
+  /// In ko, this message translates to:
+  /// **'탭하여 대화에 참여하세요'**
+  String get voiceChatJoinPrompt;
+
+  /// No description provided for @voiceChatJoin.
+  ///
+  /// In ko, this message translates to:
+  /// **'참여'**
+  String get voiceChatJoin;
+
+  /// No description provided for @voiceChatActive.
+  ///
+  /// In ko, this message translates to:
+  /// **'보이스 채팅 참여중'**
+  String get voiceChatActive;
+
+  /// No description provided for @voiceChatSpeaker.
+  ///
+  /// In ko, this message translates to:
+  /// **'스피커'**
+  String get voiceChatSpeaker;
+
+  /// No description provided for @voiceChatMic.
+  ///
+  /// In ko, this message translates to:
+  /// **'마이크'**
+  String get voiceChatMic;
+
+  /// No description provided for @voiceChatLeave.
+  ///
+  /// In ko, this message translates to:
+  /// **'나가기'**
+  String get voiceChatLeave;
+
+  /// No description provided for @voiceChatPermissionDenied.
+  ///
+  /// In ko, this message translates to:
+  /// **'마이크 권한이 거부되었습니다.'**
+  String get voiceChatPermissionDenied;
+
+  /// No description provided for @voiceChatJoinFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'참여 실패: {error}'**
+  String voiceChatJoinFailed(Object error);
 }
 
 class _AppLocalizationsDelegate

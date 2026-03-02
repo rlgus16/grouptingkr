@@ -1730,4 +1730,33 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get mainTabStory => '스토리';
+
+  @override
+  String get voiceChatTitle => '보이스 채팅';
+
+  @override
+  String get voiceChatJoinPrompt => '탭하여 대화에 참여하세요';
+
+  @override
+  String get voiceChatJoin => '참여';
+
+  @override
+  String get voiceChatActive => '보이스 채팅 참여중';
+
+  @override
+  String get voiceChatSpeaker => '스피커';
+
+  @override
+  String get voiceChatMic => '마이크';
+
+  @override
+  String get voiceChatLeave => '나가기';
+
+  @override
+  String get voiceChatPermissionDenied => '마이크 권한이 거부되었습니다.';
+
+  @override
+  String voiceChatJoinFailed(Object error) {
+    return '참여 실패: $error';
+  }
 }
