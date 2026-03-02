@@ -164,6 +164,21 @@ class _VoiceChatViewState extends State<VoiceChatView> {
           _chatroomMembers = members;
           _isLoadingMembers = false;
         });
+
+        // Mute any already active remote users who are blocked
+        if (_engine != null) {
+          final authController = context.read<AuthController>();
+          final blockedIds = authController.blockedUserIds;
+          
+          for (final member in members) {
+            if (blockedIds.contains(member.uid) && _remoteUsers.containsKey(member.uid.hashCode)) {
+              _engine!.muteRemoteAudioStream(
+                uid: member.uid.hashCode,
+                mute: true,
+              );
+            }
+          }
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -406,11 +421,32 @@ class _VoiceChatViewState extends State<VoiceChatView> {
 
       _engine!.registerEventHandler(
         RtcEngineEventHandler(
-          onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
+          onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) async {
             if (mounted) {
               setState(() {
                 _remoteUsers[remoteUid] = true;
               });
+
+              // Check if this newly joined remote user is blocked
+              // Note: remoteUid here is usually the hashcode of the uid. 
+              // We need to check if any blocked user's hashcode matches this remoteUid.
+              final authController = context.read<AuthController>();
+              final blockedIds = authController.blockedUserIds;
+              
+              bool isRemoteUserBlocked = false;
+              for (String blockedId in blockedIds) {
+                if (blockedId.hashCode == remoteUid) {
+                  isRemoteUserBlocked = true;
+                  break;
+                }
+              }
+
+              if (isRemoteUserBlocked) {
+                await _engine!.muteRemoteAudioStream(
+                  uid: remoteUid,
+                  mute: true,
+                );
+              }
             }
           },
           onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
