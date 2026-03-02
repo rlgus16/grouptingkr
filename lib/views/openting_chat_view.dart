@@ -448,7 +448,7 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
               children: [
                 // Compact horizontal members list
                 SizedBox(
-                  height: 60,
+                  height: 70, // Increased height slightly to accommodate larger avatars
                   child: _isLoadingMembers
                       ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
                       : _chatroomMembers.isEmpty
@@ -481,11 +481,11 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
                                         name: member.nickname,
                                         isOwner: member.uid == _currentChatroomData?['creatorId'],
                                         gender: member.gender,
-                                        size: 40,
+                                        size: 50, // CHANGED FROM 40 TO 50
                                       ),
                                       const SizedBox(height: 4),
                                       SizedBox(
-                                        width: 50,
+                                        width: 60, // CHANGED FROM 50 TO 60
                                         child: Text(
                                           member.nickname,
                                           style: const TextStyle(fontSize: 10, color: AppTheme.gray700),

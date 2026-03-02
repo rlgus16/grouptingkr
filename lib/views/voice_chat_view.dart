@@ -844,7 +844,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(
-                  height: 60,
+                  height: 70, // Increased height slightly to accommodate larger avatars
                   child: _isLoadingMembers
                       ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
                       : _chatroomMembers.isEmpty
@@ -879,11 +879,11 @@ class _VoiceChatViewState extends State<VoiceChatView> {
                                         isOwner: member.uid == _currentChatroomData?['creatorId'],
                                         isVoiceChatJoined: isVoiceJoined,
                                         gender: member.gender,
-                                        size: 40,
+                                        size: 50,
                                       ),
                                       const SizedBox(height: 4),
                                       SizedBox(
-                                        width: 50,
+                                        width: 60,
                                         child: Text(
                                           member.nickname,
                                           style: const TextStyle(fontSize: 10, color: AppTheme.gray700),
