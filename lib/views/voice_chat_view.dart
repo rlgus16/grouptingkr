@@ -697,63 +697,55 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
         builder: (context, voiceChatService, _) {
           return Column(
             children: [
+              // Fixed top section: member list + voice panel
+              _buildMemberList(voiceChatService.remoteUsers),
+              _buildVoiceChatPanel(voiceChatService),
+              // Expandable messages section
               Expanded(
-                child: CustomScrollView(
-                  controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  slivers: [
-                    SliverToBoxAdapter(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildMemberList(voiceChatService.remoteUsers),
-                          _buildVoiceChatPanel(voiceChatService),
-                        ],
-                      ),
-                    ),
-                    _messages.isEmpty
-                        ? SliverFillRemaining(
-                            child: _buildEmptyMessageView(l10n),
-                          )
-                        : SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (context, index) {
-                                final message = _messages[_messages.length - 1 - index];
-                                final isMe = message.senderId == currentUserId;
-                                final senderProfile = _userProfiles[message.senderId];
-                                
-                                final authController = context.read<AuthController>();
-                                final isBlocked = authController.blockedUserIds.contains(message.senderId);
-                                if (isBlocked && !isMe) {
-                                  return const SizedBox.shrink();
-                                }
+                child: Container(
+                  color: const Color(0xFFF5F6F8),
+                  child: _messages.isEmpty
+                      ? _buildEmptyMessageView(l10n)
+                      : ListView.builder(
+                          controller: _scrollController,
+                          reverse: true,
+                          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                          itemCount: _messages.length,
+                          itemBuilder: (context, index) {
+                            final message = _messages[_messages.length - 1 - index];
+                            final isMe = message.senderId == currentUserId;
+                            final senderProfile = _userProfiles[message.senderId];
 
-                                return Padding(
-                                  padding: const EdgeInsets.only(bottom: 4.0),
-                                  child: MessageBubble(
-                                    message: message,
-                                    isMe: isMe,
-                                    senderProfile: senderProfile,
-                                    openChatroomId: widget.chatroomId,
-                                    isChatRoomOwner: isOwner,
-                                    isSenderInChatroom: _currentChatroomData?['participants']?.contains(message.senderId) ?? false,
-                                    onAvatarLongPress: message.senderId != 'system' && senderProfile != null
-                                        ? () => _showUserOptions(context, senderProfile)
-                                        : null,
-                                    onReply: message.senderId != 'system'
-                                        ? () {
-                                            setState(() {
-                                              _replyMessage = message;
-                                            });
-                                          }
-                                        : null,
-                                  ),
-                                );
-                              },
-                              childCount: _messages.length,
-                            ),
-                          ),
-                  ],
+                            final authController = context.read<AuthController>();
+                            final isBlocked = authController.blockedUserIds.contains(message.senderId);
+                            if (isBlocked && !isMe) {
+                              return const SizedBox.shrink();
+                            }
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 4.0),
+                              child: MessageBubble(
+                                message: message,
+                                isMe: isMe,
+                                senderProfile: senderProfile,
+                                openChatroomId: widget.chatroomId,
+                                isChatRoomOwner: isOwner,
+                                isSenderInChatroom: _currentChatroomData?['participants']?.contains(message.senderId) ?? false,
+                                onAvatarLongPress: message.senderId != 'system' && senderProfile != null
+                                    ? () => _showUserOptions(context, senderProfile)
+                                    : null,
+                                onReply: message.senderId != 'system'
+                                    ? () {
+                                        setState(() {
+                                          _replyMessage = message;
+                                        });
+                                      }
+                                    : null,
+                              ),
+                            );
+                          },
+                        ),
                 ),
               ),
               ChatInputArea(
