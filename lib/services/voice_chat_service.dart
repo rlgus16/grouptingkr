@@ -1,0 +1,225 @@
+import 'package:flutter/material.dart';
+import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/agora_config.dart';
+
+class VoiceChatService extends ChangeNotifier {
+  RtcEngine? _engine;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  String? _activeChatroomId;
+  String? get activeChatroomId => _activeChatroomId;
+
+  bool _isVoiceChatActive = false;
+  bool get isVoiceChatActive => _isVoiceChatActive;
+
+  bool _isMuted = false;
+  bool get isMuted => _isMuted;
+
+  bool _isSpeakerOn = true;
+  bool get isSpeakerOn => _isSpeakerOn;
+
+  Map<int, bool> _remoteUsers = {};
+  Map<int, bool> get remoteUsers => _remoteUsers;
+
+  Future<void> initAgoraAsListener(String chatroomId, int uid, List<String> blockedIds) async {
+    if (_engine != null && _activeChatroomId == chatroomId) {
+      // Already initialized for this room
+      return;
+    }
+
+    _activeChatroomId = chatroomId;
+
+    try {
+      _engine = createAgoraRtcEngine();
+      await _engine!.initialize(const RtcEngineContext(
+        appId: AgoraConfig.appId,
+        channelProfile: ChannelProfileType.channelProfileLiveBroadcasting,
+      ));
+
+      _engine!.registerEventHandler(
+        RtcEngineEventHandler(
+          onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) async {
+            _remoteUsers[remoteUid] = true;
+            
+            bool isRemoteUserBlocked = false;
+            for (String blockedId in blockedIds) {
+              if (blockedId.hashCode == remoteUid) {
+                isRemoteUserBlocked = true;
+                break;
+              }
+            }
+
+            if (isRemoteUserBlocked) {
+              await _engine!.muteRemoteAudioStream(
+                uid: remoteUid,
+                mute: true,
+              );
+            }
+            notifyListeners();
+          },
+          onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
+            _remoteUsers.remove(remoteUid);
+            notifyListeners();
+          },
+        ),
+      );
+
+      await _engine!.setClientRole(role: ClientRoleType.clientRoleAudience);
+      
+      await _engine!.joinChannel(
+        token: '',
+        channelId: chatroomId,
+        uid: uid,
+        options: const ChannelMediaOptions(
+          clientRoleType: ClientRoleType.clientRoleAudience,
+          autoSubscribeAudio: true,
+        ),
+      );
+
+      _isVoiceChatActive = false;
+      _isMuted = false;
+      _isSpeakerOn = true;
+      notifyListeners();
+
+    } catch (e) {
+      debugPrint('Agora Listener Init Error: $e');
+    }
+  }
+
+  Future<bool> joinAsBroadcaster() async {
+    try {
+      if (_engine == null) return false;
+
+      final status = await Permission.microphone.request();
+      if (status != PermissionStatus.granted) {
+        return false;
+      }
+
+      await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
+      await _engine!.enableAudio();
+      
+      await _engine!.updateChannelMediaOptions(
+        const ChannelMediaOptions(
+          clientRoleType: ClientRoleType.clientRoleBroadcaster,
+          autoSubscribeAudio: true,
+          publishMicrophoneTrack: true,
+        ),
+      );
+
+      _isVoiceChatActive = true;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Agora Broadcaster Join Error: $e');
+      return false;
+    }
+  }
+
+  Future<void> revertToListener() async {
+    try {
+      if (_engine != null && _isVoiceChatActive) {
+        await _engine!.setClientRole(role: ClientRoleType.clientRoleAudience);
+        await _engine!.updateChannelMediaOptions(
+          const ChannelMediaOptions(
+            clientRoleType: ClientRoleType.clientRoleAudience,
+            autoSubscribeAudio: true,
+            publishMicrophoneTrack: false,
+          ),
+        );
+        await _engine!.disableAudio();
+        
+        _isVoiceChatActive = false;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Agora Listener Revert Error: $e');
+    }
+  }
+
+  Future<void> leaveVoiceChat() async {
+    try {
+      if (_engine != null) {
+        await revertToListener();
+        await _engine!.leaveChannel();
+        await _engine!.release();
+        _engine = null;
+      }
+    } catch (e) {
+      debugPrint('Agora Leave Error: $e');
+    } finally {
+      _activeChatroomId = null;
+      _isVoiceChatActive = false;
+      _isMuted = false;
+      _isSpeakerOn = true;
+      _remoteUsers.clear();
+      notifyListeners();
+    }
+  }
+
+  void toggleMute() {
+    _isMuted = !_isMuted;
+    if (_engine != null) {
+      _engine!.muteLocalAudioStream(_isMuted);
+    }
+    notifyListeners();
+  }
+
+  void toggleSpeaker() {
+    _isSpeakerOn = !_isSpeakerOn;
+    if (_engine != null) {
+      _engine!.setEnableSpeakerphone(_isSpeakerOn);
+    }
+    notifyListeners();
+  }
+
+  // A helper method specifically for when the user explicitly leaves the chatroom DB document
+  // It handles removing them from the Firebase Array, handling owner room deletion, and severing Agora
+  Future<bool> permanentlyLeaveChatroomDB(String chatroomId, String currentUserId) async {
+    try {
+      final chatroomRef = _firestore.collection('openChatrooms').doc(chatroomId);
+      final chatroomDoc = await chatroomRef.get();
+
+      if (!chatroomDoc.exists) {
+        await leaveVoiceChat();
+        return true;
+      }
+
+      final data = chatroomDoc.data()!;
+      final participantCount = data['participantCount'] ?? 0;
+      final creatorId = data['creatorId'];
+
+      if (participantCount <= 1 || creatorId == currentUserId) {
+        await chatroomRef.delete();
+      } else {
+        final participants = List<dynamic>.from(data['participants'] ?? []);
+        participants.remove(currentUserId);
+        
+        final updateData = <String, dynamic>{
+          'participants': participants,
+          'participantCount': FieldValue.increment(-1),
+          'updatedAt': FieldValue.serverTimestamp(),
+        };
+
+        await chatroomRef.update(updateData);
+      }
+
+      await leaveVoiceChat();
+      return true;
+    } catch (e) {
+      debugPrint('Leave DB Error: $e');
+      return false;
+    }
+  }
+
+  Future<void> muteRemoteUser(int remoteUid) async {
+    if (_engine != null) {
+      await _engine!.muteRemoteAudioStream(
+        uid: remoteUid,
+        mute: true,
+      );
+    }
+  }
+
+}

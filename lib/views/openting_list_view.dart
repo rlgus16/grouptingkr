@@ -12,6 +12,7 @@ import 'profile_detail_view.dart';
 import 'openting_chat_view.dart';
 import 'voice_chat_view.dart';
 import '../services/user_service.dart';
+import '../services/voice_chat_service.dart';
 
 class OpenChatroomListView extends StatefulWidget {
   const OpenChatroomListView({super.key});
@@ -140,9 +141,19 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(Icons.info_outline, size: 12, color: AppTheme.warningColor),
+                          const Icon(
+                            Icons.info_outline,
+                            size: 12,
+                            color: AppTheme.warningColor,
+                          ),
                           const SizedBox(width: 4),
-                          Text(l10n.costTenTing, style: const TextStyle(color: AppTheme.warningColor, fontSize: 12)),
+                          Text(
+                            l10n.costTenTing,
+                            style: const TextStyle(
+                              color: AppTheme.warningColor,
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -1167,8 +1178,9 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                                                       1000;
                                                 }
                                               }
-                                              if (distance < 0)
+                                              if (distance < 0) {
                                                 return const SizedBox.shrink();
+                                              }
 
                                               final String distanceText =
                                                   distance >= 100
@@ -1244,56 +1256,81 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (currentUserId != null)
-            StreamBuilder<QuerySnapshot>(
-              stream: _firestore
-                  .collection('openChatrooms')
-                  .where('participants', arrayContains: currentUserId)
-                  .where('isActive', isEqualTo: true)
-                  .limit(1)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-                  final chatroomDoc = snapshot.data!.docs.first;
-                  final chatroomId = chatroomDoc.id;
-                  final roomData = chatroomDoc.data() as Map<String, dynamic>;
-                  final roomType = roomData['roomType'] ?? 'chat';
+            Consumer<VoiceChatService>(
+              builder: (context, voiceService, _) {
+                return StreamBuilder<QuerySnapshot>(
+                  stream: _firestore
+                      .collection('openChatrooms')
+                      .where('participants', arrayContains: currentUserId)
+                      .where('isActive', isEqualTo: true)
+                      .limit(1)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                      final chatroomDoc = snapshot.data!.docs.first;
+                      final chatroomId = chatroomDoc.id;
+                      final roomData =
+                          chatroomDoc.data() as Map<String, dynamic>;
+                      final roomType = roomData['roomType'] ?? 'chat';
 
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryColor.withValues(alpha: 0.4),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
-                            spreadRadius: 0,
+                      // Check if there is an active background voice connection
+                      // If so, force the FAB to pulse and act as an indicator for it, regardless of roomType (though it should be the same room)
+                      final activeId = voiceService.activeChatroomId;
+                      final isVoiceActive = activeId != null;
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: isVoiceActive
+                                    ? AppTheme.primaryColor.withValues(
+                                        alpha: 0.6,
+                                      )
+                                    : AppTheme.primaryColor.withValues(
+                                        alpha: 0.4,
+                                      ),
+                                blurRadius: isVoiceActive ? 24 : 16,
+                                offset: const Offset(0, 6),
+                                spreadRadius: isVoiceActive ? 4 : 0,
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      child: FloatingActionButton(
-                        heroTag: 'opentingMyRoomBtn',
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => roomType == 'voice'
-                                  ? VoiceChatView(chatroomId: chatroomId)
-                                  : OpenChatroomChatView(
-                                      chatroomId: chatroomId,
-                                    ),
-                            ),
-                          );
-                        },
-                        backgroundColor: Colors.white,
-                        elevation: 0,
-                        child: _AnimatedRoomIcon(roomType: roomType),
-                      ),
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
+                          child: FloatingActionButton(
+                            heroTag: 'opentingMyRoomBtn',
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      (roomType == 'voice' || isVoiceActive)
+                                      ? VoiceChatView(
+                                          chatroomId: isVoiceActive
+                                              ? activeId
+                                              : chatroomId,
+                                        )
+                                      : OpenChatroomChatView(
+                                          chatroomId: chatroomId,
+                                        ),
+                                ),
+                              );
+                            },
+                            backgroundColor: Colors.white,
+                            elevation: 0,
+                            child: isVoiceActive
+                                ? const _AnimatedRoomIcon(
+                                    roomType: 'voice',
+                                  ) // Force pulse if active
+                                : _AnimatedRoomIcon(roomType: roomType),
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                );
               },
             ),
           Container(
@@ -1431,7 +1468,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
 class _AnimatedRoomIcon extends StatefulWidget {
   final String roomType;
 
-  const _AnimatedRoomIcon({super.key, required this.roomType});
+  const _AnimatedRoomIcon({required this.roomType});
 
   @override
   State<_AnimatedRoomIcon> createState() => _AnimatedRoomIconState();

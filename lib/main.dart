@@ -22,6 +22,7 @@ import 'services/fcm_service.dart';
 import 'firebase_options.dart';
 import 'services/version_service.dart';
 import 'widgets/update_dialog.dart';
+import 'services/voice_chat_service.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -207,6 +208,7 @@ class MyApp extends StatelessWidget {
           controller.initialize();
           return controller;
         }),
+        ChangeNotifierProvider(create: (_) => VoiceChatService()),
       ],
       child: Consumer<LocaleController>(
         builder: (context, localeController, _) {

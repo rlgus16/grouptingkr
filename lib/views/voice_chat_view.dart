@@ -2,9 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
-import 'package:agora_rtc_engine/agora_rtc_engine.dart';
-import 'package:permission_handler/permission_handler.dart';
-import '../utils/agora_config.dart';
 import '../controllers/auth_controller.dart';
 import '../utils/app_theme.dart';
 import '../l10n/generated/app_localizations.dart';
@@ -17,6 +14,7 @@ import 'profile_detail_view.dart';
 import '../utils/user_action_helper.dart';
 import '../widgets/chat_input_area.dart';
 import 'openting_view.dart';
+import '../services/voice_chat_service.dart';
 
 class VoiceChatView extends StatefulWidget {
   final String chatroomId;
@@ -46,15 +44,6 @@ class _VoiceChatViewState extends State<VoiceChatView> {
   StreamSubscription<DocumentSnapshot>? _messageSubscription;
   StreamSubscription<DocumentSnapshot>? _chatroomSubscription;
 
-  // Agora Engine
-  RtcEngine? _engine;
-  Map<int, bool> _remoteUsers = {}; // Tracks UIDs of active speakers
-
-  // Voice Chat States
-  bool _isVoiceChatActive = false;
-  bool _isMuted = false;
-  bool _isSpeakerOn = true;
-
   @override
   void initState() {
     super.initState();
@@ -71,9 +60,6 @@ class _VoiceChatViewState extends State<VoiceChatView> {
     _scrollController.dispose();
     _messageSubscription?.cancel();
     _chatroomSubscription?.cancel();
-    
-    // Clean up Agora engine if active
-    _leaveVoiceChat();
     
     super.dispose();
   }
@@ -166,16 +152,14 @@ class _VoiceChatViewState extends State<VoiceChatView> {
         });
 
         // Mute any already active remote users who are blocked
-        if (_engine != null) {
+        final voiceService = context.read<VoiceChatService>();
+        if (voiceService.activeChatroomId != null) {
           final authController = context.read<AuthController>();
           final blockedIds = authController.blockedUserIds;
           
           for (final member in members) {
-            if (blockedIds.contains(member.uid) && _remoteUsers.containsKey(member.uid.hashCode)) {
-              _engine!.muteRemoteAudioStream(
-                uid: member.uid.hashCode,
-                mute: true,
-              );
+            if (blockedIds.contains(member.uid) && voiceService.remoteUsers.containsKey(member.uid.hashCode)) {
+              voiceService.muteRemoteUser(member.uid.hashCode);
             }
           }
         }
@@ -316,47 +300,19 @@ class _VoiceChatViewState extends State<VoiceChatView> {
 
     if (currentUserId == null) return;
 
-    try {
-      final chatroomRef = _firestore.collection('openChatrooms').doc(widget.chatroomId);
-      final chatroomDoc = await chatroomRef.get();
+    _isLeaving = true;
+    final voiceService = context.read<VoiceChatService>();
+    final success = await voiceService.permanentlyLeaveChatroomDB(widget.chatroomId, currentUserId);
 
-      if (!chatroomDoc.exists) return;
-
-      final data = chatroomDoc.data()!;
-      final participantCount = data['participantCount'] ?? 0;
-      final creatorId = data['creatorId'];
-
-      if (participantCount <= 1 || creatorId == currentUserId) {
-        // Automatically destroy room if owner leaves or if room is empty
-        _isLeaving = true;
-        await chatroomRef.delete();
-      } else {
-        final participants = List<dynamic>.from(data['participants'] ?? []);
-
-        participants.remove(currentUserId);
-        
-        _isLeaving = true;
-
-        final updateData = <String, dynamic>{
-          'participants': participants,
-          'participantCount': FieldValue.increment(-1),
-          'updatedAt': FieldValue.serverTimestamp(),
-        };
-
-        await chatroomRef.update(updateData);
-      }
-
-      if (mounted) {
-        CustomToast.showSuccess(context, AppLocalizations.of(context)!.opentingLeaveSuccess);
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const OpentingView()),
-          (route) => route.isFirst,
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        CustomToast.showError(context, AppLocalizations.of(context)!.opentingLeaveFailed);
-      }
+    if (success && mounted) {
+      CustomToast.showSuccess(context, AppLocalizations.of(context)!.opentingLeaveSuccess);
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const OpentingView()),
+        (route) => route.isFirst,
+      );
+    } else if (mounted) {
+      CustomToast.showError(context, AppLocalizations.of(context)!.opentingLeaveFailed);
+      _isLeaving = false;
     }
   }
 
@@ -412,172 +368,33 @@ class _VoiceChatViewState extends State<VoiceChatView> {
   }
 
   Future<void> _initAgoraAsListener() async {
-    try {
-      _engine = createAgoraRtcEngine();
-      await _engine!.initialize(const RtcEngineContext(
-        appId: AgoraConfig.appId,
-        channelProfile: ChannelProfileType.channelProfileLiveBroadcasting,
-      ));
-
-      _engine!.registerEventHandler(
-        RtcEngineEventHandler(
-          onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) async {
-            if (mounted) {
-              setState(() {
-                _remoteUsers[remoteUid] = true;
-              });
-
-              // Check if this newly joined remote user is blocked
-              // Note: remoteUid here is usually the hashcode of the uid. 
-              // We need to check if any blocked user's hashcode matches this remoteUid.
-              final authController = context.read<AuthController>();
-              final blockedIds = authController.blockedUserIds;
-              
-              bool isRemoteUserBlocked = false;
-              for (String blockedId in blockedIds) {
-                if (blockedId.hashCode == remoteUid) {
-                  isRemoteUserBlocked = true;
-                  break;
-                }
-              }
-
-              if (isRemoteUserBlocked) {
-                await _engine!.muteRemoteAudioStream(
-                  uid: remoteUid,
-                  mute: true,
-                );
-              }
-            }
-          },
-          onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
-            if (mounted) {
-              setState(() {
-                _remoteUsers.remove(remoteUid);
-              });
-            }
-          },
-        ),
-      );
-
-      await _engine!.setClientRole(role: ClientRoleType.clientRoleAudience);
-      
-      final authController = context.read<AuthController>();
-      final uid = authController.currentUserModel?.uid.hashCode ?? 0;
-      
-      await _engine!.joinChannel(
-        token: '',
-        channelId: widget.chatroomId,
-        uid: uid,
-        options: const ChannelMediaOptions(
-          clientRoleType: ClientRoleType.clientRoleAudience,
-          autoSubscribeAudio: true,
-        ),
-      );
-    } catch (e) {
-      debugPrint('Agora Listener Init Error: $e');
-    }
-  }
-
-  Future<void> _joinAsBroadcaster() async {
-    try {
-      if (_engine == null) {
-        await _initAgoraAsListener();
-      }
-
-      // Request permissions
-      final status = await Permission.microphone.request();
-      if (status != PermissionStatus.granted) {
-        if (mounted) CustomToast.showError(context, AppLocalizations.of(context)!.voiceChatPermissionDenied);
-        return;
-      }
-
-      await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
-      await _engine!.enableAudio();
-      
-      // Update options for broadcaster
-      await _engine!.updateChannelMediaOptions(
-        const ChannelMediaOptions(
-          clientRoleType: ClientRoleType.clientRoleBroadcaster,
-          autoSubscribeAudio: true,
-          publishMicrophoneTrack: true,
-        ),
-      );
-
-      if (mounted) {
-        setState(() {
-          _isVoiceChatActive = true;
-        });
-      }
-    } catch (e) {
-      debugPrint('Agora Broadcaster Join Error: $e');
-      if (mounted) CustomToast.showError(context, AppLocalizations.of(context)!.voiceChatJoinFailed(e.toString()));
-    }
-  }
-
-  Future<void> _leaveVoiceChat() async {
-    try {
-      if (_engine != null) {
-        if (_isVoiceChatActive) {
-          // If we were broadcasting, revert to listener role
-          await _engine!.setClientRole(role: ClientRoleType.clientRoleAudience);
-          await _engine!.updateChannelMediaOptions(
-            const ChannelMediaOptions(
-              clientRoleType: ClientRoleType.clientRoleAudience,
-              autoSubscribeAudio: true,
-              publishMicrophoneTrack: false,
-            ),
-          );
-          await _engine!.disableAudio();
-        } else {
-          // If completely disposing view
-          await _engine!.leaveChannel();
-          await _engine!.release();
-          _engine = null;
-        }
-      }
-    } catch (e) {
-      debugPrint('Agora Leave Error: $e');
-    }
+    final authController = context.read<AuthController>();
+    final uid = authController.currentUserModel?.uid.hashCode ?? 0;
+    final blockedIds = authController.blockedUserIds;
     
-    if (mounted) {
-      setState(() {
-        _isVoiceChatActive = false;
-        _isMuted = false;
-        _isSpeakerOn = true;
-      });
+    final voiceService = context.read<VoiceChatService>();
+    await voiceService.initAgoraAsListener(widget.chatroomId, uid, blockedIds);
+  }
+
+  Future<void> _joinAsBroadcaster(VoiceChatService service) async {
+    final success = await service.joinAsBroadcaster();
+    if (!success && mounted) {
+      CustomToast.showError(context, AppLocalizations.of(context)!.voiceChatJoinFailed(''));
     }
   }
 
-  void _toggleVoiceChat() {
-    if (_isVoiceChatActive) {
-      _leaveVoiceChat();
+  void _toggleVoiceChat(VoiceChatService service) {
+    if (service.isVoiceChatActive) {
+      service.revertToListener();
     } else {
-      _joinAsBroadcaster();
+      _joinAsBroadcaster(service);
     }
   }
 
-  void _toggleMute() {
-    setState(() {
-      _isMuted = !_isMuted;
-    });
-    if (_engine != null) {
-      _engine!.muteLocalAudioStream(_isMuted);
-    }
-  }
-
-  void _toggleSpeaker() {
-    setState(() {
-      _isSpeakerOn = !_isSpeakerOn;
-    });
-    if (_engine != null) {
-      _engine!.setEnableSpeakerphone(_isSpeakerOn);
-    }
-  }
-
-  Widget _buildVoiceChatPanel() {
-    if (!_isVoiceChatActive) {
+  Widget _buildVoiceChatPanel(VoiceChatService service) {
+    if (!service.isVoiceChatActive) {
       return GestureDetector(
-        onTap: _toggleVoiceChat,
+        onTap: () => _toggleVoiceChat(service),
         child: Container(
           width: double.infinity,
           margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -702,7 +519,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
                     const Icon(Icons.people_rounded, color: Colors.white70, size: 14),
                     const SizedBox(width: 4),
                     Text(
-                      '${_remoteUsers.length + 1}', // 1 (self) + active remote users
+                      '${service.remoteUsers.length + 1}', // 1 (self) + active remote users
                       style: const TextStyle(
                         color: Colors.white70,
                         fontSize: 12,
@@ -719,22 +536,22 @@ class _VoiceChatViewState extends State<VoiceChatView> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _buildVoiceControlButton(
-                icon: _isSpeakerOn ? Icons.volume_up_rounded : Icons.volume_down_rounded,
+                icon: service.isSpeakerOn ? Icons.volume_up_rounded : Icons.volume_down_rounded,
                 label: AppLocalizations.of(context)!.voiceChatSpeaker,
-                isActive: _isSpeakerOn,
+                isActive: service.isSpeakerOn,
                 activeColor: Colors.white,
                 inactiveColor: Colors.white54,
-                onTap: _toggleSpeaker,
+                onTap: service.toggleSpeaker,
               ),
               const SizedBox(width: 32),
               _buildVoiceControlButton(
-                icon: _isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
+                icon: service.isMuted ? Icons.mic_off_rounded : Icons.mic_rounded,
                 label: AppLocalizations.of(context)!.voiceChatMic,
-                isActive: !_isMuted,
+                isActive: !service.isMuted,
                 activeColor: Colors.white,
                 inactiveColor: AppTheme.errorColor,
                 isLarge: true,
-                onTap: _toggleMute,
+                onTap: service.toggleMute,
               ),
               const SizedBox(width: 32),
               _buildVoiceControlButton(
@@ -744,7 +561,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
                 activeColor: Colors.white,
                 inactiveColor: AppTheme.errorColor,
                 isDestructive: true,
-                onTap: _toggleVoiceChat,
+                onTap: () => _toggleVoiceChat(service),
               ),
             ],
           ),
@@ -857,133 +674,162 @@ class _VoiceChatViewState extends State<VoiceChatView> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(bottom: BorderSide(color: AppTheme.gray200)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SizedBox(
-                  height: 70, // Increased height slightly to accommodate larger avatars
-                  child: _isLoadingMembers
-                      ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
-                      : _chatroomMembers.isEmpty
-                          ? Center(child: Text(l10n.opentingNoMembers, style: const TextStyle(fontSize: 12)))
-                          : ListView.separated(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: _chatroomMembers.length,
-                              separatorBuilder: (context, index) => const SizedBox(width: 12),
-                              itemBuilder: (context, index) {
-                                final member = _chatroomMembers[index];
-                                final isBlocked = authController.blockedUserIds.contains(member.uid);
-                                final isVoiceJoined = (member.uid == currentUserId && _isVoiceChatActive) || _remoteUsers.containsKey(member.uid.hashCode);
-                                return GestureDetector(
-                                  onLongPress: () => _showUserOptions(context, member),
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => ProfileDetailView(
-                                          user: member,
-                                          openChatroomId: widget.chatroomId,
-                                          isChatRoomOwner: currentUserId == _currentChatroomData?['creatorId'],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                  child: Column(
-                                    children: [
-                                      MemberAvatar(
-                                        imageUrl: isBlocked ? null : member.mainProfileImage,
-                                        name: member.nickname,
-                                        isOwner: member.uid == _currentChatroomData?['creatorId'],
-                                        isVoiceChatJoined: isVoiceJoined,
-                                        gender: member.gender,
-                                        size: 50,
-                                      ),
-                                      const SizedBox(height: 4),
-                                      SizedBox(
-                                        width: 60,
-                                        child: Text(
-                                          member.nickname,
-                                          style: const TextStyle(fontSize: 10, color: AppTheme.gray700),
-                                          overflow: TextOverflow.ellipsis,
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ),
-                                    ],
+      body: Consumer<VoiceChatService>(
+        builder: (context, voiceChatService, _) {
+          return Column(
+            children: [
+              Expanded(
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildMemberList(voiceChatService.remoteUsers),
+                          _buildVoiceChatPanel(voiceChatService),
+                        ],
+                      ),
+                    ),
+                    _messages.isEmpty
+                        ? SliverFillRemaining(
+                            child: _buildEmptyMessageView(l10n),
+                          )
+                        : SliverList(
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final message = _messages[_messages.length - 1 - index];
+                                final isMe = message.senderId == currentUserId;
+                                final senderProfile = _userProfiles[message.senderId];
+                                
+                                final authController = context.read<AuthController>();
+                                final isBlocked = authController.blockedUserIds.contains(message.senderId);
+                                if (isBlocked && !isMe) {
+                                  return const SizedBox.shrink();
+                                }
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 4.0),
+                                  child: MessageBubble(
+                                    message: message,
+                                    isMe: isMe,
+                                    senderProfile: senderProfile,
+                                    openChatroomId: widget.chatroomId,
+                                    isChatRoomOwner: isOwner,
+                                    isSenderInChatroom: _currentChatroomData?['participants']?.contains(message.senderId) ?? false,
+                                    onAvatarLongPress: message.senderId != 'system' && senderProfile != null
+                                        ? () => _showUserOptions(context, senderProfile)
+                                        : null,
+                                    onReply: message.senderId != 'system'
+                                        ? () {
+                                            setState(() {
+                                              _replyMessage = message;
+                                            });
+                                          }
+                                        : null,
                                   ),
                                 );
                               },
+                              childCount: _messages.length,
                             ),
-                ),
-              ],
-            ),
-          ),
-          _buildVoiceChatPanel(),
-          Expanded(
-            child: Container(
-              color: const Color(0xFFF5F6F8),
-              child: _messages.isEmpty
-                  ? _buildEmptyMessageView(l10n)
-                  : ListView.builder(
-                      controller: _scrollController,
-                      reverse: true,
-                      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                      itemCount: _messages.length,
-                      itemBuilder: (context, index) {
-                        final message = _messages[_messages.length - 1 - index];
-                        final isMe = message.senderId == currentUserId;
-                        final senderProfile = _userProfiles[message.senderId];
-                        
-                        final authController = context.read<AuthController>();
-                        final isBlocked = authController.blockedUserIds.contains(message.senderId);
-                        if (isBlocked && !isMe) {
-                          return const SizedBox.shrink();
-                        }
-
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 4.0),
-                          child: MessageBubble(
-                            message: message,
-                            isMe: isMe,
-                            senderProfile: senderProfile,
-                            openChatroomId: widget.chatroomId,
-                            isChatRoomOwner: isOwner,
-                            isSenderInChatroom: _currentChatroomData?['participants']?.contains(message.senderId) ?? false,
-                            onAvatarLongPress: message.senderId != 'system' && senderProfile != null
-                                ? () => _showUserOptions(context, senderProfile)
-                                : null,
-                            onReply: message.senderId != 'system'
-                                ? () {
-                                    setState(() {
-                                      _replyMessage = message;
-                                    });
-                                  }
-                                : null,
                           ),
-                        );
-                      },
-                    ),
-            ),
-          ),
-          ChatInputArea(
-            controller: _messageController,
-            isKeyboardVisible: isKeyboardVisible,
-            replyMessage: _replyMessage,
-            onCancelReply: () {
-              setState(() {
-                _replyMessage = null;
-              });
-            },
-            onSend: _sendMessage,
+                  ],
+                ),
+              ),
+              ChatInputArea(
+                controller: _messageController,
+                isKeyboardVisible: isKeyboardVisible,
+                replyMessage: _replyMessage,
+                onCancelReply: () {
+                  setState(() {
+                    _replyMessage = null;
+                  });
+                },
+                onSend: _sendMessage,
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+
+  Widget _buildMemberList(Map<int, bool> remoteUsersData) {
+    final l10n = AppLocalizations.of(context)!;
+    final authController = context.read<AuthController>();
+    final currentUserId = authController.currentUserModel?.uid;
+
+    if (_isLoadingMembers) {
+      return const Padding(
+        padding: EdgeInsets.all(20),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: AppTheme.gray200)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            height: 70,
+            child: _chatroomMembers.isEmpty
+                ? Center(child: Text(l10n.opentingNoMembers, style: const TextStyle(fontSize: 12)))
+                : ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _chatroomMembers.length,
+                    separatorBuilder: (context, index) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      final member = _chatroomMembers[index];
+                      final isBlocked = authController.blockedUserIds.contains(member.uid);
+                      final isVoiceJoined = (member.uid == currentUserId && context.read<VoiceChatService>().isVoiceChatActive) || remoteUsersData.containsKey(member.uid.hashCode);
+                      
+                      return GestureDetector(
+                        onLongPress: () => _showUserOptions(context, member),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProfileDetailView(
+                                user: member,
+                                openChatroomId: widget.chatroomId,
+                                isChatRoomOwner: currentUserId == _currentChatroomData?['creatorId'],
+                              ),
+                            ),
+                          );
+                        },
+                        child: Column(
+                          children: [
+                            MemberAvatar(
+                              imageUrl: isBlocked ? null : member.mainProfileImage,
+                              name: member.nickname,
+                              isOwner: member.uid == _currentChatroomData?['creatorId'],
+                              isVoiceChatJoined: isVoiceJoined,
+                              gender: member.gender,
+                              size: 50,
+                            ),
+                            const SizedBox(height: 4),
+                            SizedBox(
+                              width: 60,
+                              child: Text(
+                                member.nickname,
+                                style: const TextStyle(fontSize: 10, color: AppTheme.gray700),
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
           ),
         ],
       ),
