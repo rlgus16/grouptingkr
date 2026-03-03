@@ -28,7 +28,7 @@ class VoiceChatView extends StatefulWidget {
   State<VoiceChatView> createState() => _VoiceChatViewState();
 }
 
-class _VoiceChatViewState extends State<VoiceChatView> {
+class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserver {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -47,6 +47,7 @@ class _VoiceChatViewState extends State<VoiceChatView> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadChatroomData();
       _listenToMessages();
@@ -56,12 +57,28 @@ class _VoiceChatViewState extends State<VoiceChatView> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _messageController.dispose();
     _scrollController.dispose();
     _messageSubscription?.cancel();
     _chatroomSubscription?.cancel();
     
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached) {
+      if (mounted) {
+        final authController = context.read<AuthController>();
+        final voiceService = context.read<VoiceChatService>();
+        final currentUserId = authController.currentUserModel?.uid;
+        if (currentUserId != null && !_isLeaving) {
+          _isLeaving = true;
+          voiceService.permanentlyLeaveChatroomDB(widget.chatroomId, currentUserId);
+        }
+      }
+    }
   }
 
   void _loadChatroomData() {
@@ -369,11 +386,13 @@ class _VoiceChatViewState extends State<VoiceChatView> {
 
   Future<void> _initAgoraAsListener() async {
     final authController = context.read<AuthController>();
-    final uid = authController.currentUserModel?.uid.hashCode ?? 0;
+    final currentUser = authController.currentUserModel;
+    final actualUserId = currentUser?.uid ?? '';
+    final agoraUid = actualUserId.hashCode;
     final blockedIds = authController.blockedUserIds;
     
     final voiceService = context.read<VoiceChatService>();
-    await voiceService.initAgoraAsListener(widget.chatroomId, uid, blockedIds);
+    await voiceService.initAgoraAsListener(widget.chatroomId, actualUserId, agoraUid, blockedIds);
   }
 
   Future<void> _joinAsBroadcaster(VoiceChatService service) async {

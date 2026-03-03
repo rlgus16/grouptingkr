@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 // Import v2 triggers explicitly
 import { onDocumentUpdated, onDocumentCreated } from "firebase-functions/v2/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { onValueWritten } from "firebase-functions/v2/database";
 
 admin.initializeApp();
 
@@ -966,3 +967,77 @@ export const notifyStoryComment = onDocumentCreated("stories/{storyId}/comments/
     console.error("Error sending story comment notification:", error);
   }
 });
+
+// [VOICE CHAT PRESENCE CLEANUP]
+// Triggers when a user's RTDB presence node changes (usually offline onDisconnect)
+export const onVoiceChatPresenceChange = onValueWritten("voiceChatPresence/{chatroomId}/{userId}", async (event) => {
+  const snapshot = event.data.after;
+  const chatroomId = event.params.chatroomId;
+  const userIdStr = event.params.userId; // This is the stringified uid.hashCode used in Agora
+
+  if (!snapshot.exists() || snapshot.val()?.status === "offline") {
+    console.log(`User ${userIdStr} went offline in chatroom ${chatroomId}. Cleaning up.`);
+
+    const chatroomRef = db.collection("openChatrooms").doc(chatroomId);
+
+    try {
+      await db.runTransaction(async (transaction) => {
+        const chatroomDoc = await transaction.get(chatroomRef);
+
+        if (!chatroomDoc.exists) {
+          console.log(`Chatroom ${chatroomId} already deleted.`);
+          return;
+        }
+
+        const data = chatroomDoc.data()!;
+        const creatorId = data.creatorId;
+        const participantCount = data.participantCount || 0;
+        const participants = data.participants || [];
+
+        // We need the actual user document ID to check if they are the creator
+        // If the newer app version sent the actual user ID directly:
+        let actualUserId: string | null = null;
+        if (participants.includes(userIdStr)) {
+          actualUserId = userIdStr;
+        } else {
+          // Fallback for older app versions sending hashCode
+          for (const pid of participants) {
+            if (hashCode(pid).toString() === userIdStr) {
+              actualUserId = pid;
+              break;
+            }
+          }
+        }
+
+        if (participantCount <= 1 || (actualUserId && creatorId === actualUserId)) {
+          console.log(`Owner left or last person left. Deleting chatroom ${chatroomId}.`);
+          transaction.delete(chatroomRef);
+        } else if (actualUserId) {
+          console.log(`Removing user ${actualUserId} from chatroom ${chatroomId}.`);
+          const newParticipants = participants.filter((p: string) => p !== actualUserId);
+          transaction.update(chatroomRef, {
+            participants: newParticipants,
+            participantCount: admin.firestore.FieldValue.increment(-1),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          });
+        }
+      });
+
+      // Also cleanup the presence node so it doesn't clutter RTDB
+      await snapshot.ref.remove();
+
+    } catch (e) {
+      console.error(`Error cleaning up presence for room ${chatroomId}:`, e);
+    }
+  }
+});
+
+// Simple Java-like hashCode function to match Dart's String.hashCode behaviour
+function hashCode(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return hash;
+}

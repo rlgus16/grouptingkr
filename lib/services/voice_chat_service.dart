@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import '../utils/agora_config.dart';
 
 class VoiceChatService extends ChangeNotifier {
   RtcEngine? _engine;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseDatabase _rtdb = FirebaseDatabase.instance;
 
   String? _activeChatroomId;
   String? get activeChatroomId => _activeChatroomId;
@@ -23,13 +25,39 @@ class VoiceChatService extends ChangeNotifier {
   Map<int, bool> _remoteUsers = {};
   Map<int, bool> get remoteUsers => _remoteUsers;
 
-  Future<void> initAgoraAsListener(String chatroomId, int uid, List<String> blockedIds) async {
+  Future<void> initAgoraAsListener(String chatroomId, String actualUserId, int agoraUid, List<String> blockedIds) async {
     if (_engine != null && _activeChatroomId == chatroomId) {
       // Already initialized for this room
       return;
     }
 
     _activeChatroomId = chatroomId;
+
+    // Set up Firebase Realtime Database Presence
+    final presenceRef = _rtdb.ref('.info/connected');
+    final userStatusRef = _rtdb.ref('voiceChatPresence/$chatroomId/$actualUserId');
+
+    presenceRef.onValue.listen((event) {
+      if (event.snapshot.value == false) {
+        return;
+      }
+      userStatusRef.onDisconnect().set({
+        'status': 'offline',
+        'lastChanged': ServerValue.timestamp,
+        'chatroomId': chatroomId,
+        'userId': actualUserId,
+        'agoraUid': agoraUid,
+      }).then((_) {
+        // When connected successfully, set online status
+        userStatusRef.set({
+          'status': 'online',
+          'lastChanged': ServerValue.timestamp,
+          'chatroomId': chatroomId,
+          'userId': actualUserId,
+          'agoraUid': agoraUid,
+        });
+      });
+    });
 
     try {
       _engine = createAgoraRtcEngine();
@@ -71,7 +99,7 @@ class VoiceChatService extends ChangeNotifier {
       await _engine!.joinChannel(
         token: '',
         channelId: chatroomId,
-        uid: uid,
+        uid: agoraUid,
         options: const ChannelMediaOptions(
           clientRoleType: ClientRoleType.clientRoleAudience,
           autoSubscribeAudio: true,
@@ -149,6 +177,13 @@ class VoiceChatService extends ChangeNotifier {
     } catch (e) {
       debugPrint('Agora Leave Error: $e');
     } finally {
+      if (_activeChatroomId != null) {
+        // Clean up RTDB presence on intentional leave
+        // Assuming we have the current userId hashcode here, but since leaveVoiceChat
+        // doesn't take uid, we rely on the onDisconnect for hard kills, 
+        // and permanentlyLeaveChatroomDB cleans Firestore.
+      }
+
       _activeChatroomId = null;
       _isVoiceChatActive = false;
       _isMuted = false;

@@ -2,12 +2,10 @@
   "rules": {
     ".read": false,
     ".write": false,
-    
     "chats": {
       "$chatRoomId": {
         ".read": "auth != null",
         ".write": "auth != null",
-
         "messages": {
           "$messageId": {
             ".validate": "newData.hasChildren(['senderId', 'content', 'timestamp', 'type'])",
@@ -25,7 +23,6 @@
             }
           }
         },
-        
         "typing": {
           "$userId": {
             ".read": "auth != null",
@@ -35,12 +32,10 @@
         }
       }
     },
-    
     "groups": {
       "$groupId": {
         ".read": "auth != null",
         ".write": "auth != null && data.child('memberIds').val().contains(auth.uid)",
-        
         "memberIds": {
           ".validate": "newData.isString()"
         },
@@ -49,13 +44,19 @@
         }
       }
     },
-    
+    "voiceChatPresence": {
+      "$chatroomId": {
+        "$userId": {
+          ".read": "auth != null",
+          ".write": "auth != null && $userId === auth.uid"
+        }
+      }
+    },
     "presence": {
       "$userId": {
         ".read": "auth != null",
         ".write": "auth != null && $userId === auth.uid",
         ".validate": "newData.hasChildren(['isOnline', 'lastSeen'])",
-        
         "isOnline": {
           ".validate": "newData.val() === true || newData.val() === false"
         },
@@ -65,4 +66,4 @@
       }
     }
   }
-} 
+}
