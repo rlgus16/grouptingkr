@@ -13,6 +13,10 @@ class VoiceChatService extends ChangeNotifier {
   String? _activeChatroomId;
   String? get activeChatroomId => _activeChatroomId;
 
+  // Track presence ref so we can explicitly cancel onDisconnect on intentional leave
+  DatabaseReference? _activePresenceRef;
+  String? _activePresenceUserId;
+
   bool _isVoiceChatActive = false;
   bool get isVoiceChatActive => _isVoiceChatActive;
 
@@ -36,6 +40,10 @@ class VoiceChatService extends ChangeNotifier {
     // Set up Firebase Realtime Database Presence
     final presenceRef = _rtdb.ref('.info/connected');
     final userStatusRef = _rtdb.ref('voiceChatPresence/$chatroomId/$actualUserId');
+
+    // Track the presence ref so we can cancel onDisconnect on intentional leave
+    _activePresenceRef = userStatusRef;
+    _activePresenceUserId = actualUserId;
 
     presenceRef.onValue.listen((event) {
       if (event.snapshot.value == false) {
@@ -166,6 +174,23 @@ class VoiceChatService extends ChangeNotifier {
     }
   }
 
+  /// Cancels the RTDB onDisconnect handler so it won't fire when the
+  /// connection eventually closes after an intentional leave.
+  /// We do NOT remove the presence node here — the Cloud Function already
+  /// removes it in its own cleanup, and removing it ourselves would
+  /// re-trigger the Cloud Function causing a double-decrement of participantCount.
+  Future<void> _clearPresence() async {
+    if (_activePresenceRef == null) return;
+    try {
+      await _activePresenceRef!.onDisconnect().cancel();
+    } catch (e) {
+      debugPrint('RTDB Presence Clear Error: $e');
+    } finally {
+      _activePresenceRef = null;
+      _activePresenceUserId = null;
+    }
+  }
+
   Future<void> leaveVoiceChat() async {
     try {
       if (_engine != null) {
@@ -177,13 +202,6 @@ class VoiceChatService extends ChangeNotifier {
     } catch (e) {
       debugPrint('Agora Leave Error: $e');
     } finally {
-      if (_activeChatroomId != null) {
-        // Clean up RTDB presence on intentional leave
-        // Assuming we have the current userId hashcode here, but since leaveVoiceChat
-        // doesn't take uid, we rely on the onDisconnect for hard kills, 
-        // and permanentlyLeaveChatroomDB cleans Firestore.
-      }
-
       _activeChatroomId = null;
       _isVoiceChatActive = false;
       _isMuted = false;
@@ -226,6 +244,8 @@ class VoiceChatService extends ChangeNotifier {
       final creatorId = data['creatorId'];
 
       if (participantCount <= 1 || creatorId == currentUserId) {
+        // Cancel RTDB presence before deleting (owner / last person leaving)
+        await _clearPresence();
         await chatroomRef.delete();
       } else {
         final participants = List<dynamic>.from(data['participants'] ?? []);
@@ -237,6 +257,9 @@ class VoiceChatService extends ChangeNotifier {
           'updatedAt': FieldValue.serverTimestamp(),
         };
 
+        // Cancel RTDB presence BEFORE updating Firestore so the Cloud Function
+        // never sees an "offline" event after the count was already decremented.
+        await _clearPresence();
         await chatroomRef.update(updateData);
       }
 

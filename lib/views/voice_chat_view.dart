@@ -68,16 +68,8 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.detached) {
-      if (mounted) {
-        final authController = context.read<AuthController>();
-        final voiceService = context.read<VoiceChatService>();
-        final currentUserId = authController.currentUserModel?.uid;
-        if (currentUserId != null && !_isLeaving) {
-          _isLeaving = true;
-          voiceService.permanentlyLeaveChatroomDB(widget.chatroomId, currentUserId);
-        }
-      }
+    if (state == AppLifecycleState.detached && !_isLeaving) {
+      _leaveChatroom();
     }
   }
 

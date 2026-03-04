@@ -991,16 +991,14 @@ export const onVoiceChatPresenceChange = onValueWritten("voiceChatPresence/{chat
 
         const data = chatroomDoc.data()!;
         const creatorId = data.creatorId;
-        const participantCount = data.participantCount || 0;
         const participants = data.participants || [];
 
-        // We need the actual user document ID to check if they are the creator
-        // If the newer app version sent the actual user ID directly:
+        // Resolve the actual Firebase UID from the RTDB path segment
         let actualUserId: string | null = null;
         if (participants.includes(userIdStr)) {
           actualUserId = userIdStr;
         } else {
-          // Fallback for older app versions sending hashCode
+          // Fallback for older app versions that sent hashCode as the node name
           for (const pid of participants) {
             if (hashCode(pid).toString() === userIdStr) {
               actualUserId = pid;
@@ -1009,15 +1007,26 @@ export const onVoiceChatPresenceChange = onValueWritten("voiceChatPresence/{chat
           }
         }
 
-        if (participantCount <= 1 || (actualUserId && creatorId === actualUserId)) {
-          console.log(`Owner left or last person left. Deleting chatroom ${chatroomId}.`);
+        if (!actualUserId) {
+          // User not found in participants — nothing to clean up
+          console.log(`User ${userIdStr} not found in participants for chatroom ${chatroomId}. Skipping.`);
+          return;
+        }
+
+        // Compute new participant list FIRST, then decide based on its length.
+        // Do NOT use the stored participantCount — it can be stale due to concurrent
+        // writes (e.g. permanentlyLeaveChatroomDB running at the same time).
+        const newParticipants = participants.filter((p: string) => p !== actualUserId);
+        const isOwner = creatorId === actualUserId;
+
+        if (isOwner || newParticipants.length === 0) {
+          console.log(`Owner left or last person left chatroom ${chatroomId}. Deleting.`);
           transaction.delete(chatroomRef);
-        } else if (actualUserId) {
-          console.log(`Removing user ${actualUserId} from chatroom ${chatroomId}.`);
-          const newParticipants = participants.filter((p: string) => p !== actualUserId);
+        } else {
+          console.log(`Removing user ${actualUserId} from chatroom ${chatroomId}. Remaining: ${newParticipants.length}`);
           transaction.update(chatroomRef, {
             participants: newParticipants,
-            participantCount: admin.firestore.FieldValue.increment(-1),
+            participantCount: newParticipants.length,
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
           });
         }
