@@ -88,10 +88,7 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
       if (!snapshot.exists || data == null) {
         if (mounted && !_isLeaving) {
           CustomToast.showError(context, AppLocalizations.of(context)!.voiceChatClosedByOwner);
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const OpentingView()),
-            (route) => route.isFirst,
-          );
+          _leaveChatroom();
         }
         return;
       }
@@ -102,25 +99,19 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
         
         if (!participants.contains(currentUserId) && !isBanned) {
           if (!_isLeaving) {
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (context) => const OpentingView()),
-              (route) => route.isFirst,
-            );
+            _leaveChatroom();
           }
           return;
         }
 
         if (isBanned && !_isLeaving) {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const OpentingView()),
-            (route) => route.isFirst,
-          );
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(AppLocalizations.of(context)!.opentingBannedMessage),
               backgroundColor: AppTheme.errorColor,
             ),
           );
+          _leaveChatroom();
           return;
         }
 
