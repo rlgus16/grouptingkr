@@ -3074,12 +3074,6 @@ abstract class AppLocalizations {
   /// **'채팅방 생성에 실패했습니다'**
   String get opentingCreateFailed;
 
-  /// No description provided for @opentingRoomFull.
-  ///
-  /// In ko, this message translates to:
-  /// **'채팅방이 가득 찼습니다'**
-  String get opentingRoomFull;
-
   /// No description provided for @opentingJoinSuccess.
   ///
   /// In ko, this message translates to:
@@ -3278,11 +3272,11 @@ abstract class AppLocalizations {
   /// **'채팅방 나가기 실패'**
   String get opentingLeaveFailed;
 
-  /// No description provided for @opentingCannotJoinBanned.
+  /// No description provided for @opentingCannotJoin.
   ///
   /// In ko, this message translates to:
   /// **'참여할 수 없습니다.'**
-  String get opentingCannotJoinBanned;
+  String get opentingCannotJoin;
 
   /// No description provided for @privateChatTitle.
   ///

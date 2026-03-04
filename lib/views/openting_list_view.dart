@@ -416,7 +416,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
       if (mounted) {
         CustomToast.showError(
           context,
-          AppLocalizations.of(context)!.opentingRoomFull,
+          AppLocalizations.of(context)!.opentingCannotJoin,
         );
       }
       return;
@@ -452,7 +452,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
         if (mounted) {
           CustomToast.showError(
             context,
-            AppLocalizations.of(context)!.opentingCannotJoinBanned,
+            AppLocalizations.of(context)!.opentingCannotJoin,
           );
         }
         return;
@@ -466,7 +466,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
         if (mounted) {
           CustomToast.showError(
             context,
-            AppLocalizations.of(context)!.opentingRoomFull,
+            AppLocalizations.of(context)!.opentingCannotJoin,
           );
         }
         return;

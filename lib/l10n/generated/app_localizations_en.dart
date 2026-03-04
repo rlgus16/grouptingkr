@@ -1596,9 +1596,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get opentingCreateFailed => 'Failed to create chatroom';
 
   @override
-  String get opentingRoomFull => 'Chatroom is full';
-
-  @override
   String get opentingJoinSuccess => 'Joined chatroom successfully!';
 
   @override
@@ -1708,7 +1705,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get opentingLeaveFailed => 'Failed to leave chatroom';
 
   @override
-  String get opentingCannotJoinBanned => 'You cannot join this chatroom.';
+  String get opentingCannotJoin => 'You cannot join this chatroom.';
 
   @override
   String get privateChatTitle => '1:1 Chat';

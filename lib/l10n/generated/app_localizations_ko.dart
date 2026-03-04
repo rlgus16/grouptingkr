@@ -1557,9 +1557,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get opentingCreateFailed => '채팅방 생성에 실패했습니다';
 
   @override
-  String get opentingRoomFull => '채팅방이 가득 찼습니다';
-
-  @override
   String get opentingJoinSuccess => '채팅방에 참여했습니다!';
 
   @override
@@ -1667,7 +1664,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get opentingLeaveFailed => '채팅방 나가기 실패';
 
   @override
-  String get opentingCannotJoinBanned => '참여할 수 없습니다.';
+  String get opentingCannotJoin => '참여할 수 없습니다.';
 
   @override
   String get privateChatTitle => '1:1 채팅';
