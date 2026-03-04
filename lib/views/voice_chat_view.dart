@@ -88,7 +88,7 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
       if (!snapshot.exists || data == null) {
         if (mounted && !_isLeaving) {
           CustomToast.showError(context, AppLocalizations.of(context)!.voiceChatClosedByOwner);
-          _leaveChatroom();
+          _leaveChatroom(showSuccessToast: false);
         }
         return;
       }
@@ -99,7 +99,7 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
         
         if (!participants.contains(currentUserId) && !isBanned) {
           if (!_isLeaving) {
-            _leaveChatroom();
+            _leaveChatroom(showSuccessToast: false);
           }
           return;
         }
@@ -111,7 +111,7 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
               backgroundColor: AppTheme.errorColor,
             ),
           );
-          _leaveChatroom();
+          _leaveChatroom(showSuccessToast: false);
           return;
         }
 
@@ -294,7 +294,7 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
     }
   }
 
-  Future<void> _leaveChatroom() async {
+  Future<void> _leaveChatroom({bool showSuccessToast = true}) async {
     final authController = context.read<AuthController>();
     final currentUserId = authController.currentUserModel?.uid;
 
@@ -305,7 +305,9 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
     final success = await voiceService.permanentlyLeaveChatroomDB(widget.chatroomId, currentUserId);
 
     if (success && mounted) {
-      CustomToast.showSuccess(context, AppLocalizations.of(context)!.opentingLeaveSuccess);
+      if (showSuccessToast) {
+        CustomToast.showSuccess(context, AppLocalizations.of(context)!.opentingLeaveSuccess);
+      }
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const OpentingView()),
         (route) => route.isFirst,
