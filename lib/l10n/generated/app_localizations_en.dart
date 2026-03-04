@@ -1570,7 +1570,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get storyImageSelectError => 'Failed to select image';
 
   @override
-  String get opentingCreateRoomTitle => 'Create Open Chatroom';
+  String get opentingCreateRoomTitle => 'Create Chatroom';
 
   @override
   String get opentingRoomTitle => 'Room Title';

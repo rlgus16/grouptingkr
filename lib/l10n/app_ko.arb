@@ -547,7 +547,7 @@
   "storyDeleteConfirm": "이 게시물을 정말 삭제하시겠습니까?",
   "storyImageSelectError": "이미지 선택에 실패했습니다",
   
-  "opentingCreateRoomTitle": "오픈채팅 방 만들기",
+  "opentingCreateRoomTitle": "방 만들기",
   "opentingRoomTitle": "방 제목",
   "opentingRoomTitleHint": "방 제목을 입력하세요",
   "opentingMaxParticipants": "최대 인원",

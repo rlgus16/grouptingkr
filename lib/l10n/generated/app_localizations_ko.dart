@@ -1531,7 +1531,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get storyImageSelectError => '이미지 선택에 실패했습니다';
 
   @override
-  String get opentingCreateRoomTitle => '오픈채팅 방 만들기';
+  String get opentingCreateRoomTitle => '방 만들기';
 
   @override
   String get opentingRoomTitle => '방 제목';

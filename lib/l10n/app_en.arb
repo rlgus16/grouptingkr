@@ -526,7 +526,7 @@
   "storyDeleteConfirm": "Are you sure you want to delete this post?",
   "storyImageSelectError": "Failed to select image",
   
-  "opentingCreateRoomTitle": "Create Open Chatroom",
+  "opentingCreateRoomTitle": "Create Chatroom",
   "opentingRoomTitle": "Room Title",
   "opentingRoomTitleHint": "Enter room title",
   "opentingMaxParticipants": "Max Participants",

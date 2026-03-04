@@ -3029,7 +3029,7 @@ abstract class AppLocalizations {
   /// No description provided for @opentingCreateRoomTitle.
   ///
   /// In ko, this message translates to:
-  /// **'오픈채팅 방 만들기'**
+  /// **'방 만들기'**
   String get opentingCreateRoomTitle;
 
   /// No description provided for @opentingRoomTitle.

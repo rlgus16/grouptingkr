@@ -472,6 +472,16 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
         return;
       }
 
+      // If user is in an active voice chatroom, leave it fully first
+      // (Agora disconnect + RTDB presence cancel + Firestore cleanup)
+      final voiceService = context.read<VoiceChatService>();
+      if (voiceService.activeChatroomId != null) {
+        await voiceService.permanentlyLeaveChatroomDB(
+          voiceService.activeChatroomId!,
+          currentUser.uid,
+        );
+      }
+      // Leave any remaining (non-voice) chatrooms the user is still in
       await _leaveExistingChatrooms(currentUser.uid);
 
       await chatroomRef.update({
