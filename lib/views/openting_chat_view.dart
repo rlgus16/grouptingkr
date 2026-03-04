@@ -26,7 +26,7 @@ class OpenChatroomChatView extends StatefulWidget {
   State<OpenChatroomChatView> createState() => _OpenChatroomChatViewState();
 }
 
-class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
+class _OpenChatroomChatViewState extends State<OpenChatroomChatView> with WidgetsBindingObserver {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -45,6 +45,7 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadChatroomData();
       _listenToMessages();
@@ -53,11 +54,19 @@ class _OpenChatroomChatViewState extends State<OpenChatroomChatView> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _messageController.dispose();
     _scrollController.dispose();
     _messageSubscription?.cancel();
     _chatroomSubscription?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached && !_isLeaving) {
+      _leaveChatroom();
+    }
   }
 
   void _loadChatroomData() {
