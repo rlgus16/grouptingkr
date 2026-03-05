@@ -1050,3 +1050,78 @@ function hashCode(str: string): number {
   }
   return hash;
 }
+
+// [TEXT CHAT PRESENCE CLEANUP]
+// Triggers when a user's RTDB presence node changes for a text (non-voice) chatroom.
+// Mirrors onVoiceChatPresenceChange but for the chatPresence path.
+export const onChatPresenceChange = onValueWritten("chatPresence/{chatroomId}/{userId}", async (event) => {
+  const snapshot = event.data.after;
+  const chatroomId = event.params.chatroomId;
+  const userId = event.params.userId;
+
+  if (!snapshot.exists() || snapshot.val()?.status === "offline") {
+    console.log(`Chat user ${userId} went offline in chatroom ${chatroomId}. Cleaning up.`);
+
+    const chatroomRef = db.collection("openChatrooms").doc(chatroomId);
+
+    try {
+      await db.runTransaction(async (transaction) => {
+        const chatroomDoc = await transaction.get(chatroomRef);
+
+        if (!chatroomDoc.exists) {
+          console.log(`Chatroom ${chatroomId} already deleted.`);
+          return;
+        }
+
+        const data = chatroomDoc.data()!;
+        const creatorId = data.creatorId;
+        const participants: string[] = data.participants || [];
+
+        if (!participants.includes(userId)) {
+          console.log(`User ${userId} not in participants for chatroom ${chatroomId}. Skipping.`);
+          return;
+        }
+
+        if (participants.length <= 1) {
+          // Last person leaving
+          console.log(`Last person left chatroom ${chatroomId}. Deleting.`);
+          transaction.delete(chatroomRef);
+        } else {
+          const newParticipants = participants.filter((p) => p !== userId);
+          const updateData: any = {
+            participants: newParticipants,
+            participantCount: newParticipants.length,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          };
+
+          // If owner is leaving, transfer ownership to the next participant
+          if (creatorId === userId && newParticipants.length > 0) {
+            const newOwnerId = newParticipants[0];
+            updateData.creatorId = newOwnerId;
+            
+            // Try to get new owner's nickname, but update continues even if this fails
+            try {
+              const userDoc = await db.collection('users').doc(newOwnerId).get();
+              if (userDoc.exists) {
+                updateData.creatorNickname = userDoc.data()?.nickname || 'Someone';
+              }
+            } catch (e) {
+              console.log(`Could not fetch nickname for new owner ${newOwnerId}`);
+            }
+            console.log(`Owner left. Transferring ownership of chatroom ${chatroomId} to ${newOwnerId}`);
+          } else {
+            console.log(`Removing user ${userId} from chatroom ${chatroomId}. Remaining: ${newParticipants.length}`);
+          }
+
+          transaction.update(chatroomRef, updateData);
+        }
+      });
+
+      // Clean up the presence node
+      await snapshot.ref.remove();
+
+    } catch (e) {
+      console.error(`Error cleaning up chat presence for room ${chatroomId}:`, e);
+    }
+  }
+});

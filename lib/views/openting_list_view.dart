@@ -9,7 +9,6 @@ import '../widgets/custom_toast.dart';
 import '../widgets/member_avatar.dart';
 import '../models/user_model.dart';
 import 'profile_detail_view.dart';
-import 'openting_chat_view.dart';
 import 'voice_chat_view.dart';
 import '../services/user_service.dart';
 import '../services/voice_chat_service.dart';
@@ -26,7 +25,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
   final TextEditingController _titleController = TextEditingController();
   final Set<String> _joiningRooms = <String>{};
   int _selectedMaxParticipants = 10;
-  String _selectedRoomType = 'chat'; // 'chat' or 'voice'
+  String _selectedRoomType = 'voice'; // 'chat' or 'voice'
   double _maxDistance = 100.0; // Distance filter in km
   bool _hideFullRooms = false; // Hide full rooms filter
   final Map<String, UserModel> _userProfileCache =
@@ -106,16 +105,6 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                             color: AppTheme.gray600,
                           ),
                           items: [
-                            DropdownMenuItem<String>(
-                              value: 'chat',
-                              child: Text(
-                                l10n.opentingRoomTypeChat,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  color: AppTheme.textPrimary,
-                                ),
-                              ),
-                            ),
                             DropdownMenuItem<String>(
                               value: 'voice',
                               child: Text(
@@ -371,7 +360,9 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
           MaterialPageRoute(
             builder: (context) => _selectedRoomType == 'voice'
                 ? VoiceChatView(chatroomId: docRef.id)
-                : OpenChatroomChatView(chatroomId: docRef.id),
+                : const Scaffold(
+                    body: Center(child: Text('Text chat is no longer supported.')),
+                  ),
           ),
         );
       }
@@ -501,7 +492,9 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
           MaterialPageRoute(
             builder: (context) => roomType == 'voice'
                 ? VoiceChatView(chatroomId: roomId)
-                : OpenChatroomChatView(chatroomId: roomId),
+                : const Scaffold(
+                    body: Center(child: Text('Text chat is no longer supported.')),
+                  ),
           ),
         );
       }
@@ -962,8 +955,8 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                                   builder: (context) =>
                                       (data['roomType'] ?? 'chat') == 'voice'
                                       ? VoiceChatView(chatroomId: roomId)
-                                      : OpenChatroomChatView(
-                                          chatroomId: roomId,
+                                      : const Scaffold(
+                                          body: Center(child: Text('Text chat is no longer supported.')),
                                         ),
                                 ),
                               );
@@ -1318,11 +1311,11 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                                       (roomType == 'voice' || isVoiceActive)
                                       ? VoiceChatView(
                                           chatroomId: isVoiceActive
-                                              ? activeId
+                                              ? activeId!
                                               : chatroomId,
                                         )
-                                      : OpenChatroomChatView(
-                                          chatroomId: chatroomId,
+                                      : const Scaffold(
+                                          body: Center(child: Text('Text chat is no longer supported.')),
                                         ),
                                 ),
                               );
