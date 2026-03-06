@@ -47,7 +47,7 @@ class UserModel {
     this.chatNotification = true,
     this.latitude = 0.0,
     this.longitude = 0.0,
-    this.tingBalance = 0,
+    this.tingBalance = 20,
     this.languageCode,
   });
 

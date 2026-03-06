@@ -341,6 +341,7 @@ class AuthController extends ChangeNotifier {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         isProfileComplete: false, // 프로필 미완성 표시
+        tingBalance: 20, // 가입 시 20 Ting 지급
         languageCode: await _getInitialLanguageCode(), // 현재 설정된 언어 코드 사용
       );
 
@@ -737,6 +738,7 @@ class AuthController extends ChangeNotifier {
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         isProfileComplete: false,
+        tingBalance: 20, // 가입 시 20 Ting 지급
       );
 
       await userService.createUser(recoveredUser);
