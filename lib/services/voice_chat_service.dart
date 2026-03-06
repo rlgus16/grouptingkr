@@ -242,13 +242,21 @@ class VoiceChatService extends ChangeNotifier {
       final data = chatroomDoc.data()!;
       final participantCount = data['participantCount'] ?? 0;
       final creatorId = data['creatorId'];
+      final participants = List<dynamic>.from(data['participants'] ?? []);
+
+      // If the user was kicked (removed from participants by owner), they don't have
+      // permission to write to this document anymore. We can just skip updating Firestore.
+      if (!participants.contains(currentUserId)) {
+        await _clearPresence();
+        await leaveVoiceChat();
+        return true;
+      }
 
       if (participantCount <= 1 || creatorId == currentUserId) {
         // Cancel RTDB presence before deleting (owner / last person leaving)
         await _clearPresence();
         await chatroomRef.delete();
       } else {
-        final participants = List<dynamic>.from(data['participants'] ?? []);
         participants.remove(currentUserId);
         
         final updateData = <String, dynamic>{

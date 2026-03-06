@@ -335,6 +335,19 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
         'isActive': true,
       };
 
+      // Retrieve required services first
+      final authController = context.read<AuthController>();
+      final voiceService = context.read<VoiceChatService>();
+      final activeChatroomId = voiceService.activeChatroomId;
+
+      // Disconnect from any active voice chatroom before creating a new one
+      if (activeChatroomId != null) {
+        await voiceService.permanentlyLeaveChatroomDB(
+          activeChatroomId,
+          currentUser.uid,
+        );
+      }
+
       await _leaveExistingChatrooms(currentUser.uid);
       final docRef = await _firestore
           .collection('openChatrooms')
@@ -466,9 +479,11 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
       // If user is in an active voice chatroom, leave it fully first
       // (Agora disconnect + RTDB presence cancel + Firestore cleanup)
       final voiceService = context.read<VoiceChatService>();
-      if (voiceService.activeChatroomId != null) {
+      final activeChatroomId = voiceService.activeChatroomId;
+      
+      if (activeChatroomId != null) {
         await voiceService.permanentlyLeaveChatroomDB(
-          voiceService.activeChatroomId!,
+          activeChatroomId,
           currentUser.uid,
         );
       }
@@ -1278,47 +1293,45 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
 
                       // Check if there is an active background voice connection
                       // If so, force the FAB to pulse and act as an indicator for it, regardless of roomType (though it should be the same room)
-                      final activeId = voiceService.activeChatroomId;
-                      final isVoiceActive = activeId != null;
+      final activeChatroomId = voiceService.activeChatroomId;
+      final isVoiceActive = activeChatroomId != null;
 
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16.0),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: isVoiceActive
-                                    ? AppTheme.primaryColor.withValues(
-                                        alpha: 0.6,
-                                      )
-                                    : AppTheme.primaryColor.withValues(
-                                        alpha: 0.4,
-                                      ),
-                                blurRadius: isVoiceActive ? 24 : 16,
-                                offset: const Offset(0, 6),
-                                spreadRadius: isVoiceActive ? 4 : 0,
-                              ),
-                            ],
-                          ),
-                          child: FloatingActionButton(
-                            heroTag: 'opentingMyRoomBtn',
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      (roomType == 'voice' || isVoiceActive)
-                                      ? VoiceChatView(
-                                          chatroomId: isVoiceActive
-                                              ? activeId!
-                                              : chatroomId,
-                                        )
-                                      : const Scaffold(
-                                          body: Center(child: Text('Text chat is no longer supported.')),
-                                        ),
-                                ),
-                              );
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16.0),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: isVoiceActive
+                    ? AppTheme.primaryColor.withValues(
+                        alpha: 0.6,
+                      )
+                    : AppTheme.primaryColor.withValues(
+                        alpha: 0.4,
+                      ),
+                blurRadius: isVoiceActive ? 24 : 16,
+                offset: const Offset(0, 6),
+                spreadRadius: isVoiceActive ? 4 : 0,
+              ),
+            ],
+          ),
+          child: FloatingActionButton(
+            heroTag: 'opentingMyRoomBtn',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      (roomType == 'voice' || isVoiceActive)
+                      ? VoiceChatView(
+                          chatroomId: activeChatroomId ?? chatroomId,
+                        )
+                      : const Scaffold(
+                          body: Center(child: Text('Text chat is no longer supported.')),
+                        ),
+                ),
+              );
                             },
                             backgroundColor: Colors.white,
                             elevation: 0,
