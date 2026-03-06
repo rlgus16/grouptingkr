@@ -405,7 +405,7 @@ class _ProfileDetailViewState extends State<ProfileDetailView> {
                               Icon(Icons.star, size: 20, color: themeColor),
                               const SizedBox(width: 4),
                               Text(
-                                _averageRating > 0 ? '${_averageRating.toStringAsFixed(1)}/5' : '0.0/5',
+                                _averageRating > 0 ? '${_averageRating.toStringAsFixed(1)}' : '0.0',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,

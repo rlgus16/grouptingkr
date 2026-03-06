@@ -645,7 +645,7 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
         title: Column(
           children: [
             Text(
-              l10n.opentingTitle, // Or "Voice Chat" if there was a localized string
+              l10n.opentingTabList,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
             ),
             Row(

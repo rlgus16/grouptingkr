@@ -137,7 +137,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            l10n.costTenTing,
+                            l10n.costFiveTing,
                             style: const TextStyle(
                               color: AppTheme.warningColor,
                               fontSize: 12,
@@ -308,7 +308,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
     }
 
     if (_selectedRoomType == 'voice') {
-      const int voiceChatCost = 10;
+      const int voiceChatCost = 5;
       if (currentUser.tingBalance < voiceChatCost) {
         if (mounted) {
           CustomToast.showError(
@@ -355,7 +355,7 @@ class _OpenChatroomListViewState extends State<OpenChatroomListView> {
 
       if (_selectedRoomType == 'voice') {
         final userService = UserService();
-        await userService.deductTings(currentUser.uid, 10);
+        await userService.deductTings(currentUser.uid, 5);
         if (mounted) {
           await authController.refreshCurrentUser();
         }

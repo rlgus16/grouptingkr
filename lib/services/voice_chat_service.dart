@@ -15,7 +15,6 @@ class VoiceChatService extends ChangeNotifier {
 
   // Track presence ref so we can explicitly cancel onDisconnect on intentional leave
   DatabaseReference? _activePresenceRef;
-  String? _activePresenceUserId;
 
   bool _isVoiceChatActive = false;
   bool get isVoiceChatActive => _isVoiceChatActive;
@@ -43,7 +42,6 @@ class VoiceChatService extends ChangeNotifier {
 
     // Track the presence ref so we can cancel onDisconnect on intentional leave
     _activePresenceRef = userStatusRef;
-    _activePresenceUserId = actualUserId;
 
     presenceRef.onValue.listen((event) {
       if (event.snapshot.value == false) {
@@ -187,7 +185,6 @@ class VoiceChatService extends ChangeNotifier {
       debugPrint('RTDB Presence Clear Error: $e');
     } finally {
       _activePresenceRef = null;
-      _activePresenceUserId = null;
     }
   }
 
