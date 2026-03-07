@@ -600,7 +600,7 @@
   "voiceChatLeave": "Leave",
   "voiceChatPermissionDenied": "Microphone permission denied",
   "voiceChatJoinFailed": "Failed to join: {error}",
-  "voiceChatClosedByOwner": "The owner has closed the chatroom.",
+  "voiceChatClosedByOwner": "The chatroom is closed.",
   "opentingRoomTypeTitle": "Room Type",
   "opentingRoomTypeChat": "Chat",
   "opentingRoomTypeVoice": "Voice"

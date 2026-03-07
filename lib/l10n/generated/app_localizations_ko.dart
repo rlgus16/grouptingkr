@@ -1761,7 +1761,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get voiceChatClosedByOwner => '방장이 채팅방을 종료했습니다.';
+  String get voiceChatClosedByOwner => '채팅방이 종료되었습니다.';
 
   @override
   String get opentingRoomTypeTitle => '방 종류';

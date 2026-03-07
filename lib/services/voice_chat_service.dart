@@ -3,6 +3,7 @@ import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import '../utils/agora_config.dart';
 
 class VoiceChatService extends ChangeNotifier {
@@ -102,8 +103,23 @@ class VoiceChatService extends ChangeNotifier {
 
       await _engine!.setClientRole(role: ClientRoleType.clientRoleAudience);
       
+      String rtcToken = '';
+      if (AgoraConfig.useTokenServer) {
+        try {
+          final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('generateAgoraToken');
+          final result = await callable.call(<String, dynamic>{
+            'channelName': chatroomId,
+            'uid': agoraUid,
+            'role': 'broadcaster', // Requesting broadcaster so they can switch roles later
+          });
+          rtcToken = result.data['token'] as String;
+        } catch (e) {
+          debugPrint('Error fetching Agora token: $e');
+        }
+      }
+
       await _engine!.joinChannel(
-        token: '',
+        token: rtcToken,
         channelId: chatroomId,
         uid: agoraUid,
         options: const ChannelMediaOptions(

@@ -3,7 +3,7 @@ import * as admin from "firebase-admin";
 import { onDocumentUpdated, onDocumentCreated } from "firebase-functions/v2/firestore";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onValueWritten } from "firebase-functions/v2/database";
-
+import { RtcTokenBuilder, RtcRole } from "agora-token";
 admin.initializeApp();
 
 // 거리 계산 헬퍼 함수 (Haversine Formula)
@@ -1098,7 +1098,7 @@ export const onChatPresenceChange = onValueWritten("chatPresence/{chatroomId}/{u
           if (creatorId === userId && newParticipants.length > 0) {
             const newOwnerId = newParticipants[0];
             updateData.creatorId = newOwnerId;
-            
+
             // Try to get new owner's nickname, but update continues even if this fails
             try {
               const userDoc = await db.collection('users').doc(newOwnerId).get();
@@ -1123,5 +1123,47 @@ export const onChatPresenceChange = onValueWritten("chatPresence/{chatroomId}/{u
     } catch (e) {
       console.error(`Error cleaning up chat presence for room ${chatroomId}:`, e);
     }
+  }
+});
+
+// Generate Agora RTC Token
+export const generateAgoraToken = onCall(async (request) => {
+  const data = request.data;
+  const channelName = data.channelName;
+  const uid = data.uid;
+  const role = data.role || 'audience';
+
+  if (!channelName || typeof uid !== 'number') {
+    throw new HttpsError(
+      "invalid-argument",
+      "The function must be called with 'channelName' (string) and 'uid' (number)."
+    );
+  }
+
+  const appId = "bab60606e5c6441e98b3ba7edc5e09bb";
+  const appCertificate = "ffcdf25f5015451d9dc252bae51c3937";
+
+  // Token valid for 24 hours
+  const expirationTimeInSeconds = 3600 * 24;
+  const currentTimestamp = Math.floor(Date.now() / 1000);
+  const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
+
+  const rtcRole = role === 'broadcaster' ? RtcRole.PUBLISHER : RtcRole.SUBSCRIBER;
+
+  try {
+    const token = RtcTokenBuilder.buildTokenWithUid(
+      appId,
+      appCertificate,
+      channelName,
+      uid,
+      rtcRole,
+      expirationTimeInSeconds,
+      privilegeExpiredTs
+    );
+
+    return { token };
+  } catch (error) {
+    console.error("Error generating Agora token:", error);
+    throw new HttpsError("internal", "Failed to generate Agora token");
   }
 });

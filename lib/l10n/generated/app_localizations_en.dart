@@ -1804,7 +1804,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get voiceChatClosedByOwner => 'The owner has closed the chatroom.';
+  String get voiceChatClosedByOwner => 'The chatroom is closed.';
 
   @override
   String get opentingRoomTypeTitle => 'Room Type';
