@@ -1,0 +1,9 @@
+/* Localized versions of Info.plist keys */
+
+"NSLocationWhenInUseUsageDescription" = "Location permission is required to match you with nearby groups and set your activity area based on your current location.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Location permission is required to match you with nearby groups and set your activity area based on your current location.";
+"NSLocationAlwaysUsageDescription" = "Location permission is required to match you with nearby groups and set your activity area based on your current location.";
+"NSPhotoLibraryUsageDescription" = "Gallery access is required to upload profile pictures and report users.";
+"NSContactsUsageDescription" = "Contacts access is required to invite friends.";
+"NSMicrophoneUsageDescription" = "Microphone access is required for voice chat.";
+"NSCameraUsageDescription" = "Camera access is required for voice calls to function properly.";
