@@ -74,6 +74,12 @@
 				<array>
 					<string>com.googleusercontent.apps.826622552589-320m8mfr1vg913ivqnk6giboivnejkd1</string>
 				</array>
+			</dict>
+		</array>
+		<key>UIBackgroundModes</key>
+		<array>
+			<string>audio</string>
+		</array>
 		<key>CFBundleLocalizations</key>
         <array>
             <string>ko</string>

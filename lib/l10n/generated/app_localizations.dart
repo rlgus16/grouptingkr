@@ -3461,7 +3461,7 @@ abstract class AppLocalizations {
   /// No description provided for @voiceChatClosedByOwner.
   ///
   /// In ko, this message translates to:
-  /// **'방장이 채팅방을 종료했습니다.'**
+  /// **'채팅방이 종료되었습니다.'**
   String get voiceChatClosedByOwner;
 
   /// No description provided for @opentingRoomTypeTitle.
