@@ -100,5 +100,13 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyCVQHVPAYg2fmIRzCEZtxifaMhL3-wKWO4"/>
+
+        <!-- Foreground Service Declaration for flutter_foreground_task -->
+        <service
+            android:name="com.pravera.flutter_foreground_task.service.ForegroundService"
+            android:foregroundServiceType="microphone|mediaPlayback"
+            android:exported="false"
+            tools:replace="android:stopWithTask"
+            android:stopWithTask="true" />
     </application>
 </manifest>

@@ -42,6 +42,9 @@ class VoiceChatService extends ChangeNotifier {
   bool _isVoiceChatActive = false;
   bool get isVoiceChatActive => _isVoiceChatActive;
 
+  bool _isJoinedChannel = false;
+  bool get isJoinedChannel => _isJoinedChannel;
+
   bool _isMuted = false;
   bool get isMuted => _isMuted;
 
@@ -146,6 +149,9 @@ class VoiceChatService extends ChangeNotifier {
 
       _engine!.registerEventHandler(
         RtcEngineEventHandler(
+          onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
+            _isJoinedChannel = true;
+          },
           onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) async {
             _remoteUsers[remoteUid] = true;
             
@@ -211,26 +217,11 @@ class VoiceChatService extends ChangeNotifier {
 
   Future<bool> joinAsBroadcaster(int currentUid) async {
     try {
-      if (_engine == null || _activeChatroomId == null) return false;
+      if (_engine == null || _activeChatroomId == null || !_isJoinedChannel) return false;
 
       final status = await Permission.microphone.request();
       if (status != PermissionStatus.granted) {
         return false;
-      }
-
-      if (AgoraConfig.useTokenServer) {
-        try {
-          final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('generateAgoraToken');
-          final result = await callable.call(<String, dynamic>{
-            'channelName': _activeChatroomId,
-            'uid': currentUid,
-            'role': 'broadcaster',
-          });
-          final newToken = result.data['token'] as String;
-          await _engine!.renewToken(newToken);
-        } catch (e) {
-          debugPrint('Error renewing token before broadcast: $e');
-        }
       }
 
       await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
@@ -304,6 +295,7 @@ class VoiceChatService extends ChangeNotifier {
       await FlutterForegroundTask.stopService();
       _activeChatroomId = null;
       _isVoiceChatActive = false;
+      _isJoinedChannel = false;
       _isMuted = false;
       _isSpeakerOn = true;
       _remoteUsers.clear();
