@@ -381,7 +381,11 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
   }
 
   Future<void> _joinAsBroadcaster(VoiceChatService service) async {
-    final success = await service.joinAsBroadcaster();
+    final authController = context.read<AuthController>();
+    final currentUser = authController.currentUserModel;
+    if (currentUser == null) return;
+    
+    final success = await service.joinAsBroadcaster(currentUser.uid.hashCode);
     if (!success && mounted) {
       CustomToast.showError(context, AppLocalizations.of(context)!.voiceChatJoinFailed(''));
     }

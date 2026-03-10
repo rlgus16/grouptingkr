@@ -209,13 +209,28 @@ class VoiceChatService extends ChangeNotifier {
     }
   }
 
-  Future<bool> joinAsBroadcaster() async {
+  Future<bool> joinAsBroadcaster(int currentUid) async {
     try {
-      if (_engine == null) return false;
+      if (_engine == null || _activeChatroomId == null) return false;
 
       final status = await Permission.microphone.request();
       if (status != PermissionStatus.granted) {
         return false;
+      }
+
+      if (AgoraConfig.useTokenServer) {
+        try {
+          final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('generateAgoraToken');
+          final result = await callable.call(<String, dynamic>{
+            'channelName': _activeChatroomId,
+            'uid': currentUid,
+            'role': 'broadcaster',
+          });
+          final newToken = result.data['token'] as String;
+          await _engine!.renewToken(newToken);
+        } catch (e) {
+          debugPrint('Error renewing token before broadcast: $e');
+        }
       }
 
       await _engine!.setClientRole(role: ClientRoleType.clientRoleBroadcaster);
