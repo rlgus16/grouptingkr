@@ -645,6 +645,7 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
 
     return Scaffold(
       backgroundColor: AppTheme.gray50,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Column(
           children: [
