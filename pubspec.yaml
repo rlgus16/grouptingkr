@@ -56,6 +56,8 @@ dependencies:
   flutter_contacts: ^1.1.9+2
   agora_rtc_engine: ^6.5.3
   firebase_database: ^12.1.4
+  flutter_foreground_task: ^9.2.1
+  audio_session: ^0.2.2
 
 dev_dependencies:
   flutter_test:

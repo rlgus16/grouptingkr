@@ -1,10 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'dart:isolate';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:audio_session/audio_session.dart';
 import '../utils/agora_config.dart';
+
+@pragma('vm:entry-point')
+void startCallback() {
+  FlutterForegroundTask.setTaskHandler(MyTaskHandler());
+}
+
+class MyTaskHandler extends TaskHandler {
+  @override
+  Future<void> onStart(DateTime timestamp, TaskStarter starter) async {}
+
+  @override
+  void onRepeatEvent(DateTime timestamp) {}
+
+  @override
+  Future<void> onDestroy(DateTime timestamp, bool isManual) async {}
+
+  @override
+  void onNotificationButtonPressed(String id) {}
+}
 
 class VoiceChatService extends ChangeNotifier {
   RtcEngine? _engine;
@@ -36,6 +58,55 @@ class VoiceChatService extends ChangeNotifier {
     }
 
     _activeChatroomId = chatroomId;
+    
+    // Initialize & Start Foreground Task
+    FlutterForegroundTask.init(
+      androidNotificationOptions: AndroidNotificationOptions(
+        channelId: 'voice_chat_channel',
+        channelName: 'Voice Chat Service',
+        channelDescription: 'Keeps voice chat alive in background',
+        channelImportance: NotificationChannelImportance.LOW,
+        priority: NotificationPriority.LOW,
+      ),
+      iosNotificationOptions: const IOSNotificationOptions(
+        showNotification: true,
+        playSound: false,
+      ),
+      foregroundTaskOptions: ForegroundTaskOptions(
+        eventAction: ForegroundTaskEventAction.repeat(5000),
+        autoRunOnBoot: false,
+        allowWakeLock: true,
+        allowWifiLock: true,
+      ),
+    );
+    
+    if (await FlutterForegroundTask.isRunningService) {
+      await FlutterForegroundTask.restartService();
+    } else {
+      await FlutterForegroundTask.startService(
+        notificationTitle: 'Groupting',
+        notificationText: 'Voice Chat in progress',
+        callback: startCallback,
+      );
+    }
+    
+    // Configure iOS AudioSession
+    final session = await AudioSession.instance;
+    await session.configure(AudioSessionConfiguration(
+      avAudioSessionCategory: AVAudioSessionCategory.playAndRecord,
+      avAudioSessionCategoryOptions: AVAudioSessionCategoryOptions.allowBluetooth |
+          AVAudioSessionCategoryOptions.defaultToSpeaker,
+      avAudioSessionMode: AVAudioSessionMode.voiceChat,
+      avAudioSessionRouteSharingPolicy: AVAudioSessionRouteSharingPolicy.defaultPolicy,
+      avAudioSessionSetActiveOptions: AVAudioSessionSetActiveOptions.none,
+      androidAudioAttributes: AndroidAudioAttributes(
+        contentType: AndroidAudioContentType.speech,
+        flags: AndroidAudioFlags.none,
+        usage: AndroidAudioUsage.voiceCommunication,
+      ),
+      androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+      androidWillPauseWhenDucked: true,
+    ));
 
     // Set up Firebase Realtime Database Presence
     final presenceRef = _rtdb.ref('.info/connected');
@@ -215,6 +286,7 @@ class VoiceChatService extends ChangeNotifier {
     } catch (e) {
       debugPrint('Agora Leave Error: $e');
     } finally {
+      await FlutterForegroundTask.stopService();
       _activeChatroomId = null;
       _isVoiceChatActive = false;
       _isMuted = false;
