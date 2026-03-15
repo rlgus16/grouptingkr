@@ -1127,7 +1127,7 @@ export const onChatPresenceChange = onValueWritten("chatPresence/{chatroomId}/{u
 });
 
 // Generate Agora RTC Token
-export const generateAgoraToken = onCall(async (request) => {
+export const generateAgoraToken = onCall({ enforceAppCheck: false }, async (request) => {
   const data = request.data;
   const channelName = data.channelName;
   const uid = data.uid;
