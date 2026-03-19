@@ -54,6 +54,8 @@ class VoiceChatService extends ChangeNotifier {
   Map<int, bool> _remoteUsers = {};
   Map<int, bool> get remoteUsers => _remoteUsers;
 
+  List<String> _blockedIds = [];
+
   Future<void> initAgoraAsListener(String chatroomId, String actualUserId, int agoraUid, List<String> blockedIds) async {
     if (_engine != null && _activeChatroomId == chatroomId) {
       // Already initialized for this room
@@ -61,6 +63,7 @@ class VoiceChatService extends ChangeNotifier {
     }
 
     _activeChatroomId = chatroomId;
+    _blockedIds = List.from(blockedIds);
     
     // Initialize & Start Foreground Task
     FlutterForegroundTask.init(
@@ -156,7 +159,7 @@ class VoiceChatService extends ChangeNotifier {
             _remoteUsers[remoteUid] = true;
             
             bool isRemoteUserBlocked = false;
-            for (String blockedId in blockedIds) {
+            for (String blockedId in _blockedIds) {
               if (blockedId.hashCode == remoteUid) {
                 isRemoteUserBlocked = true;
                 break;
@@ -378,6 +381,27 @@ class VoiceChatService extends ChangeNotifier {
       await _engine!.muteRemoteAudioStream(
         uid: remoteUid,
         mute: true,
+      );
+    }
+  }
+
+  void updateBlockedUsers(List<String> newBlockedIds) {
+    if (_engine == null || !_isJoinedChannel) return;
+
+    _blockedIds = List.from(newBlockedIds);
+
+    for (final remoteUid in _remoteUsers.keys) {
+      bool shouldMute = false;
+      for (final blockedId in _blockedIds) {
+        if (blockedId.hashCode == remoteUid) {
+          shouldMute = true;
+          break;
+        }
+      }
+
+      _engine!.muteRemoteAudioStream(
+        uid: remoteUid,
+        mute: shouldMute,
       );
     }
   }

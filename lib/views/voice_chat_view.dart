@@ -638,6 +638,14 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final authController = context.watch<AuthController>();
+    
+    // Dynamically sync blocked users to VoiceChatService
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<VoiceChatService>().updateBlockedUsers(authController.blockedUserIds);
+      }
+    });
+
     final currentUserId = authController.currentUserModel?.uid;
     final isOwner = _currentChatroomData?['creatorId'] == currentUserId;
     final mediaQuery = MediaQuery.of(context);
