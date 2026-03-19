@@ -255,7 +255,9 @@ class VoiceChatService extends ChangeNotifier {
             publishMicrophoneTrack: false,
           ),
         );
-        await _engine!.disableAudio();
+        
+        // Removed _engine!.disableAudio(); because that turns off the entire
+        // audio module, which would prevent you from hearing others!
         
         _isVoiceChatActive = false;
         notifyListeners();
