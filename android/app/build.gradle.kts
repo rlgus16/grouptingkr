@@ -16,8 +16,8 @@ plugins {
 
 android {
     namespace = "com.rlgus16.groupting"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"
+    compileSdk = 35
+    ndkVersion = "25.1.8937393"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -32,7 +32,7 @@ android {
     defaultConfig {
         applicationId = "com.rlgus16.groupting"
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
