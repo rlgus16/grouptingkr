@@ -158,8 +158,9 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
           final blockedIds = authController.blockedUserIds;
           
           for (final member in members) {
-            if (blockedIds.contains(member.uid) && voiceService.remoteUsers.containsKey(member.uid.hashCode)) {
-              voiceService.muteRemoteUser(member.uid.hashCode);
+            final consistentUid = VoiceChatService.generateConsistentAgoraUid(member.uid);
+            if (blockedIds.contains(member.uid) && voiceService.remoteUsers.containsKey(consistentUid)) {
+              voiceService.muteRemoteUser(consistentUid);
             }
           }
         }
@@ -373,7 +374,7 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
     final authController = context.read<AuthController>();
     final currentUser = authController.currentUserModel;
     final actualUserId = currentUser?.uid ?? '';
-    final agoraUid = actualUserId.hashCode;
+    final agoraUid = VoiceChatService.generateConsistentAgoraUid(actualUserId);
     final blockedIds = authController.blockedUserIds;
     
     final voiceService = context.read<VoiceChatService>();
@@ -385,7 +386,7 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
     final currentUser = authController.currentUserModel;
     if (currentUser == null) return;
     
-    final success = await service.joinAsBroadcaster(currentUser.uid.hashCode);
+    final success = await service.joinAsBroadcaster(VoiceChatService.generateConsistentAgoraUid(currentUser.uid));
     if (!success && mounted) {
       CustomToast.showError(context, AppLocalizations.of(context)!.voiceChatJoinFailed(''));
     }

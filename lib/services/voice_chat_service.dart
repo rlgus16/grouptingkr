@@ -29,6 +29,18 @@ class MyTaskHandler extends TaskHandler {
 }
 
 class VoiceChatService extends ChangeNotifier {
+  static int generateConsistentAgoraUid(String firebaseUid) {
+    int hash = 0;
+    for (int i = 0; i < firebaseUid.length; i++) {
+        hash = 0x1fffffff & (hash + firebaseUid.codeUnitAt(i));
+        hash = 0x1fffffff & (hash + ((0x0007ffff & hash) << 10));
+        hash ^= hash >> 6;
+    }
+    hash = 0x1fffffff & (hash + ((0x03ffffff & hash) << 3));
+    hash ^= hash >> 11;
+    return 0x1fffffff & (hash + ((0x00003fff & hash) << 15));
+  }
+
   RtcEngine? _engine;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseDatabase _rtdb = FirebaseDatabase.instance;
@@ -160,7 +172,7 @@ class VoiceChatService extends ChangeNotifier {
             
             bool isRemoteUserBlocked = false;
             for (String blockedId in _blockedIds) {
-              if (blockedId.hashCode == remoteUid) {
+              if (VoiceChatService.generateConsistentAgoraUid(blockedId) == remoteUid) {
                 isRemoteUserBlocked = true;
                 break;
               }
@@ -393,7 +405,7 @@ class VoiceChatService extends ChangeNotifier {
     for (final remoteUid in _remoteUsers.keys) {
       bool shouldMute = false;
       for (final blockedId in _blockedIds) {
-        if (blockedId.hashCode == remoteUid) {
+        if (VoiceChatService.generateConsistentAgoraUid(blockedId) == remoteUid) {
           shouldMute = true;
           break;
         }
