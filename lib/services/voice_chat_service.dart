@@ -252,6 +252,9 @@ class VoiceChatService extends ChangeNotifier {
 
       _isVoiceChatActive = true;
       notifyListeners();
+      
+      // Re-apply mutes because updateChannelMediaOptions with autoSubscribeAudio resets mute states
+      _applyMutesForBlockedUsers();
       return true;
     } catch (e) {
       debugPrint('Agora Broadcaster Join Error: $e');
@@ -276,6 +279,9 @@ class VoiceChatService extends ChangeNotifier {
         
         _isVoiceChatActive = false;
         notifyListeners();
+        
+        // Re-apply mutes because updateChannelMediaOptions with autoSubscribeAudio resets mute states
+        _applyMutesForBlockedUsers();
       }
     } catch (e) {
       debugPrint('Agora Listener Revert Error: $e');
@@ -397,10 +403,8 @@ class VoiceChatService extends ChangeNotifier {
     }
   }
 
-  void updateBlockedUsers(List<String> newBlockedIds) {
+  void _applyMutesForBlockedUsers() {
     if (_engine == null || !_isJoinedChannel) return;
-
-    _blockedIds = List.from(newBlockedIds);
 
     for (final remoteUid in _remoteUsers.keys) {
       bool shouldMute = false;
@@ -416,6 +420,13 @@ class VoiceChatService extends ChangeNotifier {
         mute: shouldMute,
       );
     }
+  }
+
+  void updateBlockedUsers(List<String> newBlockedIds) {
+    if (_engine == null || !_isJoinedChannel) return;
+
+    _blockedIds = List.from(newBlockedIds);
+    _applyMutesForBlockedUsers();
   }
 
 }
