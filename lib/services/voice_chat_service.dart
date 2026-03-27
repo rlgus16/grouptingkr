@@ -8,6 +8,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:audio_session/audio_session.dart';
 import '../utils/agora_config.dart';
+import '../controllers/auth_controller.dart';
 
 @pragma('vm:entry-point')
 void startCallback() {
@@ -67,15 +68,23 @@ class VoiceChatService extends ChangeNotifier {
   Map<int, bool> get remoteUsers => _remoteUsers;
 
   List<String> _blockedIds = [];
+  AuthController? _authController;
+  void Function()? _authListener;
 
-  Future<void> initAgoraAsListener(String chatroomId, String actualUserId, int agoraUid, List<String> blockedIds) async {
+  Future<void> initAgoraAsListener(String chatroomId, String actualUserId, int agoraUid, AuthController authController) async {
     if (_engine != null && _activeChatroomId == chatroomId) {
       // Already initialized for this room
       return;
     }
 
+    _authController = authController;
+    _authListener = () {
+      updateBlockedUsers(_authController!.blockedUserIds);
+    };
+    _authController!.addListener(_authListener!);
+
     _activeChatroomId = chatroomId;
-    _blockedIds = List.from(blockedIds);
+    _blockedIds = List.from(authController.blockedUserIds);
     
     // Initialize & Start Foreground Task
     FlutterForegroundTask.init(
@@ -315,6 +324,11 @@ class VoiceChatService extends ChangeNotifier {
     } catch (e) {
       debugPrint('Agora Leave Error: $e');
     } finally {
+      if (_authController != null && _authListener != null) {
+        _authController!.removeListener(_authListener!);
+        _authController = null;
+        _authListener = null;
+      }
       await FlutterForegroundTask.stopService();
       _activeChatroomId = null;
       _isVoiceChatActive = false;

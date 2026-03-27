@@ -375,10 +375,9 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
     final currentUser = authController.currentUserModel;
     final actualUserId = currentUser?.uid ?? '';
     final agoraUid = VoiceChatService.generateConsistentAgoraUid(actualUserId);
-    final blockedIds = authController.blockedUserIds;
     
     final voiceService = context.read<VoiceChatService>();
-    await voiceService.initAgoraAsListener(widget.chatroomId, actualUserId, agoraUid, blockedIds);
+    await voiceService.initAgoraAsListener(widget.chatroomId, actualUserId, agoraUid, authController);
   }
 
   Future<void> _joinAsBroadcaster(VoiceChatService service) async {
@@ -639,13 +638,6 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final authController = context.watch<AuthController>();
-    
-    // Dynamically sync blocked users to VoiceChatService
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        context.read<VoiceChatService>().updateBlockedUsers(authController.blockedUserIds);
-      }
-    });
 
     final currentUserId = authController.currentUserModel?.uid;
     final isOwner = _currentChatroomData?['creatorId'] == currentUserId;
