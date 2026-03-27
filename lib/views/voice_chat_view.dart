@@ -791,7 +791,8 @@ class _VoiceChatViewState extends State<VoiceChatView> with WidgetsBindingObserv
                     itemBuilder: (context, index) {
                       final member = _chatroomMembers[index];
                       final isBlocked = authController.blockedUserIds.contains(member.uid);
-                      final isVoiceJoined = (member.uid == currentUserId && context.read<VoiceChatService>().isVoiceChatActive) || remoteUsersData.containsKey(member.uid.hashCode);
+                      final consistentUid = VoiceChatService.generateConsistentAgoraUid(member.uid);
+                      final isVoiceJoined = (member.uid == currentUserId && context.read<VoiceChatService>().isVoiceChatActive) || remoteUsersData.containsKey(consistentUid);
                       
                       return GestureDetector(
                         onLongPress: () => _showUserOptions(context, member),
