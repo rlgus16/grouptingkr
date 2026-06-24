@@ -100,7 +100,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyCVQHVPAYg2fmIRzCEZtxifaMhL3-wKWO4"/>
+            android:value="AIzaSyB89nToUM6JSdf7t8soknGCCNKS_fkjiu4"/>
 
         <!-- Foreground Service Declaration for flutter_foreground_task -->
         <service
