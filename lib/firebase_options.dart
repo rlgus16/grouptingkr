@@ -47,7 +47,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDgOkgsLXaa4ga-co5FGaVTb9fkroWpg3M',
+    apiKey: 'AIzaSyB89nToUM6JSdf7t8soknGCCNKS_fkjiu4',
     appId: '1:826622552589:web:c3c37ae751d231d5eb4344',
     messagingSenderId: '826622552589',
     projectId: 'groupting-aebab',
@@ -58,7 +58,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDGzgBkOmqsh3Su_lHarO3yufDpJXCSdQQ',
+    apiKey: 'AIzaSyB89nToUM6JSdf7t8soknGCCNKS_fkjiu4',
     appId: '1:826622552589:android:b8cd6195c9eca66aeb4344',
     messagingSenderId: '826622552589',
     projectId: 'groupting-aebab',
@@ -67,7 +67,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCHgXnkh3FYEqy9LOwnt6mdBclDhX7zOLc',
+    apiKey: 'AIzaSyB89nToUM6JSdf7t8soknGCCNKS_fkjiu4',
     appId: '1:826622552589:ios:8edb281a853c4f31eb4344',
     messagingSenderId: '826622552589',
     projectId: 'groupting-aebab',

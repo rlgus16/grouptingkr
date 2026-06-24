@@ -11,7 +11,7 @@ import GoogleMaps
   ) -> Bool {
 
     // Google Maps API 키 설정 (Firebase 설정보다 먼저 혹은 같이 호출)
-    GMSServices.provideAPIKey("AIzaSyCVQHVPAYg2fmIRzCEZtxifaMhL3-wKWO4")
+    GMSServices.provideAPIKey("AIzaSyB89nToUM6JSdf7t8soknGCCNKS_fkjiu4")
 
     // Firebase 초기화
     FirebaseApp.configure()
